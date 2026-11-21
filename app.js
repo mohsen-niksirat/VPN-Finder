@@ -31,7 +31,7 @@
       allCountries: 'All countries',
       countrySheetTitle: 'Select Country',
       countrySearchPlaceholder: 'Search country or ISO code...',
-      noCountryGeoNote: 'Country metadata not published for this protocol',
+      noCountryGeoNote: 'Country is not published for this protocol',
       sortFilterLabel: 'Sort by',
       sortScore: 'Best score',
       sortSpeed: 'Fastest',
@@ -61,7 +61,7 @@
       checkedMinAgo: 'checked {n} min ago',
       checkedHrAgo: 'checked {n} hr ago',
       checkedDayAgo: 'checked {n} d ago',
-      unknownLocation: 'Unspecified Location',
+      unknownLocation: 'Location not published',
       detailsExpand: 'Details ▾',
       detailsCollapse: 'Hide details ▴',
       detailSource: 'Source',
@@ -104,7 +104,7 @@
       allCountries: 'همه کشورها',
       countrySheetTitle: 'انتخاب کشور',
       countrySearchPlaceholder: 'جستجوی نام یا کد کشور...',
-      noCountryGeoNote: 'کشور برای این پروتکل در کاتالوگ ثبت نشده',
+      noCountryGeoNote: 'کشور برای این پروتکل منتشر نشده است',
       sortFilterLabel: 'مرتب‌سازی',
       sortScore: 'بهترین امتیاز',
       sortSpeed: 'سریع‌ترین',
@@ -134,7 +134,7 @@
       checkedMinAgo: 'بررسی‌شده {n} دقیقه پیش',
       checkedHrAgo: 'بررسی‌شده {n} ساعت پیش',
       checkedDayAgo: 'بررسی‌شده {n} روز پیش',
-      unknownLocation: 'موقعیت نامشخص',
+      unknownLocation: 'موقعیت منتشر نشده',
       detailsExpand: 'جزئیات ▾',
       detailsCollapse: 'بستن جزئیات ▴',
       detailSource: 'منبع',
@@ -627,6 +627,10 @@
     }
   }
 
+  function protocolSupportsScore(proto) {
+    return String(proto || '').toLowerCase() === 'openvpn';
+  }
+
   function renderProtocolChips() {
     const t = I18N[state.lang];
     const container = document.getElementById('protocol-chips');
@@ -655,7 +659,13 @@
         if (state.selectedProtocol === p.id) return;
         state.selectedProtocol = p.id;
         state.selectedCountry = '';
+        if (!protocolSupportsScore(p.id) && state.selectedSort === 'score') {
+          state.selectedSort = 'last_checked';
+        } else if (protocolSupportsScore(p.id) && state.selectedSort === 'last_checked') {
+          state.selectedSort = 'score';
+        }
         renderProtocolChips();
+        renderSortButtons();
         scheduleFilterReload();
       });
 
@@ -675,12 +685,14 @@
     const t = I18N[state.lang];
     const btn = document.getElementById('country-picker-btn');
     const labelEl = document.getElementById('country-picker-label');
+    const noteEl = document.getElementById('country-filter-note');
     const countries = state.countriesByProtocol[state.selectedProtocol] || [];
+    const hasCountries = countries.length > 0;
 
-    if (!state.selectedCountry) {
-      const totalC = countries.length;
-      labelEl.textContent =
-        totalC > 0 ? `${t.allCountries} (${formatNumber(totalC)})` : t.allCountries;
+    if (!hasCountries || !state.selectedCountry) {
+      labelEl.textContent = hasCountries
+        ? `${t.allCountries} (${formatNumber(countries.length)})`
+        : t.allCountries;
     } else {
       const match = countries.find((c) => c.code === state.selectedCountry);
       const flag = countryCodeToFlag(state.selectedCountry);
@@ -691,11 +703,22 @@
       }
     }
 
-    btn.disabled = state.isPreviewFallback;
-    if (state.isPreviewFallback) {
+    const isDisabled = state.isPreviewFallback || !hasCountries;
+    btn.disabled = isDisabled;
+    if (isDisabled) {
       btn.setAttribute('aria-disabled', 'true');
     } else {
       btn.removeAttribute('aria-disabled');
+    }
+
+    if (noteEl) {
+      if (!hasCountries) {
+        noteEl.textContent = t.noCountryGeoNote;
+        noteEl.hidden = false;
+      } else {
+        noteEl.textContent = '';
+        noteEl.hidden = true;
+      }
     }
   }
 
@@ -708,8 +731,12 @@
       last_checked: t.sortRecent,
     };
 
-    if (state.isPreviewFallback && state.selectedSort !== 'score') {
-      state.selectedSort = 'score';
+    const supportsScore = protocolSupportsScore(state.selectedProtocol);
+    if (!supportsScore && state.selectedSort === 'score') {
+      state.selectedSort = 'last_checked';
+    }
+    if (state.isPreviewFallback) {
+      state.selectedSort = supportsScore ? 'score' : 'last_checked';
     }
 
     const buttons = document.querySelectorAll('#sort-segmented .sort-btn');
@@ -717,6 +744,9 @@
       const sortVal = btn.getAttribute('data-sort');
       if (labels[sortVal]) {
         btn.textContent = labels[sortVal];
+      }
+      if (sortVal === 'score') {
+        btn.hidden = !supportsScore;
       }
       const active = sortVal === state.selectedSort;
       btn.classList.toggle('is-active', active);
@@ -812,11 +842,12 @@
         const labelPart = srv.score_label ? ` (${srv.score_label})` : '';
         qBadge.textContent = `${t.scorePrefix} ${formatNumber(scoreNum)}${labelPart}`;
         badgesGroup.appendChild(qBadge);
-      } else if (srv.score_label) {
-        const qBadge = document.createElement('span');
-        qBadge.className = 'quality-badge';
-        qBadge.textContent = String(srv.score_label);
-        badgesGroup.appendChild(qBadge);
+      } else if (srv.freshness_status) {
+        const fChip = document.createElement('span');
+        const freshNorm = String(srv.freshness_status).toLowerCase();
+        fChip.className = `freshness-chip${freshNorm === 'fresh' ? ' is-fresh' : ''}`;
+        fChip.textContent = String(srv.freshness_status);
+        badgesGroup.appendChild(fChip);
       }
 
       if (Array.isArray(srv.risk_flags) && srv.risk_flags.length > 0) {
@@ -1101,14 +1132,11 @@
         }
       }
 
-      const protoInfo = state.activeProtocols.find((p) => p.id === state.selectedProtocol);
       const rawMetaTotal = Number(meta.total ?? newRows.length) || 0;
       const lastPage = Number(meta.last_page ?? meta.pages ?? 1) || 1;
 
-      state.totalMatching =
-        !state.selectedCountry && protoInfo && rawMetaTotal <= 20 && lastPage === 1 && state.isPreviewFallback
-          ? protoInfo.records
-          : Math.max(rawMetaTotal, state.servers.length);
+      // Part A.5: Y is always the filtered response's meta.total (or preview bundle's stored meta.total)
+      state.totalMatching = Math.max(rawMetaTotal, state.servers.length);
 
       state.hasMorePages =
         !state.isPreviewFallback &&
@@ -1327,6 +1355,7 @@
         state.selectedCountry = '';
       }
 
+      state.selectedSort = protocolSupportsScore(state.selectedProtocol) ? 'score' : 'last_checked';
       renderHeaderAndCounters();
       renderProtocolChips();
       renderCountryTrigger();
@@ -1378,7 +1407,7 @@
         state.activeProtocols[0]?.id ||
         'vless';
       state.selectedCountry = '';
-      state.selectedSort = 'score';
+      state.selectedSort = protocolSupportsScore(state.selectedProtocol) ? 'score' : 'last_checked';
       renderProtocolChips();
       renderCountryTrigger();
       renderSortButtons();

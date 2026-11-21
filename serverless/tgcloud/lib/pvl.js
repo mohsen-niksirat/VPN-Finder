@@ -561,7 +561,7 @@ export function validateAndNormalizeServersInput(input) {
     `protocol=${encodeURIComponent(rawProtocol)}`,
     ...(country ? [`country=${encodeURIComponent(country)}`] : []),
     'status=online',
-    'fresh_within=86400',
+    'fresh_within=259200',
     `sort=${encodeURIComponent(sort)}`,
     `order=${encodeURIComponent(order)}`,
     `page=${page}`,
@@ -668,7 +668,7 @@ export async function buildPublicCatalogSnapshot(protocol = 'openvpn') {
       try {
         const sRes = await fetchPvlServers({
           protocol: proto,
-          sort: 'score',
+          sort: proto === 'openvpn' ? 'score' : 'last_checked',
           page: 1,
           per_page: 20,
         });

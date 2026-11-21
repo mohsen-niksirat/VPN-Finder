@@ -395,6 +395,12 @@ input:focus-visible,
   font-variant-numeric: tabular-nums;
 }
 
+.filter-note {
+  margin: var(--space-1) 0 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
 /* Protocol Chips */
 .protocol-chips {
   display: flex;
@@ -645,6 +651,23 @@ input:focus-visible,
 }
 
 .quality-badge.is-high {
+  background-color: var(--ok-bg);
+  border-color: var(--ok-border);
+  color: var(--ok-text);
+}
+
+.freshness-chip {
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.freshness-chip.is-fresh {
   background-color: var(--ok-bg);
   border-color: var(--ok-border);
   color: var(--ok-text);

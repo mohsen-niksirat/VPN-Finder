@@ -16,6 +16,13 @@ const IGNORED_DIRS = new Set([
 // Construct prefixes dynamically so this scanner script itself contains zero forbidden substrings.
 const PVL_PREFIX = ['p', 'v', 'l', 'k', '_'].join('');
 const BEARER_WORD = ['B', 'e', 'a', 'r', 'e', 'r'].join('');
+const CONFIG_SCHEMES = [
+  ['v', 'l', 'e', 's', 's', ':', '/', '/'].join(''),
+  ['v', 'm', 'e', 's', 's', ':', '/', '/'].join(''),
+  ['t', 'r', 'o', 'j', 'a', 'n', ':', '/', '/'].join(''),
+  ['s', 's', ':', '/', '/'].join(''),
+  ['h', 'y', 's', 't', 'e', 'r', 'i', 'a', '2', ':', '/', '/'].join(''),
+];
 
 const RULES = [
   {
@@ -34,6 +41,10 @@ const RULES = [
   {
     name: 'tgcloud CLI token literal',
     regex: /\bapp\d{6,}:[A-Za-z0-9_-]{20,}\b/,
+  },
+  {
+    name: 'VPN configuration URI literal',
+    regex: new RegExp('(?:^|[^a-zA-Z0-9_])(?:' + CONFIG_SCHEMES.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'i'),
   },
 ];
 
