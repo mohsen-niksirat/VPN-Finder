@@ -1,4 +1,5 @@
 export const APP_URL = 'https://mohsen-niksirat.github.io/vpn-finder/';
+export const TGCLOUD_APP_URL = 'https://app9074617711.tgcloud.ai/';
 export const BOT_NAME = 'VPN Finder';
 
 export const ABOUT_EN =

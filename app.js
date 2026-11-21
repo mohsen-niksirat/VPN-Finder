@@ -9,9 +9,12 @@
 
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
-  // Optional tgcloud static origin fallback if opened on GitHub Pages with ?api_base=
+  // Default proxy host for cross-origin calls (e.g. when opened on GitHub Pages)
   const urlParams = new URLSearchParams(window.location.search);
-  const DEFAULT_PROXY_BASE = urlParams.get('api_base') || window.VPN_FINDER_API_BASE || '';
+  const DEFAULT_PROXY_BASE =
+    urlParams.get('api_base') ||
+    window.VPN_FINDER_API_BASE ||
+    (window.location.hostname.endsWith('.tgcloud.ai') ? '' : 'https://app9074617711.tgcloud.ai');
 
   const I18N = {
     en: {

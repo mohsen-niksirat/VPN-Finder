@@ -47,6 +47,7 @@ async function upsertUser(from, startParam) {
 
 async function formatOwnerStats() {
   const totalUsers = await db.$count(users);
+  const sampleUsers = await db.select().from(users).limit(5).all();
   const apiKey = await getPvlApiKey();
   const cacheRows = await db
     .select()
@@ -99,7 +100,7 @@ async function formatOwnerStats() {
   lines.push('');
   lines.push(`Last PVL snapshot time: ${lastSnapshotTime}`);
 
-  return lines.join('\n');
+  return { statsText: lines.join('\n'), sampleUsers };
 }
 
 export default async function (message) {
@@ -114,6 +115,11 @@ export default async function (message) {
 
   const lang = message.from?.language_code || 'en';
   const fromId = message.from?.id || 0;
+  const dryRun = Boolean(message._dry_run);
+  const sendMsg = async (params) => {
+    if (dryRun) return { dry_run: true, ...params };
+    return await api.sendMessage(params);
+  };
 
   if (parsed && parsed.cmd === 'start') {
     if (isPrivate) {
@@ -121,12 +127,12 @@ export default async function (message) {
     }
     const text = welcomeText(lang);
     const reply_markup = buildAppKeyboard(lang, parsed.param);
-    await api.sendMessage({
+    await sendMsg({
       chat_id: message.chat.id,
       text,
       reply_markup,
     });
-    return { action: 'start', userId: fromId, lang };
+    return { action: 'start', userId: fromId, lang, text, reply_markup };
   }
 
   if (parsed && parsed.cmd === 'app') {
@@ -135,53 +141,57 @@ export default async function (message) {
     }
     const text = appPromptText(lang);
     const reply_markup = buildAppKeyboard(lang, '');
-    await api.sendMessage({
+    await sendMsg({
       chat_id: message.chat.id,
       text,
       reply_markup,
     });
-    return { action: 'app', userId: fromId, lang };
+    return { action: 'app', userId: fromId, lang, text, reply_markup };
   }
 
   if (parsed && parsed.cmd === 'help') {
     const text = helpText(lang);
     const reply_markup = buildAppKeyboard(lang, '');
-    await api.sendMessage({
+    await sendMsg({
       chat_id: message.chat.id,
       text,
       parse_mode: 'HTML',
       disable_web_page_preview: true,
       reply_markup,
     });
-    return { action: 'help', userId: fromId, lang };
+    return { action: 'help', userId: fromId, lang, text, reply_markup };
   }
 
   if (parsed && parsed.cmd === 'stats') {
     const ownerId = await getOwnerId();
     if (isPrivate && ownerId && fromId === ownerId) {
-      const statsText = await formatOwnerStats();
-      await api.sendMessage({
+      const { statsText, sampleUsers } = await formatOwnerStats();
+      await sendMsg({
         chat_id: message.chat.id,
         text: statsText,
       });
-      return { action: 'stats', owner: true, statsText };
+      return { action: 'stats', owner: true, statsText, sampleUsers };
     }
-    await api.sendMessage({
+    const text = helpText(lang);
+    const reply_markup = buildAppKeyboard(lang, '');
+    await sendMsg({
       chat_id: message.chat.id,
-      text: helpText(lang),
+      text,
       parse_mode: 'HTML',
       disable_web_page_preview: true,
-      reply_markup: buildAppKeyboard(lang, ''),
+      reply_markup,
     });
     return { action: 'stats_denied', owner: false };
   }
 
   if (isPrivate) {
-    await api.sendMessage({
+    const text = fallbackText(lang);
+    const reply_markup = buildAppKeyboard(lang, '');
+    await sendMsg({
       chat_id: message.chat.id,
-      text: fallbackText(lang),
-      reply_markup: buildAppKeyboard(lang, ''),
+      text,
+      reply_markup,
     });
-    return { action: 'fallback', userId: fromId, lang };
+    return { action: 'fallback', userId: fromId, lang, text, reply_markup };
   }
 }
