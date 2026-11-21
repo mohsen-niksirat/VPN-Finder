@@ -37,17 +37,21 @@ export default async function (cq) {
     return await api.sendMessage(params);
   };
   const sendDoc = async ({ chat_id, documentBytes, filename, caption }) => {
+    const inputFile = new InputFile(documentBytes, filename, {
+      type: 'application/x-openvpn-profile',
+    });
     if (dryRun) {
       return {
         dry_run: true,
         filename,
         byteLength: documentBytes?.byteLength || 0,
         caption,
+        hasInputFile: Boolean(inputFile),
       };
     }
     return await api.sendDocument({
       chat_id,
-      document: new InputFile(documentBytes, filename, { type: 'application/x-openvpn-profile' }),
+      document: inputFile,
       caption,
     });
   };

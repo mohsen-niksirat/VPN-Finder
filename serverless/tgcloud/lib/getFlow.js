@@ -3,6 +3,7 @@ import { eq, sql } from 'sdk/db';
 import { users } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
+  checkConnectionRateLimit,
   consumeConnectionRateLimit,
   downloadAndBrandOvpn,
   fetchConnection,
@@ -12,6 +13,7 @@ import {
   getRemainingConnectionBudget,
   incrementCounter,
   PVL_CACHE_TTL_SEC,
+  PVL_SERVERS_TTL_SEC,
   resolveCountryName,
 } from './pvl.js';
 import {
@@ -371,6 +373,7 @@ export async function deliverConfigsBatch({
   let attempts = 0;
   let delivered = 0;
   let rateLimited = false;
+  let sendFailedCount = 0;
   const skippedIds = [];
   const deliveredMeta = [];
 
@@ -378,37 +381,63 @@ export async function deliverConfigsBatch({
     if (delivered >= requested || attempts >= maxAttempts) break;
     attempts += 1;
 
-    const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
-    if (conn?.error === 'rate_limited') {
-      rateLimited = true;
-      break;
-    }
-    if (conn?.error) {
-      skippedIds.push({ id: srv.id, reason: conn.error });
+    if (!srv || !srv.id) {
+      skippedIds.push({ id: 'unknown', reason: 'missing_record_id' });
       continue;
     }
 
     if (proto === 'openvpn') {
-      const ovpn = await downloadAndBrandOvpn(conn.config_download_url);
+      const rateCheck = await checkConnectionRateLimit(userId);
+      if (!rateCheck.allowed) {
+        rateLimited = true;
+        break;
+      }
+
+      let dlUrl = srv.config_download_url;
+      if (!dlUrl) {
+        try {
+          const metaRes = await fetchPvlCached({
+            cacheKey: `server_meta:${srv.id}`,
+            pathAndQuery: `/servers/${encodeURIComponent(srv.id)}`,
+            ttlSec: PVL_SERVERS_TTL_SEC,
+          });
+          const rec = metaRes?.data && typeof metaRes.data === 'object' ? metaRes.data : metaRes;
+          dlUrl = rec?.config_download_url || null;
+        } catch {
+          dlUrl = null;
+        }
+      }
+
+      if (!dlUrl) {
+        skippedIds.push({ id: srv.id, reason: 'missing_config_download_url' });
+        continue;
+      }
+
+      const ovpn = await downloadAndBrandOvpn(dlUrl);
       if (ovpn?.error || !ovpn?.bytes) {
         skippedIds.push({ id: srv.id, reason: ovpn?.error || 'ovpn_download_failed' });
         continue;
       }
 
-      delivered += 1;
-      alreadyDelivered.add(srv.id);
-
+      const nextIdx = delivered + 1;
       const ccPart = (srv.country_code || cc || 'OpenVPN').toUpperCase();
-      const filename = `MyLeitner-${ccPart === 'OPENVPN' ? 'OpenVPN' : ccPart}-${delivered}.ovpn`;
-      const caption = formatOvpnCaption(delivered, requested, srv, lang);
+      const filename = `MyLeitner-${ccPart === 'OPENVPN' ? 'OpenVPN' : ccPart}-${nextIdx}.ovpn`;
+      const caption = formatOvpnCaption(nextIdx, requested, srv, lang);
 
-      await sendDoc({
-        chat_id: chatId,
-        documentBytes: ovpn.bytes,
-        filename,
-        caption,
-      });
+      try {
+        await sendDoc({
+          chat_id: chatId,
+          documentBytes: ovpn.bytes,
+          filename,
+          caption,
+        });
+      } catch {
+        sendFailedCount += 1;
+        continue;
+      }
 
+      delivered = nextIdx;
+      alreadyDelivered.add(srv.id);
       await consumeConnectionRateLimit(userId);
       await incrementCounter('connections_served', 1);
       await incrementCounter('configs_sent_chat', 1);
@@ -424,25 +453,40 @@ export async function deliverConfigsBatch({
       continue;
     }
 
+    const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
+    if (conn?.error === 'rate_limited') {
+      rateLimited = true;
+      break;
+    }
+    if (conn?.error) {
+      skippedIds.push({ id: srv.id, reason: conn.error });
+      continue;
+    }
+
     if (!conn.config_uri) {
       skippedIds.push({ id: srv.id, reason: 'no_uri' });
       continue;
     }
 
-    delivered += 1;
-    alreadyDelivered.add(srv.id);
-
+    const nextIdx = delivered + 1;
     const uri = String(conn.config_uri);
     const schemeIdx = uri.indexOf('://');
     const schemePrefix = schemeIdx > 0 ? `${uri.slice(0, schemeIdx + 3)}...` : 'unknown';
+    const msgHtml = formatConfigMessage(nextIdx, requested, srv, uri, lang);
 
-    const msgHtml = formatConfigMessage(delivered, requested, srv, uri, lang);
-    await sendMsg({
-      chat_id: chatId,
-      text: msgHtml,
-      parse_mode: 'HTML',
-    });
+    try {
+      await sendMsg({
+        chat_id: chatId,
+        text: msgHtml,
+        parse_mode: 'HTML',
+      });
+    } catch {
+      sendFailedCount += 1;
+      continue;
+    }
 
+    delivered = nextIdx;
+    alreadyDelivered.add(srv.id);
     await consumeConnectionRateLimit(userId);
     await incrementCounter('connections_served', 1);
     await incrementCounter('configs_sent_chat', 1);
@@ -475,6 +519,7 @@ export async function deliverConfigsBatch({
       rateLimited: true,
       deliveredMeta,
       skippedIds,
+      sendFailedCount,
     };
   }
 
@@ -482,6 +527,7 @@ export async function deliverConfigsBatch({
   const summary = batchSummaryText(lang, delivered, requested, {
     rateLimited,
     skippedCount: skippedIds.length,
+    sendFailedCount,
   });
   const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL', { allFailed });
   await sendMsg({
@@ -502,6 +548,7 @@ export async function deliverConfigsBatch({
     allFailed,
     deliveredMeta,
     skippedIds,
+    sendFailedCount,
     summaryText: summary,
     summaryKeyboard: summaryKb,
   };

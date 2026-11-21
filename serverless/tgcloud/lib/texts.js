@@ -257,13 +257,19 @@ export function batchSummaryText(
   lang,
   delivered,
   requested,
-  { rateLimited = false, skippedCount = 0 } = {}
+  { rateLimited = false, skippedCount = 0, sendFailedCount = 0 } = {}
 ) {
   const skippedLine =
     skippedCount > 0
       ? isFa(lang)
         ? `\n\n⚠️ ${skippedCount} سرور قابل دریافت نبود و رد شد.`
         : `\n\n⚠️ ${skippedCount} servers couldn't be fetched and were skipped.`
+      : '';
+  const sendFailedLine =
+    sendFailedCount > 0
+      ? isFa(lang)
+        ? `\n\n⚠️ ارسال ${sendFailedCount} فایل ناموفق بود. لطفاً دوباره تلاش کنید.`
+        : `\n\n⚠️ ${sendFailedCount} files couldn't be sent, please try again.`
       : '';
   const limitNote = rateLimited
     ? isFa(lang)
@@ -274,13 +280,13 @@ export function batchSummaryText(
   if (delivered === 0) {
     if (isFa(lang)) {
       return (
-        `⚠️ هیچ کانفیگی قابل ارسال نبود.${skippedLine}${limitNote}\n\n` +
+        `⚠️ هیچ کانفیگی قابل ارسال نبود.${skippedLine}${sendFailedLine}${limitNote}\n\n` +
         'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
         'ساخته‌ی <a href="https://t.me/MyLeitner">@MyLeitner</a>'
       );
     }
     return (
-      `⚠️ 0 configs sent.${skippedLine}${limitNote}\n\n` +
+      `⚠️ 0 configs sent.${skippedLine}${sendFailedLine}${limitNote}\n\n` +
       'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
       'Made by <a href="https://t.me/MyLeitner">@MyLeitner</a>'
     );
@@ -288,13 +294,13 @@ export function batchSummaryText(
 
   if (isFa(lang)) {
     return (
-      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${skippedLine}${limitNote}\n\n` +
+      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${skippedLine}${sendFailedLine}${limitNote}\n\n` +
       'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
       'ساخته‌ی <a href="https://t.me/MyLeitner">@MyLeitner</a>'
     );
   }
   return (
-    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${skippedLine}${limitNote}\n\n` +
+    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${skippedLine}${sendFailedLine}${limitNote}\n\n` +
     'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
     'Made by <a href="https://t.me/MyLeitner">@MyLeitner</a>'
   );
