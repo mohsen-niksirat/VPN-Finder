@@ -70,6 +70,28 @@
       detailFreshness: 'Freshness',
       detailServerId: 'Record ID',
       detailCatalogLink: 'Open on PublicVPNList ↗',
+      btnQrCode: 'QR code',
+      btnOpenV2rayNg: 'Open in v2rayNG',
+      btnCopyConfig: 'Copy config',
+      btnDownloadOvpn: 'Download .ovpn',
+      v2rayNgHint: 'Opens v2rayNG (Android)',
+      ovpnNoQrNote: 'QR code and v2rayNG import are not available for OpenVPN.',
+      previewConnectNote: 'Open this app inside Telegram to connect.',
+      unavailableLabel: 'Unavailable',
+      riskTitle: 'Third-Party Server Notice',
+      riskBody:
+        'Public servers listed here are operated by third parties. A technical check verifies reachability and speed only and is not a privacy, identity, or safety guarantee. Use at your own risk.',
+      riskContinue: 'I understand, continue',
+      riskCancel: 'Cancel',
+      qrTitle: 'Connect via QR Code',
+      qrClose: 'Close',
+      qrTooLarge:
+        'Configuration exceeds the 2,400-byte QR limit. Use Copy config or Open in v2rayNG instead.',
+      toastCopied: 'Copied',
+      toastConfigGone: 'This configuration is no longer available. Pick another server.',
+      toastRateLimited: 'Too many connection requests. Please wait a minute.',
+      errSourceUnavailable: 'Upstream source temporarily unavailable. Please retry.',
+      errFetchFailed: 'Could not fetch configuration. Please retry.',
       recordsLabel: 'records',
       dataLabel: 'Data:',
       snapshotLabel: 'Snapshot:',
@@ -143,6 +165,28 @@
       detailFreshness: 'تازگی',
       detailServerId: 'شناسه رکورد',
       detailCatalogLink: 'مشاهده در PublicVPNList ↗',
+      btnQrCode: 'کد QR',
+      btnOpenV2rayNg: 'باز کردن در v2rayNG',
+      btnCopyConfig: 'کپی کانفیگ',
+      btnDownloadOvpn: 'دانلود فایل .ovpn',
+      v2rayNgHint: 'باز شدن در v2rayNG (اندروید)',
+      ovpnNoQrNote: 'کد QR و ورود مستقیم v2rayNG برای OpenVPN در دسترس نیست.',
+      previewConnectNote: 'برای اتصال، این برنامه را داخل تلگرام باز کنید.',
+      unavailableLabel: 'ناموجود',
+      riskTitle: 'هشدار سرورهای شخص ثالث',
+      riskBody:
+        'سرورهای عمومی فهرست‌شده توسط اشخاص ثالث اداره می‌شوند. بررسی فنی صرفاً اتصال و سرعت را می‌سنجد و تضمین حریم خصوصی، هویت یا امنیت نیست. استفاده با مسئولیت خودتان است.',
+      riskContinue: 'متوجه شدم، ادامه',
+      riskCancel: 'انصراف',
+      qrTitle: 'اتصال با کد QR',
+      qrClose: 'بستن',
+      qrTooLarge:
+        'حجم کانفیگ از سقف ۲٬۴۰۰ بایت کد QR بیشتر است. از دکمه کپی کانفیگ یا باز کردن در v2rayNG استفاده کنید.',
+      toastCopied: 'کپی شد',
+      toastConfigGone: 'این کانفیگ دیگر در دسترس نیست. سرور دیگری انتخاب کنید.',
+      toastRateLimited: 'تعداد درخواست‌ها زیاد است. لطفاً یک دقیقه صبر کنید.',
+      errSourceUnavailable: 'منبع بالادستی موقتاً در دسترس نیست. لطفاً دوباره تلاش کنید.',
+      errFetchFailed: 'دریافت کانفیگ ناموفق بود. لطفاً دوباره تلاش کنید.',
       recordsLabel: 'سرور',
       dataLabel: 'Data:',
       snapshotLabel: 'اسنپ‌شات:',
@@ -254,6 +298,11 @@
     hasMorePages: false,
     servers: [],
     expandedCardIds: new Set(),
+    unavailableCardIds: new Set(),
+    activeConnectionPayload: null,
+    activeConnectionServerId: null,
+    pendingRiskAction: null,
+    toastTimer: null,
     isLoadingList: false,
     isLoadingMore: false,
     listError: false,
@@ -760,6 +809,252 @@
     });
   }
 
+  function showToast(message) {
+    const toast = document.getElementById('toast-banner');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.hidden = false;
+    if (state.toastTimer) {
+      clearTimeout(state.toastTimer);
+    }
+    state.toastTimer = setTimeout(() => {
+      toast.hidden = true;
+      state.toastTimer = null;
+    }, 3200);
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Fallback below
+      }
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function hasRiskAck() {
+    try {
+      return window.localStorage.getItem('vf_risk_ack') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function setRiskAck() {
+    try {
+      window.localStorage.setItem('vf_risk_ack', '1');
+    } catch {
+      // Ignore storage failures in restricted webviews
+    }
+  }
+
+  function openRiskSheet(actionFn) {
+    state.pendingRiskAction = actionFn;
+    document.getElementById('risk-sheet-backdrop').hidden = false;
+    document.getElementById('risk-continue-btn').focus();
+  }
+
+  function closeRiskSheet() {
+    document.getElementById('risk-sheet-backdrop').hidden = true;
+    state.pendingRiskAction = null;
+  }
+
+  function runWithRiskGate(actionFn) {
+    if (hasRiskAck()) {
+      actionFn();
+    } else {
+      openRiskSheet(actionFn);
+    }
+  }
+
+  function markCardUnavailable(cardId) {
+    if (!cardId) return;
+    state.unavailableCardIds.add(String(cardId));
+    renderServerCards();
+  }
+
+  function getConnectionErrorMessage(errCode) {
+    const t = I18N[state.lang];
+    if (errCode === 'config_gone' || errCode === 'not_found') return t.toastConfigGone;
+    if (errCode === 'rate_limited') return t.toastRateLimited;
+    if (errCode === 'source_unavailable') return t.errSourceUnavailable;
+    return t.errFetchFailed;
+  }
+
+  function handleConnectionError(errCode, cardId) {
+    if (errCode === 'config_gone' || errCode === 'not_found') {
+      markCardUnavailable(cardId);
+    }
+    showToast(getConnectionErrorMessage(errCode));
+  }
+
+  function closeQrModal() {
+    document.getElementById('qr-sheet-backdrop').hidden = true;
+    state.activeConnectionPayload = null;
+    state.activeConnectionServerId = null;
+    const wrap = document.getElementById('qr-canvas-wrap');
+    if (wrap) {
+      wrap.innerHTML = '';
+      wrap.hidden = true;
+    }
+    const v2rayLink = document.getElementById('qr-v2rayng-link');
+    if (v2rayLink) {
+      v2rayLink.removeAttribute('href');
+      v2rayLink.hidden = true;
+    }
+  }
+
+  async function loadQrModalPayload(srv) {
+    const t = I18N[state.lang];
+    const cardId = String(srv.id || '');
+    const loadingBox = document.getElementById('qr-loading-box');
+    const errorBox = document.getElementById('qr-error-box');
+    const errorText = document.getElementById('qr-error-text');
+    const canvasWrap = document.getElementById('qr-canvas-wrap');
+    const tooLargeNote = document.getElementById('qr-too-large-note');
+    const actionsRow = document.getElementById('qr-actions-row');
+    const copyBtn = document.getElementById('qr-copy-btn');
+    const v2rayLink = document.getElementById('qr-v2rayng-link');
+
+    loadingBox.hidden = false;
+    errorBox.hidden = true;
+    canvasWrap.innerHTML = '';
+    canvasWrap.hidden = true;
+    tooLargeNote.hidden = true;
+    actionsRow.hidden = true;
+    state.activeConnectionPayload = null;
+
+    try {
+      const res = await callProxyEndpoint('pvlConnection', { id: cardId });
+      // Discard immediately if user closed or switched servers mid-flight
+      if (
+        document.getElementById('qr-sheet-backdrop').hidden ||
+        state.activeConnectionServerId !== cardId
+      ) {
+        return;
+      }
+      loadingBox.hidden = true;
+
+      if (!res || res.error) {
+        const errCode = res?.error || 'fetch_failed';
+        if (errCode === 'config_gone' || errCode === 'not_found') {
+          markCardUnavailable(cardId);
+        }
+        errorText.textContent = getConnectionErrorMessage(errCode);
+        errorBox.hidden = false;
+        return;
+      }
+
+      state.activeConnectionPayload = res;
+
+      const qrPayload = typeof res.qr_payload === 'string' ? res.qr_payload : '';
+      if (qrPayload.length > 0 && qrPayload.length <= 2400 && typeof window.qrcode === 'function') {
+        const qr = window.qrcode(0, 'M');
+        qr.addData(qrPayload);
+        qr.make();
+        canvasWrap.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2 });
+        canvasWrap.hidden = false;
+      } else if (qrPayload.length > 2400) {
+        tooLargeNote.textContent = t.qrTooLarge;
+        tooLargeNote.hidden = false;
+      }
+
+      copyBtn.disabled = !res.config_uri;
+      if (res.v2rayng_url) {
+        v2rayLink.href = res.v2rayng_url;
+        v2rayLink.hidden = false;
+      } else {
+        v2rayLink.removeAttribute('href');
+        v2rayLink.hidden = true;
+      }
+      actionsRow.hidden = false;
+    } catch {
+      if (
+        document.getElementById('qr-sheet-backdrop').hidden ||
+        state.activeConnectionServerId !== cardId
+      ) {
+        return;
+      }
+      loadingBox.hidden = true;
+      errorText.textContent = t.errFetchFailed;
+      errorBox.hidden = false;
+    }
+  }
+
+  function openQrModal(srv) {
+    const t = I18N[state.lang];
+    const cardId = String(srv.id || '');
+    state.activeConnectionServerId = cardId;
+    state.activeConnectionPayload = null;
+
+    const protoLabel =
+      state.activeProtocols.find((p) => p.id === srv.protocol)?.label ||
+      String(srv.protocol || '').toUpperCase();
+    const portPart = srv.port ? `:${srv.port}` : '';
+    const locPart = srv.country_name || srv.country_code || t.unknownLocation;
+    document.getElementById('qr-server-summary').textContent = `${protoLabel}${portPart} · ${locPart}`;
+
+    document.getElementById('qr-sheet-backdrop').hidden = false;
+    loadQrModalPayload(srv);
+  }
+
+  async function handleCopyConfig(srv, triggerBtn) {
+    const t = I18N[state.lang];
+    const cardId = String(srv.id || '');
+    if (triggerBtn) triggerBtn.disabled = true;
+    try {
+      const res = await callProxyEndpoint('pvlConnection', { id: cardId });
+      if (!res || res.error || !res.config_uri) {
+        handleConnectionError(res?.error || 'fetch_failed', cardId);
+        return;
+      }
+      const ok = await copyTextToClipboard(res.config_uri);
+      showToast(ok ? t.toastCopied : t.errFetchFailed);
+    } catch {
+      showToast(t.errFetchFailed);
+    } finally {
+      if (triggerBtn && !state.unavailableCardIds.has(cardId)) {
+        triggerBtn.disabled = false;
+      }
+    }
+  }
+
+  async function handleOpenV2rayNg(srv, triggerBtn) {
+    const cardId = String(srv.id || '');
+    if (triggerBtn) triggerBtn.disabled = true;
+    try {
+      const res = await callProxyEndpoint('pvlConnection', { id: cardId });
+      if (!res || res.error || !res.v2rayng_url) {
+        handleConnectionError(res?.error || 'fetch_failed', cardId);
+        return;
+      }
+      window.location.href = res.v2rayng_url;
+    } catch {
+      showToast(I18N[state.lang].errFetchFailed);
+    } finally {
+      if (triggerBtn && !state.unavailableCardIds.has(cardId)) {
+        triggerBtn.disabled = false;
+      }
+    }
+  }
+
   function renderServerCards() {
     const t = I18N[state.lang];
     const listEl = document.getElementById('servers-list');
@@ -795,7 +1090,8 @@
       const isExpanded = state.expandedCardIds.has(cardId);
 
       const card = document.createElement('article');
-      card.className = 'server-card';
+      const isUnavailable = state.unavailableCardIds.has(cardId);
+      card.className = `server-card${isUnavailable ? ' is-unavailable' : ''}`;
       card.setAttribute('data-server-id', cardId);
 
       const trigger = document.createElement('button');
@@ -992,6 +1288,85 @@
           details.appendChild(linkRow);
         }
 
+        // Stage 3 Connect Actions
+        const connectBlock = document.createElement('div');
+        connectBlock.className = 'connect-actions-block';
+
+        if (state.isPreviewFallback) {
+          const previewNote = document.createElement('p');
+          previewNote.className = 'connect-preview-note';
+          previewNote.textContent = t.previewConnectNote;
+          connectBlock.appendChild(previewNote);
+        } else if (srv.protocol === 'openvpn') {
+          const actionsRow = document.createElement('div');
+          actionsRow.className = 'connect-actions-row';
+
+          const ovpnUrl = srv.config_download_url || srv.server_page_url;
+          if (ovpnUrl) {
+            const ovpnLink = document.createElement('a');
+            ovpnLink.className = 'btn-secondary';
+            ovpnLink.href = ovpnUrl;
+            ovpnLink.target = '_blank';
+            ovpnLink.rel = 'noopener noreferrer';
+            ovpnLink.textContent = t.btnDownloadOvpn;
+            actionsRow.appendChild(ovpnLink);
+          }
+          connectBlock.appendChild(actionsRow);
+
+          const ovpnNote = document.createElement('p');
+          ovpnNote.className = 'connect-hint';
+          ovpnNote.textContent = t.ovpnNoQrNote;
+          connectBlock.appendChild(ovpnNote);
+        } else {
+          if (isUnavailable) {
+            const unavailBadge = document.createElement('span');
+            unavailBadge.className = 'unavailable-badge';
+            unavailBadge.textContent = t.unavailableLabel;
+            connectBlock.appendChild(unavailBadge);
+          }
+
+          const actionsRow = document.createElement('div');
+          actionsRow.className = 'connect-actions-row';
+
+          const qrBtn = document.createElement('button');
+          qrBtn.type = 'button';
+          qrBtn.className = 'btn-primary connect-qr-btn';
+          qrBtn.textContent = t.btnQrCode;
+          qrBtn.disabled = isUnavailable;
+          qrBtn.addEventListener('click', () => {
+            runWithRiskGate(() => openQrModal(srv));
+          });
+
+          const v2rayBtn = document.createElement('button');
+          v2rayBtn.type = 'button';
+          v2rayBtn.className = 'btn-secondary connect-v2rayng-btn';
+          v2rayBtn.textContent = t.btnOpenV2rayNg;
+          v2rayBtn.disabled = isUnavailable;
+          v2rayBtn.addEventListener('click', () => {
+            runWithRiskGate(() => handleOpenV2rayNg(srv, v2rayBtn));
+          });
+
+          const copyBtn = document.createElement('button');
+          copyBtn.type = 'button';
+          copyBtn.className = 'btn-secondary connect-copy-btn';
+          copyBtn.textContent = t.btnCopyConfig;
+          copyBtn.disabled = isUnavailable;
+          copyBtn.addEventListener('click', () => {
+            runWithRiskGate(() => handleCopyConfig(srv, copyBtn));
+          });
+
+          actionsRow.appendChild(qrBtn);
+          actionsRow.appendChild(v2rayBtn);
+          actionsRow.appendChild(copyBtn);
+          connectBlock.appendChild(actionsRow);
+
+          const hint = document.createElement('p');
+          hint.className = 'connect-hint';
+          hint.textContent = t.v2rayNgHint;
+          connectBlock.appendChild(hint);
+        }
+
+        details.appendChild(connectBlock);
         card.appendChild(details);
       }
 
@@ -1040,6 +1415,17 @@
 
     document.getElementById('country-sheet-title').textContent = t.countrySheetTitle;
     document.getElementById('country-search-input').placeholder = t.countrySearchPlaceholder;
+
+    document.getElementById('risk-sheet-title').textContent = t.riskTitle;
+    document.getElementById('risk-sheet-text').textContent = t.riskBody;
+    document.getElementById('risk-continue-btn').textContent = t.riskContinue;
+    document.getElementById('risk-cancel-btn').textContent = t.riskCancel;
+
+    document.getElementById('qr-sheet-title').textContent = t.qrTitle;
+    document.getElementById('qr-copy-btn').textContent = t.btnCopyConfig;
+    document.getElementById('qr-v2rayng-link').textContent = t.btnOpenV2rayNg;
+    document.getElementById('qr-close-btn').textContent = t.qrClose;
+    document.getElementById('qr-retry-btn').textContent = t.retry;
 
     document.getElementById('footer-data-label').textContent = t.dataLabel;
     document.getElementById('footer-snapshot-label').textContent = t.snapshotLabel;
@@ -1448,8 +1834,53 @@
       renderCountryOptions(e.target.value);
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !document.getElementById('country-sheet-backdrop').hidden) {
+      if (e.key !== 'Escape') return;
+      if (!document.getElementById('qr-sheet-backdrop').hidden) {
+        closeQrModal();
+      } else if (!document.getElementById('risk-sheet-backdrop').hidden) {
+        closeRiskSheet();
+      } else if (!document.getElementById('country-sheet-backdrop').hidden) {
         closeCountrySheet();
+      }
+    });
+
+    // Risk Gate sheet listeners
+    document.getElementById('risk-continue-btn').addEventListener('click', () => {
+      setRiskAck();
+      const action = state.pendingRiskAction;
+      closeRiskSheet();
+      if (typeof action === 'function') {
+        action();
+      }
+    });
+    document.getElementById('risk-cancel-btn').addEventListener('click', closeRiskSheet);
+    document.getElementById('risk-sheet-close').addEventListener('click', closeRiskSheet);
+    document.getElementById('risk-sheet-backdrop').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeRiskSheet();
+      }
+    });
+
+    // QR Connect modal listeners
+    document.getElementById('qr-sheet-close').addEventListener('click', closeQrModal);
+    document.getElementById('qr-close-btn').addEventListener('click', closeQrModal);
+    document.getElementById('qr-sheet-backdrop').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        closeQrModal();
+      }
+    });
+    document.getElementById('qr-copy-btn').addEventListener('click', async () => {
+      const uri = state.activeConnectionPayload?.config_uri;
+      if (!uri) return;
+      const ok = await copyTextToClipboard(uri);
+      showToast(ok ? I18N[state.lang].toastCopied : I18N[state.lang].errFetchFailed);
+    });
+    document.getElementById('qr-retry-btn').addEventListener('click', () => {
+      const srv = state.servers.find(
+        (s) => String(s.id || '') === String(state.activeConnectionServerId || '')
+      );
+      if (srv) {
+        loadQrModalPayload(srv);
       }
     });
 

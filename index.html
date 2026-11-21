@@ -227,6 +227,74 @@
     </div>
   </div>
 
+  <!-- Risk Gate Bottom Sheet (Stage 3: shown once before first connect action) -->
+  <div id="risk-sheet-backdrop" class="sheet-backdrop" hidden>
+    <div
+      id="risk-sheet"
+      class="country-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="risk-sheet-title"
+    >
+      <div class="sheet-header">
+        <h2 id="risk-sheet-title" class="sheet-title">Third-Party Server Notice</h2>
+        <button type="button" id="risk-sheet-close" class="btn-ghost sheet-close-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="sheet-body">
+        <p id="risk-sheet-text" class="sheet-notice-text">
+          Public servers listed here are operated by third parties. A technical check verifies reachability and speed only and is not a privacy, identity, or safety guarantee. Use at your own risk.
+        </p>
+        <div class="sheet-actions">
+          <button type="button" id="risk-continue-btn" class="btn-primary">I understand, continue</button>
+          <button type="button" id="risk-cancel-btn" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Connect Modal Sheet (Stage 3: local QR render, in-memory payload only) -->
+  <div id="qr-sheet-backdrop" class="sheet-backdrop" hidden>
+    <div
+      id="qr-sheet"
+      class="country-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="qr-sheet-title"
+    >
+      <div class="sheet-header">
+        <h2 id="qr-sheet-title" class="sheet-title">Connect via QR Code</h2>
+        <button type="button" id="qr-sheet-close" class="btn-ghost sheet-close-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="sheet-body">
+        <p id="qr-server-summary" class="qr-summary-text"></p>
+
+        <div id="qr-loading-box" class="qr-status-box" hidden>
+          <div class="skeleton-line sk-heading"></div>
+          <div class="skeleton-line sk-row"></div>
+        </div>
+
+        <div id="qr-error-box" class="error-panel qr-error-panel" hidden role="alert">
+          <p id="qr-error-text" class="error-body"></p>
+          <div class="error-actions">
+            <button type="button" id="qr-retry-btn" class="btn-primary">Retry</button>
+          </div>
+        </div>
+
+        <div id="qr-canvas-wrap" class="qr-canvas-wrap" hidden></div>
+        <p id="qr-too-large-note" class="qr-note-text" hidden></p>
+
+        <div id="qr-actions-row" class="sheet-actions" hidden>
+          <button type="button" id="qr-copy-btn" class="btn-primary">Copy config</button>
+          <a id="qr-v2rayng-link" class="btn-secondary" hidden>Open in v2rayNG</a>
+          <button type="button" id="qr-close-btn" class="btn-ghost">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-banner" class="toast-banner" role="status" aria-live="polite" hidden></div>
+
   <footer class="app-footer">
     <div class="footer-inner">
       <p class="footer-attribution">
@@ -242,6 +310,7 @@
     </div>
   </footer>
 
+  <script src="assets/qrcode.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import { db, fetch, EndpointError } from 'sdk';
 import { eq } from 'sdk/db';
-import { botConfig, pvlCache } from '../schema.js';
+import { botConfig, connectionRateLimits, pvlCache } from '../schema.js';
 
 export const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 export const PVL_CACHE_TTL_SEC = 30 * 60; // 30 minutes for stats, protocols, countries
@@ -321,6 +321,162 @@ export async function fetchPvlCached({ cacheKey, pathAndQuery, ttlSec = PVL_CACH
       fetched_at: fetchedAt,
       etag: newEtag,
     },
+  };
+}
+
+export const CONNECTION_RATE_LIMIT_MAX = 15;
+export const CONNECTION_RATE_LIMIT_WINDOW_SEC = 10 * 60; // 10 minutes
+const PUBLIC_ID_RE = /^(?:pvl|pvlp)_[a-f0-9]{24}$/;
+
+async function checkAndIncrementConnectionRateLimit(userId) {
+  const uid = Number(userId) || 0;
+  if (!uid) return { allowed: false };
+  const now = Math.floor(Date.now() / 1000);
+  const row = await db
+    .select()
+    .from(connectionRateLimits)
+    .where(eq(connectionRateLimits.userId, uid))
+    .get();
+
+  if (!row || now - Number(row.windowStart || 0) >= CONNECTION_RATE_LIMIT_WINDOW_SEC) {
+    await db
+      .insert(connectionRateLimits)
+      .values({ userId: uid, windowStart: now, count: 1 })
+      .onConflictDoUpdate({
+        target: connectionRateLimits.userId,
+        set: { windowStart: now, count: 1 },
+      })
+      .run();
+    return { allowed: true, count: 1 };
+  }
+
+  const nextCount = Number(row.count || 0) + 1;
+  if (nextCount > CONNECTION_RATE_LIMIT_MAX) {
+    return { allowed: false, count: nextCount };
+  }
+
+  await db
+    .update(connectionRateLimits)
+    .set({ count: nextCount })
+    .where(eq(connectionRateLimits.userId, uid))
+    .run();
+
+  return { allowed: true, count: nextCount };
+}
+
+/**
+ * Fetches on-demand connection info for a server record by public ID.
+ * - Validates `id` against `^(?:pvl|pvlp)_[a-f0-9]{24}$`.
+ * - Enforces per-user rate limit (max 15 fetches / 10 minutes).
+ * - Uses `fetchPvlCached` ONLY for the server metadata (`GET /servers/{id}`), never for `connection_info_url`.
+ * - NEVER caches, stores, or logs the returned configuration payload (`config_uri`, `qr_payload`, `v2rayng_url`).
+ */
+export async function fetchPvlConnectionOnDemand(id, userId) {
+  const cleanId = typeof id === 'string' ? id.trim() : '';
+  if (!PUBLIC_ID_RE.test(cleanId)) {
+    throw new EndpointError(
+      'Invalid "id" parameter: expected ^(?:pvl|pvlp)_[a-f0-9]{24}$',
+      { code: 'INVALID_ID', parameter: 'id' }
+    );
+  }
+
+  const rateCheck = await checkAndIncrementConnectionRateLimit(userId);
+  if (!rateCheck.allowed) {
+    return { error: 'rate_limited' };
+  }
+
+  const apiKey = await getPvlApiKey();
+  if (!apiKey) {
+    return { error: 'setup_required' };
+  }
+
+  // Step 1: Fetch server metadata via cached metadata helper (404 -> { error: "not_found" })
+  let recordMetaRes;
+  try {
+    recordMetaRes = await fetchPvlCached({
+      cacheKey: `server_meta:${cleanId}`,
+      pathAndQuery: `/servers/${encodeURIComponent(cleanId)}`,
+      ttlSec: PVL_SERVERS_TTL_SEC,
+    });
+  } catch (err) {
+    const status = err?.parameters?.status;
+    if (status === 404) {
+      return { error: 'not_found' };
+    }
+    return { error: 'fetch_failed' };
+  }
+
+  if (recordMetaRes?.error) {
+    return recordMetaRes;
+  }
+
+  const record = recordMetaRes?.data && typeof recordMetaRes.data === 'object'
+    ? recordMetaRes.data
+    : recordMetaRes;
+
+  if (!record || !record.id) {
+    return { error: 'not_found' };
+  }
+
+  const connUrl = record.connection_info_url;
+  if (!connUrl || typeof connUrl !== 'string') {
+    return { error: 'config_gone' };
+  }
+
+  // Step 2: Fetch connection_info_url ON DEMAND (no caching, no logging)
+  // First try with Authorization header; if 401/403, retry once without it.
+  let res;
+  let authMode = 'with_bearer';
+  try {
+    res = await fetch(connUrl, {
+      method: 'GET',
+      headers: {
+        ...buildAuthHeaders(apiKey, null),
+        'Cache-Control': 'no-store',
+      },
+    });
+    if (res.status === 401 || res.status === 403) {
+      authMode = 'without_bearer';
+      res = await fetch(connUrl, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+  } catch {
+    return { error: 'fetch_failed' };
+  }
+
+  if (res.status === 404 || res.status === 410) {
+    return { error: 'config_gone' };
+  }
+  if (res.status === 503) {
+    return { error: 'source_unavailable' };
+  }
+  if (!res.ok) {
+    return { error: 'fetch_failed' };
+  }
+
+  let payload;
+  try {
+    payload = await res.json();
+  } catch {
+    return { error: 'fetch_failed' };
+  }
+
+  const connData = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+  if (!connData || typeof connData !== 'object') {
+    return { error: 'fetch_failed' };
+  }
+
+  return {
+    config_uri: connData.config_uri ?? null,
+    v2rayng_url: connData.v2rayng_url ?? null,
+    qr_payload: connData.qr_payload ?? null,
+    qr_code_url: connData.qr_code_url ?? null,
+    _auth_mode: authMode,
   };
 }
 

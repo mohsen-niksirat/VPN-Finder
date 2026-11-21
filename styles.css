@@ -796,6 +796,134 @@ input:focus-visible,
   align-items: center;
 }
 
+/* Stage 3: Connect Actions & Unavailable State */
+.server-card.is-unavailable {
+  opacity: 0.58;
+}
+
+.connect-actions-block {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.connect-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.connect-actions-row .btn-primary,
+.connect-actions-row .btn-secondary {
+  flex: 1 1 auto;
+  min-width: 112px;
+  text-decoration: none;
+}
+
+.connect-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.connect-preview-note {
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Modal Sheet Body & QR Container */
+.sheet-body {
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.sheet-notice-text {
+  margin: 0 0 var(--space-4);
+  font-size: 0.90rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+.sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sheet-actions .btn-primary,
+.sheet-actions .btn-secondary,
+.sheet-actions .btn-ghost {
+  flex: 1 1 auto;
+  text-decoration: none;
+}
+
+.qr-summary-text {
+  margin: 0 0 var(--space-3);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.qr-status-box {
+  padding: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.qr-error-panel {
+  margin-bottom: var(--space-3);
+}
+
+.qr-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-3);
+  background-color: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}
+
+.qr-canvas-wrap svg {
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  display: block;
+}
+
+.qr-note-text {
+  margin: 0 0 var(--space-3);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+
+/* Toast Notification */
+.toast-banner {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: calc(100vw - 32px);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* Pagination */
 .pagination-bar {
   margin-top: var(--space-4);

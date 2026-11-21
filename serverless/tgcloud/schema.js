@@ -20,3 +20,9 @@ export const pvlCache = table('pvl_cache', {
   etag:      text('etag'),
   fetchedAt: integer('fetched_at').notNull(),
 });
+
+export const connectionRateLimits = table('connection_rate_limits', {
+  userId:      integer('user_id').primaryKey(),
+  windowStart: integer('window_start').notNull(),
+  count:       integer('count').notNull(),
+});
