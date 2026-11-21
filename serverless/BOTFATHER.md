@@ -22,18 +22,22 @@ Browse checked public VPN servers from PublicVPNList by country and protocol. Th
 
 ## 3. Description (`/setdescription`) (max 512 chars)
 
-### English (436 / 512 chars)
+### English (485 / 512 chars)
 ```text
 Find technically-checked public VPN servers from the PublicVPNList catalog. Filter by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan), see measured speed/latency and how recently each server was checked, and get a QR code or v2rayNG import link.
 
 Disclaimer: All listed servers are operated by third parties. A technical check verifies reachability and throughput only and is not a privacy or safety guarantee.
+
+Creator: @MyLeitner · https://t.me/MyLeitner
 ```
 
-### Persian (`language_code: "fa"`, 427 / 512 chars)
+### Persian (`language_code: "fa"`, 426 / 512 chars)
 ```text
 سرورهای VPN عمومی بررسی‌شده از کاتالوگ PublicVPNList را پیدا کنید. بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) فیلتر کنید، سرعت، تأخیر و زمان آخرین بررسی فنی هر سرور را ببینید و کد QR یا لینک ورود مستقیم به v2rayNG دریافت کنید.
 
 سلب مسئولیت: تمام سرورها متعلق به اشخاص ثالث هستند؛ بررسی فنی صرفاً اتصال را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.
+
+سازنده: @MyLeitner · https://t.me/MyLeitner
 ```
 
 ## 4. Commands (`/setcommands`) (only active commands, no dead commands)

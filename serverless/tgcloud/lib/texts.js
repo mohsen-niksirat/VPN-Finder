@@ -10,11 +10,13 @@ export const ABOUT_FA =
 
 export const DESC_EN =
   'Find technically-checked public VPN servers from the PublicVPNList catalog. Filter by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan), see measured speed/latency and how recently each server was checked, and get a QR code or v2rayNG import link.\n\n' +
-  'Disclaimer: All listed servers are operated by third parties. A technical check verifies reachability and throughput only and is not a privacy or safety guarantee.';
+  'Disclaimer: All listed servers are operated by third parties. A technical check verifies reachability and throughput only and is not a privacy or safety guarantee.\n\n' +
+  'Creator: @MyLeitner · https://t.me/MyLeitner';
 
 export const DESC_FA =
   'سرورهای VPN عمومی بررسی‌شده از کاتالوگ PublicVPNList را پیدا کنید. بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) فیلتر کنید، سرعت، تأخیر و زمان آخرین بررسی فنی هر سرور را ببینید و کد QR یا لینک ورود مستقیم به v2rayNG دریافت کنید.\n\n' +
-  'سلب مسئولیت: تمام سرورها متعلق به اشخاص ثالث هستند؛ بررسی فنی صرفاً اتصال را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.';
+  'سلب مسئولیت: تمام سرورها متعلق به اشخاص ثالث هستند؛ بررسی فنی صرفاً اتصال را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.\n\n' +
+  'سازنده: @MyLeitner · https://t.me/MyLeitner';
 
 export const COMMANDS_EN = [
   { command: 'start', description: 'Open VPN Finder' },
@@ -48,6 +50,7 @@ export function buildAppKeyboard(lang, startParam = '', { includeGetButton = fal
   if (includeGetButton) {
     const getText = isFa(lang) ? '📥 دریافت کانفیگ' : '📥 Get configs';
     rows.push([{ text: getText, callback_data: 'get_start' }]);
+    rows.push([{ text: '📣 MyLeitner', url: 'https://t.me/MyLeitner' }]);
   }
   return { inline_keyboard: rows };
 }
@@ -57,13 +60,15 @@ export function welcomeText(lang) {
     return (
       'به VPN Finder خوش آمدید.\n\n' +
       'سرورهای VPN عمومی بررسی‌شده از کاتالوگ PublicVPNList را بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) همراه با سرعت، تأخیر و زمان آخرین بررسی فنی مرور کنید.\n\n' +
-      'سلب مسئولیت: تمام سرورها متعلق به اشخاص ثالث هستند؛ بررسی فنی صرفاً اتصال را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.'
+      'سلب مسئولیت: تمام سرورها متعلق به اشخاص ثالث هستند؛ بررسی فنی صرفاً اتصال را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.\n\n' +
+      'ساخته‌ی @MyLeitner'
     );
   }
   return (
     'Welcome to VPN Finder.\n\n' +
     'Browse technically-checked public VPN servers from the PublicVPNList catalog by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan) with measured speed, latency, and last-checked times.\n\n' +
-    'Disclaimer: Servers are operated by third parties; a technical check is not a privacy or safety guarantee.'
+    'Disclaimer: Servers are operated by third parties; a technical check is not a privacy or safety guarantee.\n\n' +
+    'Made by @MyLeitner'
   );
 }
 
@@ -87,7 +92,8 @@ export function helpText(lang) {
       '• <b>فیلتر و جستجو:</b> کاتالوگ PublicVPNList را بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) فیلتر کنید و سرعت و تأخیر اندازه‌گیری‌شده در ناحیه بررسی‌کننده و زمان آخرین تست فنی را ببینید.\n' +
       '• <b>کد QR و v2rayNG:</b> برای هر سرور می‌توانید کد QR محلی دریافت کنید یا با لینک مستقیم در برنامه v2rayNG (اندروید) یا کلاینت OpenVPN وارد نمایید.\n\n' +
       '<b>سلب مسئولیت:</b> تمام سرورها توسط اشخاص ثالث اداره می‌شوند. بررسی فنی صرفاً دسترس‌پذیری و سرعت عبور ترافیک را در لحظه تست نشان می‌دهد و به هیچ عنوان تضمین حریم خصوصی، هویت اپراتور یا امنیت نیست.\n\n' +
-      'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>'
+      'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
+      'سازنده: <a href="https://t.me/MyLeitner">@MyLeitner</a>'
     );
   }
   return (
@@ -95,7 +101,8 @@ export function helpText(lang) {
     '• <b>Filtering & Metrics:</b> Filter checked public servers by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan). Speed and latency figures are representative measurements from the checker region alongside each server\'s last-checked timestamp.\n' +
     '• <b>QR Code & v2rayNG:</b> Connect via locally rendered QR codes, one-tap v2rayNG Android deep-link imports, or OpenVPN configuration downloads.\n\n' +
     '<b>Disclaimer:</b> All listed servers are operated by third parties. A technical check verifies reachability and throughput only and is not a privacy, identity, or safety guarantee.\n\n' +
-    'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>'
+    'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
+    'Creator: <a href="https://t.me/MyLeitner">@MyLeitner</a>'
   );
 }
 
@@ -245,12 +252,14 @@ export function batchSummaryText(lang, delivered, requested, { rateLimited = fal
   if (isFa(lang)) {
     return (
       `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${limitNote}\n\n` +
-      'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>'
+      'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
+      'ساخته‌ی <a href="https://t.me/MyLeitner">@MyLeitner</a>'
     );
   }
   return (
     `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${limitNote}\n\n` +
-    'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>'
+    'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
+    'Made by <a href="https://t.me/MyLeitner">@MyLeitner</a>'
   );
 }
 
@@ -269,6 +278,7 @@ export function batchSummaryKeyboard(lang, protocol, country) {
       ],
       [
         { text: isFa(lang) ? '📱 باز کردن در مینی‌اپ' : '📱 Open in the app', web_app: { url: appUrl } },
+        { text: '📣 MyLeitner', url: 'https://t.me/MyLeitner' },
       ],
     ],
   };

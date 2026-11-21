@@ -94,6 +94,7 @@
       errFetchFailed: 'Could not fetch configuration. Please retry.',
       recordsLabel: 'records',
       dataLabel: 'Data:',
+      creatorLabel: 'Made by',
       snapshotLabel: 'Snapshot:',
       disclaimer:
         'Servers are operated by third parties; a technical check verifies reachability and speed only and is not a privacy or safety guarantee.',
@@ -189,6 +190,7 @@
       errFetchFailed: 'دریافت کانفیگ ناموفق بود. لطفاً دوباره تلاش کنید.',
       recordsLabel: 'سرور',
       dataLabel: 'Data:',
+      creatorLabel: 'ساخته‌ی',
       snapshotLabel: 'اسنپ‌شات:',
       disclaimer:
         'تمام سرورها توسط اشخاص ثالث اداره می‌شوند؛ بررسی فنی صرفاً اتصال و سرعت را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.',
@@ -1428,6 +1430,7 @@
     document.getElementById('qr-retry-btn').textContent = t.retry;
 
     document.getElementById('footer-data-label').textContent = t.dataLabel;
+    document.getElementById('footer-creator-label').textContent = t.creatorLabel;
     document.getElementById('footer-snapshot-label').textContent = t.snapshotLabel;
     document.getElementById('footer-disclaimer').textContent = t.disclaimer;
 

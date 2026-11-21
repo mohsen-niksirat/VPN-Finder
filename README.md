@@ -1,5 +1,7 @@
 # VPN Finder
 
+Made by [@MyLeitner](https://t.me/MyLeitner).
+
 Telegram Mini App + Bot that browses the [PublicVPNList](https://publicvpnlist.com/api/) catalog (API v1) by country and protocol (`VLESS`, `Shadowsocks`, `VMess`, `OpenVPN`, `Hysteria2`, `Trojan`).
 
 ## Architecture & Security

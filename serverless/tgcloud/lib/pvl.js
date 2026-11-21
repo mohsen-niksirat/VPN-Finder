@@ -418,6 +418,105 @@ export async function getCounters() {
  * - Uses `fetchPvlCached` ONLY for the server metadata (`GET /servers/{id}`), never for `connection_info_url`.
  * - NEVER caches, stores, or logs the returned configuration payload (`config_uri`, `qr_payload`, `v2rayng_url`).
  */
+const FRAGMENT_SCHEMES = new Set(['vless', 'trojan', 'hysteria2', 'tuic', 'ss']);
+const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const utf8Enc = new TextEncoder();
+const utf8Dec = new TextDecoder('utf-8', { fatal: true });
+
+function encodeBase64Utf8(str) {
+  const bytes = utf8Enc.encode(str);
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b0 = bytes[i];
+    const has1 = i + 1 < bytes.length;
+    const has2 = i + 2 < bytes.length;
+    const b1 = has1 ? bytes[i + 1] : 0;
+    const b2 = has2 ? bytes[i + 2] : 0;
+    const triplet = (b0 << 16) | (b1 << 8) | b2;
+    out += B64_CHARS[(triplet >> 18) & 63];
+    out += B64_CHARS[(triplet >> 12) & 63];
+    out += has1 ? B64_CHARS[(triplet >> 6) & 63] : '=';
+    out += has2 ? B64_CHARS[triplet & 63] : '=';
+  }
+  return out;
+}
+
+function decodeBase64Utf8(rawB64) {
+  let clean = String(rawB64 || '').trim().replace(/-/g, '+').replace(/_/g, '/');
+  if (!clean || !/^[A-Za-z0-9+/]+={0,2}$/.test(clean)) return null;
+  while (clean.length % 4 !== 0) clean += '=';
+  const pad = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
+  const outLen = (clean.length * 3) / 4 - pad;
+  const bytes = new Uint8Array(outLen);
+  let j = 0;
+  for (let i = 0; i < clean.length; i += 4) {
+    const a = B64_CHARS.indexOf(clean[i]);
+    const b = B64_CHARS.indexOf(clean[i + 1]);
+    const c = clean[i + 2] === '=' ? 0 : B64_CHARS.indexOf(clean[i + 2]);
+    const d = clean[i + 3] === '=' ? 0 : B64_CHARS.indexOf(clean[i + 3]);
+    if (a < 0 || b < 0 || c < 0 || d < 0) return null;
+    const triplet = (a << 18) | (b << 12) | (c << 6) | d;
+    if (j < outLen) bytes[j++] = (triplet >> 16) & 0xff;
+    if (j < outLen) bytes[j++] = (triplet >> 8) & 0xff;
+    if (j < outLen) bytes[j++] = triplet & 0xff;
+  }
+  try {
+    return utf8Dec.decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function isConfigUriScheme(uri) {
+  if (typeof uri !== 'string') return false;
+  const idx = uri.indexOf('://');
+  if (idx <= 0) return false;
+  const scheme = uri.slice(0, idx).toLowerCase();
+  return scheme === 'vmess' || FRAGMENT_SCHEMES.has(scheme);
+}
+
+/**
+ * Sets the profile display remark on a VPN config URI to `@MyLeitner | <CC> <PROTOCOL>`
+ * (or `@MyLeitner | <PROTOCOL>` if country is unknown) without modifying connection parameters.
+ * Idempotent across repeated calls.
+ */
+export function brandConfigUri(uri, record = {}) {
+  if (typeof uri !== 'string' || !uri) return uri;
+  const idx = uri.indexOf('://');
+  if (idx <= 0) return uri;
+  const scheme = uri.slice(0, idx).toLowerCase();
+
+  const rawCc = typeof record?.country_code === 'string' ? record.country_code.trim().toUpperCase() : '';
+  const cc = /^[A-Z]{2}$/.test(rawCc) ? rawCc : '';
+  const rawProto = typeof record?.protocol === 'string' ? record.protocol.trim().toUpperCase() : '';
+  const protoLabel = rawProto || scheme.toUpperCase();
+  const remark = (cc ? `@MyLeitner | ${cc} ${protoLabel}` : `@MyLeitner | ${protoLabel}`).replace(/#/g, '');
+
+  if (FRAGMENT_SCHEMES.has(scheme)) {
+    const hashIdx = uri.indexOf('#');
+    const base = hashIdx === -1 ? uri : uri.slice(0, hashIdx);
+    return `${base}#${remark}`;
+  }
+
+  if (scheme === 'vmess') {
+    const b64Part = uri.slice(idx + 3);
+    const jsonStr = decodeBase64Utf8(b64Part);
+    if (!jsonStr) return uri;
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return uri;
+      }
+      parsed.ps = remark;
+      return `${uri.slice(0, idx + 3)}${encodeBase64Utf8(JSON.stringify(parsed))}`;
+    } catch {
+      return uri;
+    }
+  }
+
+  return uri;
+}
+
 export async function fetchPvlConnectionOnDemand(id, userId) {
   const cleanId = typeof id === 'string' ? id.trim() : '';
   if (!PUBLIC_ID_RE.test(cleanId)) {
@@ -518,14 +617,31 @@ export async function fetchPvlConnectionOnDemand(id, userId) {
     return { error: 'fetch_failed' };
   }
 
-  if (connData.config_uri) {
+  let brandedRecord = record;
+  if (!record.country_code && record.exit_ip) {
+    const resolvedCc = await lookupIpCountry(record.exit_ip);
+    if (resolvedCc) {
+      brandedRecord = { ...record, country_code: resolvedCc };
+    }
+  }
+
+  const rawConfigUri = connData.config_uri ?? null;
+  const rawQrPayload = connData.qr_payload ?? null;
+  const brandedConfigUri = typeof rawConfigUri === 'string'
+    ? brandConfigUri(rawConfigUri, brandedRecord)
+    : rawConfigUri;
+  const brandedQrPayload = typeof rawQrPayload === 'string' && isConfigUriScheme(rawQrPayload)
+    ? brandConfigUri(rawQrPayload, brandedRecord)
+    : rawQrPayload;
+
+  if (brandedConfigUri) {
     await incrementCounter('connections_served', 1);
   }
 
   return {
-    config_uri: connData.config_uri ?? null,
+    config_uri: brandedConfigUri,
     v2rayng_url: connData.v2rayng_url ?? null,
-    qr_payload: connData.qr_payload ?? null,
+    qr_payload: brandedQrPayload,
     qr_code_url: connData.qr_code_url ?? null,
     _auth_mode: authMode,
   };
