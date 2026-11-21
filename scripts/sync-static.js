@@ -7,7 +7,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'serverless', 'dist');
 
-const FILES = ['index.html', 'styles.css', 'app.js'];
+const FILES = ['index.html', 'styles.css', 'app.js', 'pvl-snapshot.json'];
 
 fs.mkdirSync(DIST, { recursive: true });
 for (const file of FILES) {

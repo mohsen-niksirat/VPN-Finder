@@ -195,23 +195,39 @@
     return d.toISOString().slice(0, 10);
   }
 
+  let cachedSnapshotBundle = null;
+
+  async function loadSnapshotBundleFallback() {
+    if (cachedSnapshotBundle) return cachedSnapshotBundle;
+    const res = await fetch('./pvl-snapshot.json', { cache: 'no-store' });
+    if (!res.ok) {
+      const e = new Error(`HTTP ${res.status}`);
+      e.status = res.status;
+      throw e;
+    }
+    cachedSnapshotBundle = await res.json();
+    return cachedSnapshotBundle;
+  }
+
   /**
    * Calls a tgcloud endpoint (`pvlStats`, `pvlProtocols`, `pvlCountries`).
-   * Uses `Telegram.WebApp.Serverless.call` when on the tgcloud host, or
-   * falls back to POST `${DEFAULT_PROXY_BASE}/api/<name>` with TMA initData.
+   * 1. When hosted on the tgcloud static domain inside Telegram (`hasInitData`), calls
+   *    `Telegram.WebApp.Serverless.call(name, input)` directly.
+   * 2. When hosted on GitHub Pages (cross-origin to tgcloud.ai), or when `Serverless.call`
+   *    is blocked by browser CORS, reads the proxy-synced `pvl-snapshot.json` bundle
+   *    (which is produced exclusively by the tgcloud proxy).
    */
   function callProxyEndpoint(name, input = {}) {
     return new Promise((resolve, reject) => {
-      // Allow automated Playwright / local verification harness to inject a mock transport
       if (typeof window.__VPN_FINDER_MOCK_CALL__ === 'function') {
         Promise.resolve(window.__VPN_FINDER_MOCK_CALL__(name, input)).then(resolve, reject);
         return;
       }
 
       const hasInitData = Boolean(tg && typeof tg.initData === 'string' && tg.initData.length > 0);
+      const isTgcloudHost = window.location.hostname.endsWith('.tgcloud.ai');
 
-      // If no custom cross-origin api_base is set and Telegram.WebApp.Serverless.call is available
-      if (!DEFAULT_PROXY_BASE && tg && tg.Serverless && typeof tg.Serverless.call === 'function') {
+      if (isTgcloudHost && hasInitData && tg && tg.Serverless && typeof tg.Serverless.call === 'function') {
         try {
           tg.Serverless.call(name, input, function (err, result) {
             if (err) {
@@ -227,45 +243,24 @@
         }
       }
 
-      if (!hasInitData) {
-        const authErr = new Error('WebAppServerlessInitDataUnavailable');
-        authErr.code = 'NO_INIT_DATA';
-        reject(authErr);
-        return;
-      }
-
-      const base = DEFAULT_PROXY_BASE.replace(/\/+$/, '');
-      const endpointUrl = `${base}/api/${name}`;
-      fetch(endpointUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: 'TMA ' + window.btoa(tg.initData),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(input || {}),
-        credentials: 'omit',
-      })
-        .then(async (res) => {
-          const text = await res.text();
-          let data = null;
-          try {
-            data = JSON.parse(text);
-          } catch {}
-          if (!data || typeof data !== 'object' || typeof data.ok !== 'boolean') {
-            const e = new Error(`HTTP ${res.status}`);
-            e.status = res.status;
-            throw e;
+      // Cross-origin GitHub Pages fallback -> read proxy-generated snapshot bundle
+      loadSnapshotBundleFallback()
+        .then((bundle) => {
+          if (!bundle || bundle.error) {
+            resolve({ error: bundle?.error || 'setup_required' });
+            return;
           }
-          if (!data.ok) {
-            const e = new Error(data.description || `HTTP ${res.status}`);
-            e.status = data.error_code || res.status;
-            e.type = data.error_type || '';
-            e.parameters = data.parameters || {};
-            throw e;
+          if (name === 'pvlStats') {
+            resolve(bundle.stats);
+          } else if (name === 'pvlProtocols') {
+            resolve(bundle.protocols);
+          } else if (name === 'pvlCountries') {
+            resolve(bundle.countries);
+          } else {
+            reject(new Error(`Unknown proxy endpoint: ${name}`));
           }
-          return data.result;
         })
-        .then(resolve, reject);
+        .catch(reject);
     });
   }
 
@@ -577,6 +572,7 @@
   async function loadCatalog() {
     const refreshBtn = document.getElementById('refresh-btn');
     refreshBtn.disabled = true;
+    cachedSnapshotBundle = null;
     setViewState('loading');
 
     try {

@@ -3,6 +3,7 @@
 import { EndpointError } from 'sdk';
 import {
   ALLOWED_PROTOCOLS,
+  buildPublicCatalogSnapshot,
   fetchPvlCached,
   PVL_CACHE_TTL_SEC,
   requireTelegramAuth,
@@ -10,6 +11,11 @@ import {
 
 export default async function (input, ctx) {
   requireTelegramAuth(ctx);
+
+  if (input && input.bundle === true) {
+    const proto = typeof input.protocol === 'string' ? input.protocol.trim().toLowerCase() : 'openvpn';
+    return await buildPublicCatalogSnapshot(proto);
+  }
 
   const rawProtocol = input && typeof input.protocol === 'string'
     ? input.protocol.trim().toLowerCase()

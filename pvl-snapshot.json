@@ -1,0 +1,390 @@
+{
+  "generated_at": "2026-11-21T16:51:21Z",
+  "protocol": "openvpn",
+  "stats": {
+    "data": {
+      "record_count": 2388,
+      "fresh_count": 338,
+      "stale_count": 2050,
+      "countries_count": 41,
+      "protocols": [
+        "openvpn"
+      ],
+      "protocol_record_counts": {
+        "openvpn": 2388,
+        "vless": 589,
+        "trojan": 36,
+        "vmess": 201,
+        "shadowsocks": 606,
+        "hysteria2": 53,
+        "tuic": 0,
+        "wireguard": 0,
+        "ikev2": 0
+      }
+    },
+    "meta": {
+      "schema_version": "1.1",
+      "dataset_version": "20261121T165121Z-88a6c9d5b26c",
+      "snapshot_id": "70008c518d38d7c8",
+      "generated_at": "2026-11-21T16:51:21Z",
+      "expires_at": "2026-11-21T17:06:21Z",
+      "protocol_dataset_version": "20261121T165433Z-260c877c09df"
+    },
+    "links": {
+      "self": "https://publicvpnlist.com/api/v1/stats",
+      "documentation": "https://publicvpnlist.com/api/"
+    },
+    "_cache": {
+      "key": "stats",
+      "hit": true,
+      "revalidated": false,
+      "stale": false,
+      "fetched_at": 1795280182,
+      "etag": "\"0ed0f24b12f3211ee1156a01914d8bd1be56833a5bf1bef9e43406e91a33dd7c\""
+    }
+  },
+  "protocols": {
+    "data": [
+      {
+        "protocol": "openvpn",
+        "transports": [
+          "tcp",
+          "udp"
+        ],
+        "record_count": 2388,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/openvpn/",
+        "median_speed_mbps": 3.36,
+        "measured_count": 200
+      },
+      {
+        "protocol": "vless",
+        "transports": [
+          "grpc",
+          "tcp",
+          "websocket"
+        ],
+        "record_count": 589,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/vless/",
+        "median_speed_mbps": 3.87,
+        "measured_count": 178
+      },
+      {
+        "protocol": "trojan",
+        "transports": [
+          "tcp",
+          "websocket"
+        ],
+        "record_count": 36,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/trojan/",
+        "median_speed_mbps": 5.89,
+        "measured_count": 35
+      },
+      {
+        "protocol": "vmess",
+        "transports": [
+          "tcp",
+          "websocket"
+        ],
+        "record_count": 201,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/vmess/",
+        "median_speed_mbps": 3.39,
+        "measured_count": 160
+      },
+      {
+        "protocol": "shadowsocks",
+        "transports": [
+          "tcp"
+        ],
+        "record_count": 606,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/shadowsocks/",
+        "median_speed_mbps": 4.61,
+        "measured_count": 183
+      },
+      {
+        "protocol": "hysteria2",
+        "transports": [
+          "udp"
+        ],
+        "record_count": 53,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/hysteria2/",
+        "median_speed_mbps": 4.44,
+        "measured_count": 49
+      },
+      {
+        "protocol": "tuic",
+        "transports": [],
+        "record_count": 0,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/tuic/",
+        "median_speed_mbps": null,
+        "measured_count": 0
+      },
+      {
+        "protocol": "wireguard",
+        "transports": [],
+        "record_count": 0,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/wireguard/",
+        "median_speed_mbps": null,
+        "measured_count": 0
+      },
+      {
+        "protocol": "ikev2",
+        "transports": [],
+        "record_count": 0,
+        "documentation_url": "https://publicvpnlist.com/api/protocols/ikev2/",
+        "median_speed_mbps": null,
+        "measured_count": 0
+      }
+    ],
+    "meta": {
+      "schema_version": "1.1",
+      "dataset_version": "20261121T165121Z-88a6c9d5b26c",
+      "snapshot_id": "70008c518d38d7c8",
+      "generated_at": "2026-11-21T16:51:21Z",
+      "expires_at": "2026-11-21T17:06:21Z",
+      "protocol_dataset_version": "20261121T165433Z-260c877c09df",
+      "total": 9
+    },
+    "links": {
+      "self": "https://publicvpnlist.com/api/v1/protocols",
+      "documentation": "https://publicvpnlist.com/api/"
+    },
+    "_cache": {
+      "key": "protocols",
+      "hit": true,
+      "revalidated": false,
+      "stale": false,
+      "fetched_at": 1795280193,
+      "etag": "W/\"a02779adef86a45b289b7069c8142c6b30d2785ac42f4a088077abd600c262f3\""
+    }
+  },
+  "countries": {
+    "data": [
+      {
+        "country_code": "AR",
+        "country_name": "Argentina",
+        "record_count": 1
+      },
+      {
+        "country_code": "AU",
+        "country_name": "Australia",
+        "record_count": 6
+      },
+      {
+        "country_code": "BD",
+        "country_name": "Bangladesh",
+        "record_count": 1
+      },
+      {
+        "country_code": "BE",
+        "country_name": "Belgium",
+        "record_count": 1
+      },
+      {
+        "country_code": "BG",
+        "country_name": "Bulgaria",
+        "record_count": 2
+      },
+      {
+        "country_code": "BR",
+        "country_name": "Brazil",
+        "record_count": 1
+      },
+      {
+        "country_code": "BY",
+        "country_name": "Belarus",
+        "record_count": 4
+      },
+      {
+        "country_code": "CA",
+        "country_name": "Canada",
+        "record_count": 4
+      },
+      {
+        "country_code": "CR",
+        "country_name": "Costa Rica",
+        "record_count": 1
+      },
+      {
+        "country_code": "CZ",
+        "country_name": "Czech Republic",
+        "record_count": 1
+      },
+      {
+        "country_code": "DE",
+        "country_name": "Germany",
+        "record_count": 1
+      },
+      {
+        "country_code": "ES",
+        "country_name": "Spain",
+        "record_count": 4
+      },
+      {
+        "country_code": "FI",
+        "country_name": "Finland",
+        "record_count": 2
+      },
+      {
+        "country_code": "FR",
+        "country_name": "France",
+        "record_count": 9
+      },
+      {
+        "country_code": "GB",
+        "country_name": "UK",
+        "record_count": 9
+      },
+      {
+        "country_code": "GD",
+        "country_name": "Grenada",
+        "record_count": 1
+      },
+      {
+        "country_code": "HK",
+        "country_name": "Hong Kong",
+        "record_count": 1
+      },
+      {
+        "country_code": "HR",
+        "country_name": "Croatia (LOCAL Name: Hrvatska)",
+        "record_count": 23
+      },
+      {
+        "country_code": "HU",
+        "country_name": "Hungary",
+        "record_count": 2
+      },
+      {
+        "country_code": "ID",
+        "country_name": "Indonesia",
+        "record_count": 2
+      },
+      {
+        "country_code": "IN",
+        "country_name": "India",
+        "record_count": 1
+      },
+      {
+        "country_code": "IR",
+        "country_name": "Iran (ISLAMIC Republic Of)",
+        "record_count": 1
+      },
+      {
+        "country_code": "IT",
+        "country_name": "Italy",
+        "record_count": 1
+      },
+      {
+        "country_code": "JP",
+        "country_name": "Japan",
+        "record_count": 1131
+      },
+      {
+        "country_code": "KR",
+        "country_name": "South Korea",
+        "record_count": 944
+      },
+      {
+        "country_code": "LT",
+        "country_name": "Lithuania",
+        "record_count": 1
+      },
+      {
+        "country_code": "MD",
+        "country_name": "Moldova Republic of",
+        "record_count": 1
+      },
+      {
+        "country_code": "MX",
+        "country_name": "Mexico",
+        "record_count": 1
+      },
+      {
+        "country_code": "NL",
+        "country_name": "Netherlands",
+        "record_count": 4
+      },
+      {
+        "country_code": "NZ",
+        "country_name": "New Zealand",
+        "record_count": 2
+      },
+      {
+        "country_code": "PE",
+        "country_name": "Peru",
+        "record_count": 2
+      },
+      {
+        "country_code": "PT",
+        "country_name": "Portugal",
+        "record_count": 1
+      },
+      {
+        "country_code": "RO",
+        "country_name": "Romania",
+        "record_count": 1
+      },
+      {
+        "country_code": "RU",
+        "country_name": "Russia",
+        "record_count": 127
+      },
+      {
+        "country_code": "SE",
+        "country_name": "Sweden",
+        "record_count": 1
+      },
+      {
+        "country_code": "TH",
+        "country_name": "Thailand",
+        "record_count": 1
+      },
+      {
+        "country_code": "TW",
+        "country_name": "Taiwan",
+        "record_count": 1
+      },
+      {
+        "country_code": "UA",
+        "country_name": "Ukraine",
+        "record_count": 9
+      },
+      {
+        "country_code": "US",
+        "country_name": "USA",
+        "record_count": 78
+      },
+      {
+        "country_code": "VN",
+        "country_name": "Vietnam",
+        "record_count": 3
+      },
+      {
+        "country_code": "ZA",
+        "country_name": "South Africa",
+        "record_count": 1
+      }
+    ],
+    "meta": {
+      "schema_version": "1.1",
+      "dataset_version": "20261121T165121Z-88a6c9d5b26c",
+      "snapshot_id": "70008c518d38d7c8",
+      "generated_at": "2026-11-21T16:51:21Z",
+      "expires_at": "2026-11-21T17:06:21Z",
+      "protocol_dataset_version": "20261121T165433Z-260c877c09df",
+      "total": 41
+    },
+    "links": {
+      "self": "https://publicvpnlist.com/api/v1/countries",
+      "documentation": "https://publicvpnlist.com/api/"
+    },
+    "_cache": {
+      "key": "countries?protocol=openvpn",
+      "hit": true,
+      "revalidated": false,
+      "stale": false,
+      "fetched_at": 1795280201,
+      "etag": "W/\"eec162d3761a527c859dee596ec508cbc4741329499a7610c0517856b7a2ee9e\""
+    }
+  }
+}

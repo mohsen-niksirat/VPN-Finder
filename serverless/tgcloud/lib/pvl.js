@@ -317,6 +317,63 @@ export function extractSnapshotTimestamp(payload) {
   );
 }
 
+/**
+ * Generates an anonymized, non-secret public summary bundle (`stats`, `protocols`, `countries`)
+ * from `pvl_cache` so the static Mini App on GitHub Pages can load the latest cached catalog
+ * snapshot directly alongside `Telegram.WebApp.Serverless.call`.
+ */
+export async function buildPublicCatalogSnapshot(protocol = 'openvpn') {
+  const safeProto = ALLOWED_PROTOCOLS.has(protocol) ? protocol : 'openvpn';
+  const [stats, protocolsRaw, countries] = await Promise.all([
+    fetchPvlCached({ cacheKey: 'stats', pathAndQuery: '/stats', ttlSec: PVL_CACHE_TTL_SEC }),
+    fetchPvlCached({ cacheKey: 'protocols', pathAndQuery: '/protocols', ttlSec: PVL_CACHE_TTL_SEC }),
+    fetchPvlCached({
+      cacheKey: `countries?protocol=${safeProto}`,
+      pathAndQuery: `/countries?protocol=${encodeURIComponent(safeProto)}`,
+      ttlSec: PVL_CACHE_TTL_SEC,
+    }),
+  ]);
+
+  if (stats?.error === 'setup_required' || protocolsRaw?.error === 'setup_required') {
+    return { error: 'setup_required' };
+  }
+
+  let protocols = protocolsRaw;
+  if (protocolsRaw && Array.isArray(protocolsRaw.data)) {
+    const activeProtos = protocolsRaw.data
+      .filter((item) => Number(item?.record_count || 0) > 0)
+      .map((item) => String(item.protocol || '').toLowerCase())
+      .filter(Boolean);
+    const speedMap = await getProtocolSpeedSummary(activeProtos);
+    protocols = {
+      ...protocolsRaw,
+      data: protocolsRaw.data.map((item) => {
+        const key = String(item?.protocol || '').toLowerCase();
+        const speedInfo = speedMap[key];
+        return {
+          ...item,
+          median_speed_mbps:
+            item.median_speed_mbps !== undefined
+              ? item.median_speed_mbps
+              : (speedInfo ? speedInfo.median_speed_mbps : null),
+          measured_count:
+            item.measured_count !== undefined
+              ? item.measured_count
+              : (speedInfo ? speedInfo.measured_count : 0),
+        };
+      }),
+    };
+  }
+
+  return {
+    generated_at: extractSnapshotTimestamp(stats) || new Date().toISOString(),
+    protocol: safeProto,
+    stats,
+    protocols,
+    countries,
+  };
+}
+
 function computeMedian(numbers) {
   const valid = numbers.filter((n) => typeof n === 'number' && Number.isFinite(n) && n > 0);
   if (!valid.length) return null;
