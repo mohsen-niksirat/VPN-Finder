@@ -1,0 +1,59 @@
+name: Refresh PVL Snapshot
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
+    steps:
+      - name: Check TGCLOUD_TOKEN availability
+        id: auth_check
+        run: |
+          if [ -z "${TGCLOUD_TOKEN}" ]; then
+            echo "TGCLOUD_TOKEN repo secret is not set — skipping snapshot refresh (no-op)."
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.auth_check.outputs.has_token == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.auth_check.outputs.has_token == 'true'
+        with:
+          node-version: '20'
+
+      - name: Install serverless CLI
+        if: steps.auth_check.outputs.has_token == 'true'
+        run: npm --prefix serverless ci
+
+      - name: Sync PVL snapshot v2 via tgcloud proxy
+        if: steps.auth_check.outputs.has_token == 'true'
+        run: node scripts/sync-pvl-snapshot.js
+
+      - name: Run security grep gate
+        if: steps.auth_check.outputs.has_token == 'true'
+        run: npm run grep-gate
+
+      - name: Commit and push if pvl-snapshot.json changed
+        if: steps.auth_check.outputs.has_token == 'true'
+        run: |
+          git add pvl-snapshot.json
+          if git diff --cached --quiet; then
+            echo "No snapshot changes — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: refresh PVL snapshot"
+          git push origin main

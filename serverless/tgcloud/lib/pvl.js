@@ -4,6 +4,31 @@ import { botConfig, pvlCache } from '../schema.js';
 
 export const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 export const PVL_CACHE_TTL_SEC = 30 * 60; // 30 minutes for stats, protocols, countries
+export const PVL_SERVERS_TTL_SEC = 5 * 60; // 5 minutes for servers list
+
+export const PVL_SERVERS_FIELDS = [
+  'id',
+  'country_code',
+  'country_name',
+  'city',
+  'protocol',
+  'transport',
+  'port',
+  'speed_mbps',
+  'latency_ms',
+  'technical_quality_score',
+  'score_label',
+  'last_checked_at',
+  'first_seen_at',
+  'freshness_status',
+  'uptime_percent_7d',
+  'source_name',
+  'risk_flags',
+  'v2rayng_url',
+  'connection_info_url',
+  'config_download_url',
+  'server_page_url',
+].join(',');
 
 export const ALLOWED_PROTOCOLS = new Set([
   'openvpn',
@@ -436,10 +461,156 @@ export async function getGlobalStatsWithDistinctCountries() {
   };
 }
 
+const ALLOWED_SERVER_INPUT_KEYS = new Set([
+  'protocol',
+  'country',
+  'sort',
+  'page',
+  'per_page',
+]);
+
+export const SERVER_SORT_MAP = {
+  score: { sort: 'score', order: 'desc' },
+  speed: { sort: 'speed', order: 'desc' },
+  latency: { sort: 'latency', order: 'asc' },
+  last_checked: { sort: 'last_checked', order: 'desc' },
+};
+
+export function validateAndNormalizeServersInput(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new EndpointError('Invalid input object', { code: 'INVALID_INPUT' });
+  }
+
+  for (const key of Object.keys(input)) {
+    if (!ALLOWED_SERVER_INPUT_KEYS.has(key)) {
+      throw new EndpointError(`Disallowed parameter "${key}"`, {
+        code: 'DISALLOWED_PARAMETER',
+        parameter: key,
+      });
+    }
+  }
+
+  // 1. protocol (REQUIRED)
+  const rawProtocol = typeof input.protocol === 'string'
+    ? input.protocol.trim().toLowerCase()
+    : '';
+  if (!rawProtocol) {
+    throw new EndpointError(
+      'Missing required "protocol" parameter (never rely on the API OpenVPN-only default)',
+      { code: 'MISSING_PROTOCOL', parameter: 'protocol' }
+    );
+  }
+  if (!ALLOWED_PROTOCOLS.has(rawProtocol)) {
+    throw new EndpointError(
+      `Invalid protocol "${rawProtocol}". Allowed: ${[...ALLOWED_PROTOCOLS].join(', ')}`,
+      { code: 'INVALID_PROTOCOL', parameter: 'protocol' }
+    );
+  }
+
+  // 2. country (optional, ^[A-Z]{2}$)
+  let country = '';
+  if (input.country !== undefined && input.country !== null && input.country !== '') {
+    if (typeof input.country !== 'string' || !/^[A-Z]{2}$/.test(input.country)) {
+      throw new EndpointError(
+        'Invalid "country" parameter: must be a two-letter uppercase ISO code (^[A-Z]{2}$)',
+        { code: 'INVALID_COUNTRY', parameter: 'country' }
+      );
+    }
+    country = input.country;
+  }
+
+  // 3. sort ∈ {score, speed, latency, last_checked}
+  let sortKey = 'score';
+  if (input.sort !== undefined && input.sort !== null && input.sort !== '') {
+    if (typeof input.sort !== 'string' || !(input.sort in SERVER_SORT_MAP)) {
+      throw new EndpointError(
+        'Invalid "sort" parameter: must be one of score, speed, latency, last_checked',
+        { code: 'INVALID_SORT', parameter: 'sort' }
+      );
+    }
+    sortKey = input.sort;
+  }
+  const { sort, order } = SERVER_SORT_MAP[sortKey];
+
+  // 4. page >= 1
+  let page = 1;
+  if (input.page !== undefined && input.page !== null && input.page !== '') {
+    const p = Number(input.page);
+    if (!Number.isInteger(p) || p < 1) {
+      throw new EndpointError('Invalid "page" parameter: must be an integer >= 1', {
+        code: 'INVALID_PAGE',
+        parameter: 'page',
+      });
+    }
+    page = p;
+  }
+
+  // 5. per_page fixed 20 (reject other values)
+  if (input.per_page !== undefined && input.per_page !== null) {
+    const pp = Number(input.per_page);
+    if (pp !== 20) {
+      throw new EndpointError('Invalid "per_page" parameter: fixed at 20', {
+        code: 'INVALID_PER_PAGE',
+        parameter: 'per_page',
+      });
+    }
+  }
+  const perPage = 20;
+
+  const queryParts = [
+    `protocol=${encodeURIComponent(rawProtocol)}`,
+    ...(country ? [`country=${encodeURIComponent(country)}`] : []),
+    'status=online',
+    'fresh_within=86400',
+    `sort=${encodeURIComponent(sort)}`,
+    `order=${encodeURIComponent(order)}`,
+    `page=${page}`,
+    `per_page=${perPage}`,
+    `fields=${PVL_SERVERS_FIELDS}`,
+  ];
+
+  const queryString = queryParts.join('&');
+  const cacheKey = `servers?${queryString}`;
+  const pathAndQuery = `/servers?${queryString}`;
+
+  return {
+    protocol: rawProtocol,
+    country,
+    sortKey,
+    sort,
+    order,
+    page,
+    perPage,
+    cacheKey,
+    pathAndQuery,
+  };
+}
+
+export async function fetchPvlServers(input) {
+  const norm = validateAndNormalizeServersInput(input || {});
+
+  const res = await fetchPvlCached({
+    cacheKey: norm.cacheKey,
+    pathAndQuery: norm.pathAndQuery,
+    ttlSec: PVL_SERVERS_TTL_SEC,
+  });
+
+  if (!res || res.error) {
+    return res;
+  }
+
+  return {
+    data: Array.isArray(res.data) ? res.data : [],
+    meta: res.meta || {},
+    links: res.links || {},
+    _cache: res._cache,
+  };
+}
+
 /**
- * Generates an anonymized, non-secret public summary bundle (`stats`, `protocols`, `countries`)
- * from `pvl_cache` so the static Mini App on GitHub Pages can load the latest cached catalog
- * snapshot directly alongside `Telegram.WebApp.Serverless.call`.
+ * Generates an anonymized, non-secret public summary bundle v2 (`stats`, `protocols`, `countries`,
+ * `countries_by_protocol`, and `servers_preview`) from `pvl_cache` so the static Mini App on
+ * GitHub Pages can load the latest cached catalog snapshot directly alongside `Telegram.WebApp.Serverless.call`.
  */
 export async function buildPublicCatalogSnapshot(protocol = 'openvpn') {
   const safeProto = ALLOWED_PROTOCOLS.has(protocol) ? protocol : 'openvpn';
@@ -454,11 +625,13 @@ export async function buildPublicCatalogSnapshot(protocol = 'openvpn') {
   }
 
   let protocols = protocolsRaw;
+  let activeProtos = [];
   if (protocolsRaw && Array.isArray(protocolsRaw.data)) {
-    const activeProtos = protocolsRaw.data
+    activeProtos = protocolsRaw.data
       .filter((item) => Number(item?.record_count || 0) > 0)
       .map((item) => String(item.protocol || '').toLowerCase())
-      .filter(Boolean);
+      .filter((p) => ALLOWED_PROTOCOLS.has(p));
+
     const speedMap = await getProtocolSpeedSummary(activeProtos);
     protocols = {
       ...protocolsRaw,
@@ -480,12 +653,41 @@ export async function buildPublicCatalogSnapshot(protocol = 'openvpn') {
     };
   }
 
+  const countriesByProtocol = {};
+  const serversPreview = {};
+
+  await Promise.all(
+    activeProtos.map(async (proto) => {
+      try {
+        const cRes = await getProtocolCountriesResolved(proto, PVL_CACHE_TTL_SEC);
+        if (cRes && !cRes.error) {
+          countriesByProtocol[proto] = cRes;
+        }
+      } catch {}
+
+      try {
+        const sRes = await fetchPvlServers({
+          protocol: proto,
+          sort: 'score',
+          page: 1,
+          per_page: 20,
+        });
+        if (sRes && !sRes.error) {
+          serversPreview[proto] = sRes;
+        }
+      } catch {}
+    })
+  );
+
   return {
+    snapshot_version: 2,
     generated_at: extractSnapshotTimestamp(stats) || new Date().toISOString(),
     protocol: safeProto,
     stats,
     protocols,
     countries,
+    countries_by_protocol: countriesByProtocol,
+    servers_preview: serversPreview,
   };
 }
 

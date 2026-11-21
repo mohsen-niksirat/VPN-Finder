@@ -1,6 +1,6 @@
-// Syncs the non-secret cached catalog summary from the tgcloud proxy (`endpoints/pvlStats` with `bundle: true`)
-// into `pvl-snapshot.json` (and `serverless/dist/`) so GitHub Pages can serve the proxy-fetched catalog snapshot
-// cross-origin while `Telegram.WebApp.Serverless.call` handles live RPC on the tgcloud host.
+// Syncs the non-secret cached catalog summary v2 from the tgcloud proxy (`endpoints/pvlStats` with `bundle: true`)
+// into `pvl-snapshot.json` (and `serverless/dist/`), including `servers_preview` (page 1, sort=score, 20 records)
+// for every protocol with records > 0.
 
 const fs = require('fs');
 const path = require('path');
@@ -11,11 +11,12 @@ const OUT_FILE = path.join(ROOT, 'pvl-snapshot.json');
 
 function main() {
   const out = execSync(
-    'npx tgcloud run endpoints/pvlStats "{ bundle: true, protocol: \'openvpn\' }" --ctx "{ initData: { user: { id: 65807806 } } }"',
+    'npx tgcloud run endpoints/pvlStats "{ bundle: true, protocol: \'openvpn\' }" --ctx "{ initData: { user: { id: 1 } } }"',
     {
       cwd: path.join(ROOT, 'serverless'),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 20 * 1024 * 1024,
     }
   );
 
@@ -29,7 +30,11 @@ function main() {
   }
 
   fs.writeFileSync(OUT_FILE, JSON.stringify(parsed, null, 2) + '\n', 'utf8');
-  console.log(`Wrote proxy snapshot to pvl-snapshot.json (generated_at: ${parsed.generated_at})`);
+  const protoKeys = Object.keys(parsed.servers_preview || {});
+  console.log(
+    `Wrote proxy snapshot v${parsed.snapshot_version || 2} to pvl-snapshot.json ` +
+    `(generated_at: ${parsed.generated_at}, servers_preview protocols: ${protoKeys.join(', ')})`
+  );
 }
 
 main();

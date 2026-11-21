@@ -26,7 +26,7 @@
   </header>
 
   <main class="app-main" id="main-content" aria-live="polite">
-    <!-- Loading Skeleton State (R-27) -->
+    <!-- Top-Level Loading Skeleton State (R-27) -->
     <section id="state-loading" class="state-section" aria-label="Loading catalog data">
       <div class="summary-grid">
         <div class="stat-card skeleton-card">
@@ -52,23 +52,11 @@
           <div class="skeleton-line sk-row"></div>
           <div class="skeleton-line sk-row"></div>
           <div class="skeleton-line sk-row"></div>
-          <div class="skeleton-line sk-row"></div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="skeleton-line sk-heading"></div>
-        </div>
-        <div class="skeleton-table">
-          <div class="skeleton-line sk-row"></div>
-          <div class="skeleton-line sk-row"></div>
-          <div class="skeleton-line sk-row"></div>
         </div>
       </div>
     </section>
 
-    <!-- Error / Temporarily Unavailable State (R-27) -->
+    <!-- Top-Level Error State (R-27) -->
     <section id="state-error" class="state-section" hidden>
       <div class="panel error-panel" role="alert">
         <h2 id="error-title" class="error-heading">Temporarily Unavailable</h2>
@@ -79,7 +67,7 @@
       </div>
     </section>
 
-    <!-- Empty State (R-27) -->
+    <!-- Top-Level Empty State (R-27) -->
     <section id="state-empty" class="state-section" hidden>
       <div class="panel empty-panel">
         <h2 id="empty-title" class="empty-heading">No Active Records</h2>
@@ -90,7 +78,7 @@
       </div>
     </section>
 
-    <!-- Live Data State -->
+    <!-- Ready View: Header Counters + Filters + Server List -->
     <div id="state-ready" hidden>
       <!-- Live Catalog Summary Counters -->
       <section class="summary-grid" aria-labelledby="summary-heading">
@@ -109,36 +97,134 @@
         </div>
       </section>
 
-      <!-- Per-Protocol Availability Table -->
-      <section class="panel" aria-labelledby="protocols-heading">
-        <div class="panel-header">
-          <h2 id="protocols-heading" class="panel-title">Protocols &amp; Checker Median Speed</h2>
-          <span id="protocols-note" class="panel-meta">Checker-region throughput</span>
+      <!-- Preview Mode Notice Banner (shown only outside Telegram on snapshot fallback) -->
+      <div id="preview-mode-banner" class="preview-banner" hidden>
+        <span id="preview-banner-text">Preview mode: showing top 20 servers per protocol by score from the latest snapshot. Open inside Telegram (@publicvpnlist_bot) for live country filtering, sorting, and pagination.</span>
+      </div>
+
+      <!-- Filter Controls Panel -->
+      <section class="panel filters-panel" aria-labelledby="filters-heading">
+        <h2 id="filters-heading" class="sr-only">Server Filters</h2>
+
+        <!-- Protocol Chips Row -->
+        <div class="filter-block">
+          <div class="filter-label-row">
+            <span id="label-protocol-filter" class="filter-label">Protocol</span>
+            <span id="protocol-speed-hint" class="filter-hint"></span>
+          </div>
+          <div id="protocol-chips" class="protocol-chips" role="radiogroup" aria-labelledby="label-protocol-filter"></div>
         </div>
-        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="protocols-heading">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th scope="col" id="th-protocol">Protocol</th>
-                <th scope="col" id="th-records" class="num-col">Records</th>
-                <th scope="col" id="th-speed" class="num-col">Median Speed</th>
-              </tr>
-            </thead>
-            <tbody id="protocols-tbody"></tbody>
-          </table>
+
+        <!-- Country Picker + Sort Segmented Control -->
+        <div class="filter-controls-grid">
+          <div class="filter-col">
+            <span id="label-country-filter" class="filter-label">Country</span>
+            <button
+              type="button"
+              id="country-picker-btn"
+              class="country-picker-trigger"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+            >
+              <span id="country-picker-label" class="country-trigger-text">All countries</span>
+              <span class="country-trigger-caret" aria-hidden="true">▾</span>
+            </button>
+          </div>
+
+          <div class="filter-col filter-col-sort">
+            <span id="label-sort-filter" class="filter-label">Sort by</span>
+            <div id="sort-segmented" class="sort-segmented" role="radiogroup" aria-labelledby="label-sort-filter">
+              <button type="button" class="sort-btn is-active" data-sort="score" role="radio" aria-checked="true" id="sort-btn-score">Best score</button>
+              <button type="button" class="sort-btn" data-sort="speed" role="radio" aria-checked="false" id="sort-btn-speed">Fastest</button>
+              <button type="button" class="sort-btn" data-sort="latency" role="radio" aria-checked="false" id="sort-btn-latency">Lowest latency</button>
+              <button type="button" class="sort-btn" data-sort="last_checked" role="radio" aria-checked="false" id="sort-btn-recent">Most recent</button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- Top 5 Countries by Record Count -->
-      <section class="panel" aria-labelledby="countries-heading">
-        <div class="panel-header">
-          <h2 id="countries-heading" class="panel-title">Top 5 Countries by Record Count</h2>
-          <span id="countries-meta" class="panel-meta"></span>
+      <!-- Server List Section -->
+      <section class="servers-section" aria-labelledby="servers-heading">
+        <div class="servers-toolbar">
+          <h2 id="servers-heading" class="servers-title">Online Servers</h2>
+          <span id="showing-count-text" class="showing-meta"></span>
         </div>
-        <ol id="countries-list" class="country-list"></ol>
+        <p id="checker-region-note" class="checker-note">Speed and latency are representative measurements from the PublicVPNList checker region.</p>
+
+        <!-- List Page 1 Skeleton -->
+        <div id="list-loading" class="server-cards-list" hidden aria-label="Loading servers">
+          <div class="server-card skeleton-card">
+            <div class="skeleton-line sk-heading"></div>
+            <div class="skeleton-line sk-row"></div>
+            <div class="skeleton-line sk-value-sm"></div>
+          </div>
+          <div class="server-card skeleton-card">
+            <div class="skeleton-line sk-heading"></div>
+            <div class="skeleton-line sk-row"></div>
+            <div class="skeleton-line sk-value-sm"></div>
+          </div>
+          <div class="server-card skeleton-card">
+            <div class="skeleton-line sk-heading"></div>
+            <div class="skeleton-line sk-row"></div>
+            <div class="skeleton-line sk-value-sm"></div>
+          </div>
+        </div>
+
+        <!-- Per-Filter Empty State -->
+        <div id="list-empty" class="panel empty-panel" hidden>
+          <h3 id="filter-empty-title" class="empty-heading">No online servers match</h3>
+          <p id="filter-empty-body" class="empty-body">Try another country or protocol filter.</p>
+          <div class="error-actions">
+            <button type="button" id="reset-filters-btn" class="btn-secondary">Reset filters</button>
+          </div>
+        </div>
+
+        <!-- Per-Filter Error State -->
+        <div id="list-error" class="panel error-panel" hidden role="alert">
+          <h3 id="list-error-title" class="error-heading">Could not load servers</h3>
+          <p id="list-error-body" class="error-body">Failed to fetch servers for the selected filters.</p>
+          <div class="error-actions">
+            <button type="button" id="list-retry-btn" class="btn-primary">Retry</button>
+          </div>
+        </div>
+
+        <!-- Server Cards Container -->
+        <div id="servers-list" class="server-cards-list"></div>
+
+        <!-- Pagination Footer -->
+        <div id="pagination-bar" class="pagination-bar" hidden>
+          <button type="button" id="load-more-btn" class="btn-secondary btn-wide">Load more</button>
+        </div>
       </section>
     </div>
   </main>
+
+  <!-- Country Picker Searchable Sheet / Modal -->
+  <div id="country-sheet-backdrop" class="sheet-backdrop" hidden>
+    <div
+      id="country-sheet"
+      class="country-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="country-sheet-title"
+    >
+      <div class="sheet-header">
+        <h2 id="country-sheet-title" class="sheet-title">Select Country</h2>
+        <button type="button" id="country-sheet-close" class="btn-ghost sheet-close-btn" aria-label="Close country picker">✕</button>
+      </div>
+      <div class="sheet-search-wrap">
+        <label for="country-search-input" class="sr-only" id="country-search-label">Search country</label>
+        <input
+          type="search"
+          id="country-search-input"
+          class="sheet-search-input"
+          placeholder="Search country or ISO code..."
+          autocomplete="off"
+        >
+      </div>
+      <ul id="country-options-list" class="country-options-list" role="listbox"></ul>
+    </div>
+  </div>
 
   <footer class="app-footer">
     <div class="footer-inner">
