@@ -331,9 +331,28 @@ export const CONNECTION_RATE_LIMIT_MAX = 15;
 export const CONNECTION_RATE_LIMIT_WINDOW_SEC = 10 * 60; // 10 minutes
 const PUBLIC_ID_RE = /^(?:pvl|pvlp)_[a-f0-9]{24}$/;
 
-async function checkAndIncrementConnectionRateLimit(userId) {
+export async function checkConnectionRateLimit(userId) {
   const uid = Number(userId) || 0;
-  if (!uid) return { allowed: false };
+  if (!uid) return { allowed: false, remaining: 0 };
+  const now = Math.floor(Date.now() / 1000);
+  const row = await db
+    .select()
+    .from(connectionRateLimits)
+    .where(eq(connectionRateLimits.userId, uid))
+    .get();
+
+  if (!row || now - Number(row.windowStart || 0) >= CONNECTION_RATE_LIMIT_WINDOW_SEC) {
+    return { allowed: true, remaining: CONNECTION_RATE_LIMIT_MAX };
+  }
+
+  const used = Number(row.count || 0);
+  const remaining = Math.max(0, CONNECTION_RATE_LIMIT_MAX - used);
+  return { allowed: remaining > 0, remaining };
+}
+
+export async function consumeConnectionRateLimit(userId) {
+  const uid = Number(userId) || 0;
+  if (!uid) return { allowed: false, count: 0 };
   const now = Math.floor(Date.now() / 1000);
   const row = await db
     .select()
@@ -354,33 +373,18 @@ async function checkAndIncrementConnectionRateLimit(userId) {
   }
 
   const nextCount = Number(row.count || 0) + 1;
-  if (nextCount > CONNECTION_RATE_LIMIT_MAX) {
-    return { allowed: false, count: nextCount };
-  }
-
   await db
     .update(connectionRateLimits)
     .set({ count: nextCount })
     .where(eq(connectionRateLimits.userId, uid))
     .run();
 
-  return { allowed: true, count: nextCount };
+  return { allowed: nextCount <= CONNECTION_RATE_LIMIT_MAX, count: nextCount };
 }
 
 export async function getRemainingConnectionBudget(userId) {
-  const uid = Number(userId) || 0;
-  if (!uid) return 0;
-  const now = Math.floor(Date.now() / 1000);
-  const row = await db
-    .select()
-    .from(connectionRateLimits)
-    .where(eq(connectionRateLimits.userId, uid))
-    .get();
-
-  if (!row || now - Number(row.windowStart || 0) >= CONNECTION_RATE_LIMIT_WINDOW_SEC) {
-    return CONNECTION_RATE_LIMIT_MAX;
-  }
-  return Math.max(0, CONNECTION_RATE_LIMIT_MAX - Number(row.count || 0));
+  const check = await checkConnectionRateLimit(userId);
+  return check.remaining;
 }
 
 export async function incrementCounter(key, delta = 1) {
@@ -517,7 +521,7 @@ export function brandConfigUri(uri, record = {}) {
   return uri;
 }
 
-export async function fetchPvlConnectionOnDemand(id, userId) {
+export async function fetchPvlConnectionOnDemand(id, userId, { deferBudgetConsume = false } = {}) {
   const cleanId = typeof id === 'string' ? id.trim() : '';
   if (!PUBLIC_ID_RE.test(cleanId)) {
     throw new EndpointError(
@@ -526,7 +530,7 @@ export async function fetchPvlConnectionOnDemand(id, userId) {
     );
   }
 
-  const rateCheck = await checkAndIncrementConnectionRateLimit(userId);
+  const rateCheck = await checkConnectionRateLimit(userId);
   if (!rateCheck.allowed) {
     return { error: 'rate_limited' };
   }
@@ -627,6 +631,7 @@ export async function fetchPvlConnectionOnDemand(id, userId) {
 
   const rawConfigUri = connData.config_uri ?? null;
   const rawQrPayload = connData.qr_payload ?? null;
+  const configDownloadUrl = connData.config_download_url ?? record.config_download_url ?? null;
   const brandedConfigUri = typeof rawConfigUri === 'string'
     ? brandConfigUri(rawConfigUri, brandedRecord)
     : rawConfigUri;
@@ -634,20 +639,117 @@ export async function fetchPvlConnectionOnDemand(id, userId) {
     ? brandConfigUri(rawQrPayload, brandedRecord)
     : rawQrPayload;
 
-  if (brandedConfigUri) {
+  const hasDeliverable = Boolean(brandedConfigUri || configDownloadUrl);
+  if (!hasDeliverable) {
+    return { error: 'undeliverable' };
+  }
+
+  if (!deferBudgetConsume) {
+    await consumeConnectionRateLimit(userId);
     await incrementCounter('connections_served', 1);
   }
 
   return {
     config_uri: brandedConfigUri,
+    config_download_url: configDownloadUrl,
     v2rayng_url: connData.v2rayng_url ?? null,
     qr_payload: brandedQrPayload,
     qr_code_url: connData.qr_code_url ?? null,
+    country_code: brandedRecord.country_code ?? null,
+    protocol: brandedRecord.protocol ?? null,
     _auth_mode: authMode,
   };
 }
 
 export const fetchConnection = fetchPvlConnectionOnDemand;
+
+const MAX_OVPN_BYTES = 256 * 1024;
+const OVPN_DIRECTIVE_RE = /^(client|dev|proto|remote|resolv-retry|nobind|tls-client|cipher|auth|persist-key|persist-tun)\b/i;
+
+/**
+ * Downloads an .ovpn profile in memory, validates size (<=256 KB) and content,
+ * and prepends `# Provided by @MyLeitner · Data: PublicVPNList` as the first line.
+ */
+export async function downloadAndBrandOvpn(downloadUrl) {
+  if (!downloadUrl || typeof downloadUrl !== 'string') {
+    return { error: 'undeliverable' };
+  }
+  const apiKey = await getPvlApiKey();
+  if (!apiKey) {
+    return { error: 'setup_required' };
+  }
+
+  let res;
+  try {
+    res = await fetch(downloadUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Cache-Control': 'no-store',
+      },
+    });
+    if (res.status === 401 || res.status === 403) {
+      res = await fetch(downloadUrl, {
+        method: 'GET',
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+  } catch {
+    return { error: 'source_unavailable' };
+  }
+
+  if (res.status === 404 || res.status === 410) {
+    return { error: 'config_gone' };
+  }
+  if (res.status === 503 || res.status === 429) {
+    return { error: 'source_unavailable' };
+  }
+  if (!res.ok) {
+    return { error: 'fetch_failed' };
+  }
+
+  let ab;
+  try {
+    ab = await res.arrayBuffer();
+  } catch {
+    return { error: 'fetch_failed' };
+  }
+
+  if (!ab || ab.byteLength === 0 || ab.byteLength > MAX_OVPN_BYTES) {
+    return { error: 'undeliverable' };
+  }
+
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(ab));
+  } catch {
+    return { error: 'undeliverable' };
+  }
+
+  const firstNonEmpty = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .find(Boolean) || '';
+  if (!firstNonEmpty.startsWith('#') && !OVPN_DIRECTIVE_RE.test(firstNonEmpty)) {
+    return { error: 'undeliverable' };
+  }
+
+  const brandLine = '# Provided by @MyLeitner · Data: PublicVPNList';
+  const normalized = text.replace(/^\uFEFF/, '');
+  const brandedText = normalized.startsWith(brandLine)
+    ? normalized
+    : `${brandLine}\n${normalized}`;
+  const bytes = new TextEncoder().encode(brandedText);
+  if (bytes.byteLength > MAX_OVPN_BYTES + 256) {
+    return { error: 'undeliverable' };
+  }
+
+  return {
+    bytes,
+    byteLength: bytes.byteLength,
+    firstLine: brandLine,
+  };
+}
 
 export function extractSnapshotTimestamp(payload) {
   if (!payload || typeof payload !== 'object') return null;
@@ -678,18 +780,17 @@ try {
 }
 
 export function resolveCountryName(code, fallbackName = '') {
-  if (fallbackName && typeof fallbackName === 'string' && fallbackName.trim()) {
-    return fallbackName.trim();
-  }
   const cc = typeof code === 'string' ? code.trim().toUpperCase() : '';
-  if (!/^[A-Z]{2}$/.test(cc)) return cc || 'Unknown';
-  if (regionDisplayNames) {
+  if (/^[A-Z]{2}$/.test(cc) && regionDisplayNames) {
     try {
       const name = regionDisplayNames.of(cc);
       if (name && name !== cc) return name;
     } catch {}
   }
-  return cc;
+  if (fallbackName && typeof fallbackName === 'string' && fallbackName.trim()) {
+    return fallbackName.trim().replace(/\s*\(LOCAL Name:[^)]*\)/gi, '').trim();
+  }
+  return cc || 'Unknown';
 }
 
 /**

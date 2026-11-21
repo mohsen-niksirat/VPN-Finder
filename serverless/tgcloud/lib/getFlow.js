@@ -3,6 +3,8 @@ import { eq, sql } from 'sdk/db';
 import { users } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
+  consumeConnectionRateLimit,
+  downloadAndBrandOvpn,
   fetchConnection,
   fetchPvlCached,
   fetchPvlServers,
@@ -22,6 +24,7 @@ import {
   flowCancelledText,
   flowExpiredText,
   formatConfigMessage,
+  formatOvpnCaption,
   formatProtoLabel,
   isFa,
   noneFreshText,
@@ -29,6 +32,15 @@ import {
   riskGateKeyboard,
   riskGateText,
 } from './texts.js';
+
+function truncateAtWord(str, maxLen = 18) {
+  const s = String(str || '').trim();
+  if (s.length <= maxLen) return s;
+  const cut = s.slice(0, maxLen - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  const base = lastSpace > 4 ? cut.slice(0, lastSpace) : cut;
+  return `${base.trim()}…`;
+}
 
 export const FLOW_TTL_SEC = 10 * 60;
 const COUNTRIES_PER_PAGE = 8;
@@ -173,7 +185,7 @@ export async function showCountryStep({ chatId, userId, lang, protocol, page = 0
     const pair = slice.slice(i, i + 2).map((c) => {
       const cc = String(c.country_code || '').toUpperCase();
       const cnt = Number(c.count ?? c.record_count ?? 0);
-      const name = c.country_name || resolveCountryName(cc);
+      const name = truncateAtWord(resolveCountryName(cc, c.country_name), 18);
       return {
         text: `${countryCodeToFlag(cc)} ${name} · ${cnt}`,
         callback_data: `get_c_${proto}_${cc}_${safePage}`,
@@ -295,7 +307,9 @@ export async function deliverConfigsBatch({
   lang,
   count,
   sendMsg,
+  sendDoc,
   extraCandidateIds = [],
+  forceOnlyExtra = false,
 }) {
   const userRow = await getUserRow(userId);
   const flow = parseActiveFlow(userRow);
@@ -319,25 +333,27 @@ export async function deliverConfigsBatch({
     }
   }
 
-  let page = 1;
-  let totalPages = 1;
-  const maxCandidatesNeeded = requested + 5;
-  do {
-    const res = await fetchPvlServers({
-      protocol: proto,
-      ...(cc ? { country: cc } : {}),
-      sort,
-      page,
-    });
-    const rows = Array.isArray(res?.data) ? res.data : [];
-    totalPages = Math.max(1, Number(res?.meta?.pages || 1));
-    for (const r of rows) {
-      if (r && r.id && !alreadyDelivered.has(r.id)) {
-        candidates.push(r);
+  if (!forceOnlyExtra) {
+    let page = 1;
+    let totalPages = 1;
+    const maxCandidatesNeeded = requested + 5;
+    do {
+      const res = await fetchPvlServers({
+        protocol: proto,
+        ...(cc ? { country: cc } : {}),
+        sort,
+        page,
+      });
+      const rows = Array.isArray(res?.data) ? res.data : [];
+      totalPages = Math.max(1, Number(res?.meta?.pages || 1));
+      for (const r of rows) {
+        if (r && r.id && !alreadyDelivered.has(r.id)) {
+          candidates.push(r);
+        }
       }
-    }
-    page += 1;
-  } while (candidates.length < maxCandidatesNeeded && page <= totalPages && page <= 10);
+      page += 1;
+    } while (candidates.length < maxCandidatesNeeded && page <= totalPages && page <= 10);
+  }
 
   if (candidates.length === 0) {
     const countryLabel = cc ? `${countryCodeToFlag(cc)} ${resolveCountryName(cc)}` : '';
@@ -362,13 +378,54 @@ export async function deliverConfigsBatch({
     if (delivered >= requested || attempts >= maxAttempts) break;
     attempts += 1;
 
-    const conn = await fetchConnection(srv.id, userId);
+    const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
     if (conn?.error === 'rate_limited') {
       rateLimited = true;
       break;
     }
-    if (conn?.error || !conn?.config_uri) {
-      skippedIds.push({ id: srv.id, reason: conn?.error || 'no_uri' });
+    if (conn?.error) {
+      skippedIds.push({ id: srv.id, reason: conn.error });
+      continue;
+    }
+
+    if (proto === 'openvpn') {
+      const ovpn = await downloadAndBrandOvpn(conn.config_download_url);
+      if (ovpn?.error || !ovpn?.bytes) {
+        skippedIds.push({ id: srv.id, reason: ovpn?.error || 'ovpn_download_failed' });
+        continue;
+      }
+
+      delivered += 1;
+      alreadyDelivered.add(srv.id);
+
+      const ccPart = (srv.country_code || cc || 'OpenVPN').toUpperCase();
+      const filename = `MyLeitner-${ccPart === 'OPENVPN' ? 'OpenVPN' : ccPart}-${delivered}.ovpn`;
+      const caption = formatOvpnCaption(delivered, requested, srv, lang);
+
+      await sendDoc({
+        chat_id: chatId,
+        documentBytes: ovpn.bytes,
+        filename,
+        caption,
+      });
+
+      await consumeConnectionRateLimit(userId);
+      await incrementCounter('connections_served', 1);
+      await incrementCounter('configs_sent_chat', 1);
+
+      deliveredMeta.push({
+        id: srv.id,
+        type: 'ovpn',
+        filename,
+        byteLength: ovpn.byteLength,
+        firstLine: ovpn.firstLine,
+        caption,
+      });
+      continue;
+    }
+
+    if (!conn.config_uri) {
+      skippedIds.push({ id: srv.id, reason: 'no_uri' });
       continue;
     }
 
@@ -378,11 +435,6 @@ export async function deliverConfigsBatch({
     const uri = String(conn.config_uri);
     const schemeIdx = uri.indexOf('://');
     const schemePrefix = schemeIdx > 0 ? `${uri.slice(0, schemeIdx + 3)}...` : 'unknown';
-    deliveredMeta.push({
-      id: srv.id,
-      scheme: schemePrefix,
-      length: uri.length,
-    });
 
     const msgHtml = formatConfigMessage(delivered, requested, srv, uri, lang);
     await sendMsg({
@@ -390,7 +442,17 @@ export async function deliverConfigsBatch({
       text: msgHtml,
       parse_mode: 'HTML',
     });
+
+    await consumeConnectionRateLimit(userId);
+    await incrementCounter('connections_served', 1);
     await incrementCounter('configs_sent_chat', 1);
+
+    deliveredMeta.push({
+      id: srv.id,
+      type: 'uri',
+      scheme: schemePrefix,
+      length: uri.length,
+    });
   }
 
   await saveUserFlow(userId, {
@@ -416,8 +478,12 @@ export async function deliverConfigsBatch({
     };
   }
 
-  const summary = batchSummaryText(lang, delivered, requested, { rateLimited });
-  const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL');
+  const allFailed = delivered === 0 && !rateLimited;
+  const summary = batchSummaryText(lang, delivered, requested, {
+    rateLimited,
+    skippedCount: skippedIds.length,
+  });
+  const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL', { allFailed });
   await sendMsg({
     chat_id: chatId,
     text: summary,
@@ -433,6 +499,7 @@ export async function deliverConfigsBatch({
     requested,
     delivered,
     rateLimited,
+    allFailed,
     deliveredMeta,
     skippedIds,
     summaryText: summary,

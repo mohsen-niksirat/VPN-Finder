@@ -1,4 +1,4 @@
-import { api } from 'sdk';
+import { api, InputFile } from 'sdk';
 import {
   deliverConfigsBatch,
   getUserRow,
@@ -35,6 +35,21 @@ export default async function (cq) {
   const sendMsg = async (params) => {
     if (dryRun) return { dry_run: true, ...params };
     return await api.sendMessage(params);
+  };
+  const sendDoc = async ({ chat_id, documentBytes, filename, caption }) => {
+    if (dryRun) {
+      return {
+        dry_run: true,
+        filename,
+        byteLength: documentBytes?.byteLength || 0,
+        caption,
+      };
+    }
+    return await api.sendDocument({
+      chat_id,
+      document: new InputFile(documentBytes, filename, { type: 'application/x-openvpn-profile' }),
+      caption,
+    });
   };
 
   if (data === 'get_start' || data === 'get_back_proto') {
@@ -83,11 +98,13 @@ export default async function (cq) {
       lang,
       count,
       sendMsg,
+      sendDoc,
       extraCandidateIds: Array.isArray(cq._extra_candidate_ids) ? cq._extra_candidate_ids : [],
+      forceOnlyExtra: Boolean(cq._force_only_extra),
     });
   }
 
-  if (data === 'get_more') {
+  if (data === 'get_more' || data === 'get_retry') {
     const userRow = await getUserRow(userId);
     const flow = parseActiveFlow(userRow);
     if (!flow || !flow.protocol) {
@@ -101,6 +118,7 @@ export default async function (cq) {
       lang,
       count: Number(flow.lastCount || 3),
       sendMsg,
+      sendDoc,
     });
   }
 

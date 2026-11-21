@@ -243,37 +243,78 @@ export function formatConfigMessage(idx, total, srv, configUri, lang) {
   return `${escapeHtml(header)}\n<code>${escapeHtml(configUri)}</code>`;
 }
 
-export function batchSummaryText(lang, delivered, requested, { rateLimited = false } = {}) {
+export function formatOvpnCaption(idx, total, srv, lang) {
+  const speed = srv.speed_mbps !== null && srv.speed_mbps !== undefined
+    ? `${Number(srv.speed_mbps).toFixed(1)} Mbps`
+    : '-';
+  const rel = formatRelativeTime(srv.last_checked_at, lang);
+  return isFa(lang)
+    ? `${idx}/${total} · OpenVPN · ${speed} · بررسی ${rel} · @MyLeitner`
+    : `${idx}/${total} · OpenVPN · ${speed} · checked ${rel} · @MyLeitner`;
+}
+
+export function batchSummaryText(
+  lang,
+  delivered,
+  requested,
+  { rateLimited = false, skippedCount = 0 } = {}
+) {
+  const skippedLine =
+    skippedCount > 0
+      ? isFa(lang)
+        ? `\n\n⚠️ ${skippedCount} سرور قابل دریافت نبود و رد شد.`
+        : `\n\n⚠️ ${skippedCount} servers couldn't be fetched and were skipped.`
+      : '';
   const limitNote = rateLimited
     ? isFa(lang)
       ? `\n\nسقف درخواست (۱۵ کانفیگ در ۱۰ دقیقه) پر شد: ${delivered} از ${requested} کانفیگ ارسال شد.`
       : `\n\nStopped early at the shared rate limit (${delivered} of ${requested} delivered).`
     : '';
+
+  if (delivered === 0) {
+    if (isFa(lang)) {
+      return (
+        `⚠️ هیچ کانفیگی قابل ارسال نبود.${skippedLine}${limitNote}\n\n` +
+        'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
+        'ساخته‌ی <a href="https://t.me/MyLeitner">@MyLeitner</a>'
+      );
+    }
+    return (
+      `⚠️ 0 configs sent.${skippedLine}${limitNote}\n\n` +
+      'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
+      'Made by <a href="https://t.me/MyLeitner">@MyLeitner</a>'
+    );
+  }
+
   if (isFa(lang)) {
     return (
-      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${limitNote}\n\n` +
+      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${skippedLine}${limitNote}\n\n` +
       'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
       'ساخته‌ی <a href="https://t.me/MyLeitner">@MyLeitner</a>'
     );
   }
   return (
-    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${limitNote}\n\n` +
+    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${skippedLine}${limitNote}\n\n` +
     'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
     'Made by <a href="https://t.me/MyLeitner">@MyLeitner</a>'
   );
 }
 
-export function batchSummaryKeyboard(lang, protocol, country) {
+export function batchSummaryKeyboard(lang, protocol, country, { allFailed = false } = {}) {
   const parts = [];
   if (protocol) parts.push(`protocol=${encodeURIComponent(protocol)}`);
   if (country && country !== 'ALL') parts.push(`country=${encodeURIComponent(country)}`);
   const qs = parts.join('&');
   const appUrl = qs ? `${APP_URL}?${qs}` : APP_URL;
 
+  const firstBtn = allFailed
+    ? { text: isFa(lang) ? '🔁 تلاش مجدد' : '🔁 Try again', callback_data: 'get_retry' }
+    : { text: isFa(lang) ? '🔁 بیشتر مثل اینها' : '🔁 More like these', callback_data: 'get_more' };
+
   return {
     inline_keyboard: [
       [
-        { text: isFa(lang) ? '🔁 بیشتر مثل اینها' : '🔁 More like these', callback_data: 'get_more' },
+        firstBtn,
         { text: isFa(lang) ? '🌍 تغییر کشور' : '🌍 Change country', callback_data: 'get_chg_country' },
       ],
       [
