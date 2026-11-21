@@ -316,3 +316,84 @@ export function extractSnapshotTimestamp(payload) {
     null
   );
 }
+
+function computeMedian(numbers) {
+  const valid = numbers.filter((n) => typeof n === 'number' && Number.isFinite(n) && n > 0);
+  if (!valid.length) return null;
+  valid.sort((a, b) => a - b);
+  const mid = Math.floor(valid.length / 2);
+  const val = valid.length % 2 === 1 ? valid[mid] : (valid[mid - 1] + valid[mid]) / 2;
+  return Math.round(val * 100) / 100;
+}
+
+/**
+ * Computes and caches per-protocol checker-measured median speed (Mbps) from
+ * metadata-only `/servers?protocol=<p>&per_page=200&fields=protocol,speed_mbps,checker_measured_throughput_mbps`.
+ * NEVER requests, stores, or logs configuration payloads (`connection_info_url`).
+ */
+export async function getProtocolSpeedSummary(activeProtocols = []) {
+  const list = activeProtocols.filter((p) => ALLOWED_PROTOCOLS.has(p));
+  if (!list.length) return {};
+
+  const cacheKey = `protocol_speeds:${list.slice().sort().join(',')}`;
+  const now = Math.floor(Date.now() / 1000);
+  const cached = await db
+    .select()
+    .from(pvlCache)
+    .where(eq(pvlCache.key, cacheKey))
+    .get();
+
+  if (cached && now - Number(cached.fetchedAt || 0) < PVL_CACHE_TTL_SEC) {
+    const parsed = safeParseBody(cached.body);
+    if (parsed && typeof parsed === 'object') return parsed;
+  }
+
+  const results = await Promise.all(
+    list.map(async (proto) => {
+      try {
+        const res = await fetchPvlCached({
+          cacheKey: `servers_speed?protocol=${proto}`,
+          pathAndQuery: `/servers?protocol=${encodeURIComponent(proto)}&per_page=200&fields=protocol,speed_mbps,checker_measured_throughput_mbps`,
+          ttlSec: PVL_CACHE_TTL_SEC,
+        });
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        const speeds = [];
+        for (const r of rows) {
+          const s = Number(r?.checker_measured_throughput_mbps ?? r?.speed_mbps ?? NaN);
+          if (Number.isFinite(s) && s > 0) speeds.push(s);
+        }
+        return [
+          proto,
+          {
+            median_speed_mbps: computeMedian(speeds),
+            measured_count: speeds.length,
+          },
+        ];
+      } catch {
+        return [proto, { median_speed_mbps: null, measured_count: 0 }];
+      }
+    })
+  );
+
+  const summary = Object.fromEntries(results);
+  await db
+    .insert(pvlCache)
+    .values({
+      key: cacheKey,
+      body: JSON.stringify(summary),
+      etag: null,
+      fetchedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: pvlCache.key,
+      set: {
+        body: JSON.stringify(summary),
+        etag: null,
+        fetchedAt: now,
+      },
+    })
+    .run();
+
+  return summary;
+}
+

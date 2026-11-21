@@ -47,7 +47,6 @@ async function upsertUser(from, startParam) {
 
 async function formatOwnerStats() {
   const totalUsers = await db.$count(users);
-  const sampleUsers = await db.select().from(users).limit(5).all();
   const apiKey = await getPvlApiKey();
   const cacheRows = await db
     .select()
@@ -100,7 +99,7 @@ async function formatOwnerStats() {
   lines.push('');
   lines.push(`Last PVL snapshot time: ${lastSnapshotTime}`);
 
-  return { statsText: lines.join('\n'), sampleUsers };
+  return lines.join('\n');
 }
 
 export default async function (message) {
@@ -165,12 +164,12 @@ export default async function (message) {
   if (parsed && parsed.cmd === 'stats') {
     const ownerId = await getOwnerId();
     if (isPrivate && ownerId && fromId === ownerId) {
-      const { statsText, sampleUsers } = await formatOwnerStats();
+      const statsText = await formatOwnerStats();
       await sendMsg({
         chat_id: message.chat.id,
         text: statsText,
       });
-      return { action: 'stats', owner: true, statsText, sampleUsers };
+      return { action: 'stats', owner: true, statsText };
     }
     const text = helpText(lang);
     const reply_markup = buildAppKeyboard(lang, '');
