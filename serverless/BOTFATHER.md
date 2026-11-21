@@ -42,6 +42,7 @@ Disclaimer: All listed servers are operated by third parties. A technical check 
 ```text
 start - Open VPN Finder
 app - Launch the Mini App
+get - Get working VPN configs right in chat
 help - How filtering, QR & v2rayNG work + disclaimer
 ```
 
@@ -49,5 +50,6 @@ help - How filtering, QR & v2rayNG work + disclaimer
 ```text
 start - باز کردن VPN Finder
 app - اجرای مینی‌اپ
+get - دریافت مستقیم کانفیگ در چت
 help - راهنمای فیلتر، QR و v2rayNG + سلب مسئولیت
 ```

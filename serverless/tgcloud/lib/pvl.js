@@ -1,16 +1,19 @@
 import { db, fetch, EndpointError } from 'sdk';
-import { eq } from 'sdk/db';
-import { botConfig, connectionRateLimits, pvlCache } from '../schema.js';
+import { eq, sql } from 'sdk/db';
+import { botConfig, connectionRateLimits, counters, pvlCache } from '../schema.js';
+import { lookupIpCountry } from './geo.js';
 
 export const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 export const PVL_CACHE_TTL_SEC = 30 * 60; // 30 minutes for stats, protocols, countries
 export const PVL_SERVERS_TTL_SEC = 5 * 60; // 5 minutes for servers list
+export const PVL_DERIVED_COUNTRIES_TTL_SEC = 10 * 60; // 10 minutes for derived countries
 
 export const PVL_SERVERS_FIELDS = [
   'id',
   'country_code',
   'country_name',
   'city',
+  'exit_ip',
   'protocol',
   'transport',
   'port',
@@ -364,6 +367,50 @@ async function checkAndIncrementConnectionRateLimit(userId) {
   return { allowed: true, count: nextCount };
 }
 
+export async function getRemainingConnectionBudget(userId) {
+  const uid = Number(userId) || 0;
+  if (!uid) return 0;
+  const now = Math.floor(Date.now() / 1000);
+  const row = await db
+    .select()
+    .from(connectionRateLimits)
+    .where(eq(connectionRateLimits.userId, uid))
+    .get();
+
+  if (!row || now - Number(row.windowStart || 0) >= CONNECTION_RATE_LIMIT_WINDOW_SEC) {
+    return CONNECTION_RATE_LIMIT_MAX;
+  }
+  return Math.max(0, CONNECTION_RATE_LIMIT_MAX - Number(row.count || 0));
+}
+
+export async function incrementCounter(key, delta = 1) {
+  const cleanKey = String(key || '').trim();
+  const inc = Number(delta) || 0;
+  if (!cleanKey || inc <= 0) return;
+  const now = Math.floor(Date.now() / 1000);
+  await db
+    .insert(counters)
+    .values({ key: cleanKey, value: inc, updatedAt: now })
+    .onConflictDoUpdate({
+      target: counters.key,
+      set: {
+        value: sql`${counters.value} + ${inc}`,
+        updatedAt: now,
+      },
+    })
+    .run();
+}
+
+export async function getCounters() {
+  const rows = await db.select().from(counters).all();
+  const map = Object.fromEntries(rows.map((r) => [r.key, Number(r.value || 0)]));
+  return {
+    connections_served: map.connections_served || 0,
+    configs_sent_chat: map.configs_sent_chat || 0,
+    get_flows_started: map.get_flows_started || 0,
+  };
+}
+
 /**
  * Fetches on-demand connection info for a server record by public ID.
  * - Validates `id` against `^(?:pvl|pvlp)_[a-f0-9]{24}$`.
@@ -471,6 +518,10 @@ export async function fetchPvlConnectionOnDemand(id, userId) {
     return { error: 'fetch_failed' };
   }
 
+  if (connData.config_uri) {
+    await incrementCounter('connections_served', 1);
+  }
+
   return {
     config_uri: connData.config_uri ?? null,
     v2rayng_url: connData.v2rayng_url ?? null,
@@ -479,6 +530,8 @@ export async function fetchPvlConnectionOnDemand(id, userId) {
     _auth_mode: authMode,
   };
 }
+
+export const fetchConnection = fetchPvlConnectionOnDemand;
 
 export function extractSnapshotTimestamp(payload) {
   if (!payload || typeof payload !== 'object') return null;
@@ -499,6 +552,136 @@ export function extractSnapshotTimestamp(payload) {
   );
 }
 
+let regionDisplayNames = null;
+try {
+  if (typeof Intl !== 'undefined' && typeof Intl.DisplayNames === 'function') {
+    regionDisplayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+  }
+} catch {
+  regionDisplayNames = null;
+}
+
+export function resolveCountryName(code, fallbackName = '') {
+  if (fallbackName && typeof fallbackName === 'string' && fallbackName.trim()) {
+    return fallbackName.trim();
+  }
+  const cc = typeof code === 'string' ? code.trim().toUpperCase() : '';
+  if (!/^[A-Z]{2}$/.test(cc)) return cc || 'Unknown';
+  if (regionDisplayNames) {
+    try {
+      const name = regionDisplayNames.of(cc);
+      if (name && name !== cc) return name;
+    } catch {}
+  }
+  return cc;
+}
+
+/**
+ * Pages the filtered server query (status=online, fresh_within=259200, per_page=200)
+ * and groups records by country (`country_code` for openvpn; `lookupIpCountry(exit_ip)` for URI protocols).
+ * Caches the aggregate in `pvl_cache` under `countries_derived_<protocol>` with a 10-minute TTL.
+ */
+export async function getDerivedCountries(protocol) {
+  const proto = typeof protocol === 'string' ? protocol.trim().toLowerCase() : '';
+  if (!ALLOWED_PROTOCOLS.has(proto)) {
+    throw new EndpointError(
+      `Invalid protocol "${proto}". Allowed: ${[...ALLOWED_PROTOCOLS].join(', ')}`,
+      { code: 'INVALID_PROTOCOL', parameter: 'protocol' }
+    );
+  }
+
+  const cacheKey = `countries_derived_${proto}`;
+  const now = Math.floor(Date.now() / 1000);
+  const cached = await db
+    .select()
+    .from(pvlCache)
+    .where(eq(pvlCache.key, cacheKey))
+    .get();
+
+  if (cached && now - Number(cached.fetchedAt || 0) < PVL_DERIVED_COUNTRIES_TTL_SEC) {
+    const parsed = safeParseBody(cached.body);
+    if (parsed && Array.isArray(parsed.data)) {
+      return { ...parsed, _cache: { hit: true, stale: false } };
+    }
+  }
+
+  const counts = new Map(); // code -> { code, name, count }
+  let totalRecords = 0;
+  let unknownCount = 0;
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const pathAndQuery =
+      `/servers?protocol=${encodeURIComponent(proto)}&status=online&fresh_within=259200` +
+      `&page=${page}&per_page=200&fields=id,country_code,country_name,exit_ip`;
+    const res = await fetchPvlCached({
+      cacheKey: `derived_src:${proto}:p${page}`,
+      pathAndQuery,
+      ttlSec: PVL_SERVERS_TTL_SEC,
+    });
+    if (!res || res.error) break;
+    const rows = Array.isArray(res.data) ? res.data : [];
+    totalPages = Math.max(1, Number(res.meta?.pages || 1));
+
+    for (const r of rows) {
+      totalRecords += 1;
+      let cc = typeof r?.country_code === 'string' ? r.country_code.trim().toUpperCase() : '';
+      if (proto !== 'openvpn' && !/^[A-Z]{2}$/.test(cc)) {
+        cc = (await lookupIpCountry(r?.exit_ip)) || '';
+      }
+      if (!/^[A-Z]{2}$/.test(cc)) {
+        unknownCount += 1;
+        continue;
+      }
+      const existing = counts.get(cc);
+      if (existing) {
+        existing.count += 1;
+        existing.record_count += 1;
+      } else {
+        counts.set(cc, {
+          country_code: cc,
+          country_name: resolveCountryName(cc, r?.country_name),
+          count: 1,
+          record_count: 1,
+        });
+      }
+    }
+    page += 1;
+  } while (page <= totalPages && page <= 25);
+
+  const list = Array.from(counts.values()).sort((a, b) => b.count - a.count);
+  const payload = {
+    data: list,
+    meta: {
+      total: list.length,
+      total_records: totalRecords,
+      unknown_count: unknownCount,
+      derived: true,
+    },
+  };
+
+  await db
+    .insert(pvlCache)
+    .values({
+      key: cacheKey,
+      body: JSON.stringify(payload),
+      etag: null,
+      fetchedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: pvlCache.key,
+      set: {
+        body: JSON.stringify(payload),
+        etag: null,
+        fetchedAt: now,
+      },
+    })
+    .run();
+
+  return { ...payload, _cache: { hit: false, stale: false } };
+}
+
 export async function getProtocolCountriesResolved(protocol, ttlSec = PVL_CACHE_TTL_SEC) {
   if (!ALLOWED_PROTOCOLS.has(protocol)) {
     throw new EndpointError(
@@ -510,11 +693,16 @@ export async function getProtocolCountriesResolved(protocol, ttlSec = PVL_CACHE_
   const cacheKey = `countries?protocol=${protocol}`;
   const pathAndQuery = `/countries?protocol=${encodeURIComponent(protocol)}`;
 
-  return await fetchPvlCached({
+  const upstream = await fetchPvlCached({
     cacheKey,
     pathAndQuery,
     ttlSec,
   });
+
+  if (upstream && !upstream.error && Array.isArray(upstream.data) && upstream.data.length === 0) {
+    return await getDerivedCountries(protocol);
+  }
+  return upstream;
 }
 
 export async function getGlobalStatsWithDistinctCountries() {
@@ -742,8 +930,77 @@ export function validateAndNormalizeServersInput(input) {
   };
 }
 
+async function enrichUriRecordCountries(rows, protocol) {
+  if (!Array.isArray(rows) || protocol === 'openvpn') return rows;
+  return await Promise.all(
+    rows.map(async (r) => {
+      if (r && !r.country_code && r.exit_ip) {
+        const cc = await lookupIpCountry(r.exit_ip);
+        if (cc) {
+          return {
+            ...r,
+            country_code: cc,
+            country_name: resolveCountryName(cc, r.country_name),
+          };
+        }
+      }
+      return r;
+    })
+  );
+}
+
 export async function fetchPvlServers(input) {
   const norm = validateAndNormalizeServersInput(input || {});
+
+  // For URI protocols, PVL API has null country_code in its DB; filter via geolocated exit_ip.
+  if (norm.country && norm.protocol !== 'openvpn') {
+    const matched = [];
+    let p = 1;
+    let totalPages = 1;
+    do {
+      const q =
+        `/servers?protocol=${encodeURIComponent(norm.protocol)}` +
+        `&status=online&fresh_within=259200&sort=${norm.sort}&order=${norm.order}` +
+        `&page=${p}&per_page=200&fields=${PVL_SERVERS_FIELDS}`;
+      const res = await fetchPvlCached({
+        cacheKey: `servers_pool:${norm.protocol}:${norm.sort}:${norm.order}:p${p}`,
+        pathAndQuery: q,
+        ttlSec: PVL_SERVERS_TTL_SEC,
+      });
+      if (!res || res.error) {
+        if (p === 1) return res;
+        break;
+      }
+      totalPages = Math.max(1, Number(res.meta?.pages || 1));
+      const rows = Array.isArray(res.data) ? res.data : [];
+      for (const r of rows) {
+        const cc = r?.country_code
+          ? String(r.country_code).trim().toUpperCase()
+          : (await lookupIpCountry(r?.exit_ip)) || '';
+        if (cc === norm.country) {
+          matched.push({
+            ...r,
+            country_code: cc,
+            country_name: resolveCountryName(cc, r?.country_name),
+          });
+        }
+      }
+      p += 1;
+    } while (p <= totalPages && p <= 25);
+
+    const start = (norm.page - 1) * norm.perPage;
+    const pageData = matched.slice(start, start + norm.perPage);
+    return {
+      data: pageData,
+      meta: {
+        total: matched.length,
+        page: norm.page,
+        per_page: norm.perPage,
+        pages: Math.max(1, Math.ceil(matched.length / norm.perPage)),
+      },
+      links: {},
+    };
+  }
 
   const res = await fetchPvlCached({
     cacheKey: norm.cacheKey,
@@ -755,8 +1012,10 @@ export async function fetchPvlServers(input) {
     return res;
   }
 
+  const enriched = await enrichUriRecordCountries(Array.isArray(res.data) ? res.data : [], norm.protocol);
+
   return {
-    data: Array.isArray(res.data) ? res.data : [],
+    data: enriched,
     meta: res.meta || {},
     links: res.links || {},
     _cache: res._cache,

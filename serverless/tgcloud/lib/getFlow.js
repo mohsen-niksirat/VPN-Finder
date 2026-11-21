@@ -1,0 +1,508 @@
+import { db } from 'sdk';
+import { eq, sql } from 'sdk/db';
+import { users } from '../schema.js';
+import {
+  ALLOWED_PROTOCOLS,
+  fetchConnection,
+  fetchPvlCached,
+  fetchPvlServers,
+  getDerivedCountries,
+  getRemainingConnectionBudget,
+  incrementCounter,
+  PVL_CACHE_TTL_SEC,
+  resolveCountryName,
+} from './pvl.js';
+import {
+  batchSummaryKeyboard,
+  batchSummaryText,
+  chooseAmountText,
+  chooseCountryText,
+  chooseProtocolText,
+  countryCodeToFlag,
+  flowCancelledText,
+  flowExpiredText,
+  formatConfigMessage,
+  formatProtoLabel,
+  isFa,
+  noneFreshText,
+  rateLimitExhaustedText,
+  riskGateKeyboard,
+  riskGateText,
+} from './texts.js';
+
+export const FLOW_TTL_SEC = 10 * 60;
+const COUNTRIES_PER_PAGE = 8;
+
+export async function getUserRow(userId) {
+  const uid = Number(userId) || 0;
+  if (!uid) return null;
+  return await db.select().from(users).where(eq(users.id, uid)).get();
+}
+
+export async function saveUserFlow(userId, flowObj) {
+  const uid = Number(userId) || 0;
+  if (!uid) return;
+  const now = Math.floor(Date.now() / 1000);
+  await db
+    .insert(users)
+    .values({
+      id: uid,
+      flowState: flowObj ? JSON.stringify(flowObj) : null,
+      flowExpiresAt: flowObj ? now + FLOW_TTL_SEC : null,
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: {
+        flowState: flowObj ? JSON.stringify(flowObj) : null,
+        flowExpiresAt: flowObj ? now + FLOW_TTL_SEC : null,
+        lastSeen: sql`(unixepoch())`,
+      },
+    })
+    .run();
+}
+
+export async function clearUserFlow(userId) {
+  await saveUserFlow(userId, null);
+}
+
+export async function setUserRiskAck(userId) {
+  const uid = Number(userId) || 0;
+  if (!uid) return;
+  await db
+    .insert(users)
+    .values({ id: uid, riskAck: 1 })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: { riskAck: 1, lastSeen: sql`(unixepoch())` },
+    })
+    .run();
+}
+
+export function parseActiveFlow(userRow) {
+  if (!userRow || !userRow.flowState) return null;
+  const now = Math.floor(Date.now() / 1000);
+  if (Number(userRow.flowExpiresAt || 0) < now) {
+    return null;
+  }
+  try {
+    const parsed = typeof userRow.flowState === 'string'
+      ? JSON.parse(userRow.flowState)
+      : userRow.flowState;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getFilteredTotalForProtocol(protocol) {
+  const sort = protocol === 'openvpn' ? 'score' : 'last_checked';
+  const res = await fetchPvlServers({ protocol, sort, page: 1 });
+  return Number(res?.meta?.total ?? (Array.isArray(res?.data) ? res.data.length : 0));
+}
+
+export async function showProtocolStep({ chatId, userId, lang, sendMsg }) {
+  const protoRes = await fetchPvlCached({
+    cacheKey: 'protocols',
+    pathAndQuery: '/protocols',
+    ttlSec: PVL_CACHE_TTL_SEC,
+  });
+
+  const activeProtos = (Array.isArray(protoRes?.data) ? protoRes.data : [])
+    .filter((p) => Number(p?.record_count || 0) > 0)
+    .map((p) => String(p.protocol || '').toLowerCase())
+    .filter((p) => ALLOWED_PROTOCOLS.has(p));
+
+  const totals = await Promise.all(
+    activeProtos.map(async (proto) => ({
+      proto,
+      total: await getFilteredTotalForProtocol(proto).catch(() => 0),
+    }))
+  );
+
+  const nonZero = totals.filter((item) => item.total > 0);
+  const buttons = (nonZero.length ? nonZero : totals).map((item) => ({
+    text: `${formatProtoLabel(item.proto)} · ${item.total}`,
+    callback_data: `get_p_${item.proto}`,
+  }));
+
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += 2) {
+    rows.push(buttons.slice(i, i + 2));
+  }
+
+  await saveUserFlow(userId, { step: 'protocol' });
+
+  const text = chooseProtocolText(lang);
+  const reply_markup = { inline_keyboard: rows };
+  await sendMsg({ chat_id: chatId, text, reply_markup });
+  return { step: 'protocol', text, reply_markup, protocols: totals };
+}
+
+export async function showCountryStep({ chatId, userId, lang, protocol, page = 0, sendMsg }) {
+  const proto = String(protocol || '').toLowerCase();
+  if (!ALLOWED_PROTOCOLS.has(proto)) {
+    return await showProtocolStep({ chatId, userId, lang, sendMsg });
+  }
+
+  const derived = await getDerivedCountries(proto);
+  const countries = Array.isArray(derived?.data) ? derived.data : [];
+  const totalFresh = Number(
+    derived?.meta?.total_records ?? (await getFilteredTotalForProtocol(proto))
+  );
+
+  if (totalFresh < 1) {
+    const text = noneFreshText(lang, formatProtoLabel(proto));
+    const reply_markup = {
+      inline_keyboard: [[
+        { text: isFa(lang) ? '← تغییر پروتکل' : '← Choose protocol', callback_data: 'get_back_proto' },
+      ]],
+    };
+    await sendMsg({ chat_id: chatId, text, reply_markup });
+    return { step: 'none_fresh', protocol: proto, totalFresh: 0, text, reply_markup };
+  }
+
+  const totalPages = Math.max(1, Math.ceil(countries.length / COUNTRIES_PER_PAGE));
+  const safePage = Math.max(0, Math.min(Number(page) || 0, totalPages - 1));
+  const slice = countries.slice(
+    safePage * COUNTRIES_PER_PAGE,
+    (safePage + 1) * COUNTRIES_PER_PAGE
+  );
+
+  const rows = [];
+  for (let i = 0; i < slice.length; i += 2) {
+    const pair = slice.slice(i, i + 2).map((c) => {
+      const cc = String(c.country_code || '').toUpperCase();
+      const cnt = Number(c.count ?? c.record_count ?? 0);
+      const name = c.country_name || resolveCountryName(cc);
+      return {
+        text: `${countryCodeToFlag(cc)} ${name} · ${cnt}`,
+        callback_data: `get_c_${proto}_${cc}_${safePage}`,
+      };
+    });
+    rows.push(pair);
+  }
+
+  // All countries row
+  const allLabel = isFa(lang) ? `🌍 همه کشورها · ${totalFresh}` : `🌍 All countries · ${totalFresh}`;
+  rows.push([{ text: allLabel, callback_data: `get_c_${proto}_ALL_${safePage}` }]);
+
+  // Pagination + Back row
+  const navRow = [];
+  if (safePage > 0) {
+    navRow.push({
+      text: isFa(lang) ? '◂ قبلی' : '◂ Prev',
+      callback_data: `get_c_${proto}_PAGE_${safePage - 1}`,
+    });
+  }
+  if (safePage + 1 < totalPages) {
+    navRow.push({
+      text: isFa(lang) ? 'کشورهای بیشتر ▸' : 'More countries ▸',
+      callback_data: `get_c_${proto}_PAGE_${safePage + 1}`,
+    });
+  }
+  navRow.push({
+    text: isFa(lang) ? '← پروتکل‌ها' : '← Protocols',
+    callback_data: 'get_back_proto',
+  });
+  rows.push(navRow);
+
+  await saveUserFlow(userId, { step: 'country', protocol: proto, page: safePage });
+
+  const text = chooseCountryText(lang, totalFresh, formatProtoLabel(proto));
+  const reply_markup = { inline_keyboard: rows };
+  await sendMsg({ chat_id: chatId, text, reply_markup });
+  return { step: 'country', protocol: proto, page: safePage, totalFresh, text, reply_markup };
+}
+
+export async function showAmountStep({ chatId, userId, lang, protocol, country, sendMsg }) {
+  const proto = String(protocol || '').toLowerCase();
+  const cc = country && country !== 'ALL' ? String(country).toUpperCase() : 'ALL';
+  if (!ALLOWED_PROTOCOLS.has(proto)) {
+    return await showProtocolStep({ chatId, userId, lang, sendMsg });
+  }
+
+  let available = 0;
+  let countryLabel = isFa(lang) ? 'همه کشورها' : 'All countries';
+
+  if (cc === 'ALL') {
+    available = await getFilteredTotalForProtocol(proto);
+  } else {
+    const derived = await getDerivedCountries(proto);
+    const match = (derived?.data || []).find(
+      (c) => String(c.country_code || '').toUpperCase() === cc
+    );
+    available = Number(match?.count ?? match?.record_count ?? 0);
+    countryLabel = `${countryCodeToFlag(cc)} ${match?.country_name || resolveCountryName(cc)}`;
+  }
+
+  const protoLabel = formatProtoLabel(proto);
+  if (available < 1) {
+    const text = noneFreshText(lang, protoLabel, countryLabel);
+    const reply_markup = {
+      inline_keyboard: [[
+        { text: isFa(lang) ? '🌍 تغییر کشور' : '🌍 Change country', callback_data: `get_p_${proto}` },
+      ]],
+    };
+    await sendMsg({ chat_id: chatId, text, reply_markup });
+    return { step: 'none_fresh', protocol: proto, country: cc, available: 0, text, reply_markup };
+  }
+
+  const remaining = await getRemainingConnectionBudget(userId);
+  if (remaining < 1) {
+    const text = rateLimitExhaustedText(lang);
+    const reply_markup = {
+      inline_keyboard: [[
+        { text: isFa(lang) ? '← پروتکل‌ها' : '← Protocols', callback_data: 'get_back_proto' },
+      ]],
+    };
+    await sendMsg({ chat_id: chatId, text, reply_markup });
+    return { step: 'rate_limited', protocol: proto, country: cc, remaining: 0, text, reply_markup };
+  }
+
+  const maxAllowed = Math.min(available, remaining);
+  const presetCounts = [1, 3, 5, 10].filter((n) => n <= maxAllowed);
+  if (!presetCounts.length && maxAllowed >= 1) {
+    presetCounts.push(maxAllowed);
+  }
+
+  const buttons = presetCounts.map((n) => ({
+    text: String(n),
+    callback_data: `get_n_${n}`,
+  }));
+
+  const rows = [
+    buttons,
+    [{ text: isFa(lang) ? '🌍 تغییر کشور' : '🌍 Change country', callback_data: `get_p_${proto}` }],
+  ];
+
+  await saveUserFlow(userId, {
+    step: 'amount',
+    protocol: proto,
+    country: cc,
+    available,
+    deliveredIds: [],
+  });
+
+  const text = chooseAmountText(lang, available, protoLabel, countryLabel, remaining);
+  const reply_markup = { inline_keyboard: rows };
+  await sendMsg({ chat_id: chatId, text, reply_markup });
+  return { step: 'amount', protocol: proto, country: cc, available, remaining, text, reply_markup };
+}
+
+export async function deliverConfigsBatch({
+  chatId,
+  userId,
+  lang,
+  count,
+  sendMsg,
+  extraCandidateIds = [],
+}) {
+  const userRow = await getUserRow(userId);
+  const flow = parseActiveFlow(userRow);
+  if (!flow || !flow.protocol) {
+    const text = flowExpiredText(lang);
+    await sendMsg({ chat_id: chatId, text });
+    return { step: 'expired', text };
+  }
+
+  const proto = flow.protocol;
+  const cc = flow.country && flow.country !== 'ALL' ? flow.country : '';
+  const alreadyDelivered = new Set(Array.isArray(flow.deliveredIds) ? flow.deliveredIds : []);
+  const requested = Math.max(1, Math.min(10, Number(count) || 1));
+
+  const sort = proto === 'openvpn' ? 'score' : 'last_checked';
+  const candidates = [];
+
+  for (const staleId of extraCandidateIds) {
+    if (staleId && !alreadyDelivered.has(staleId)) {
+      candidates.push({ id: staleId, protocol: proto, transport: 'tcp', speed_mbps: null, last_checked_at: null });
+    }
+  }
+
+  let page = 1;
+  let totalPages = 1;
+  const maxCandidatesNeeded = requested + 5;
+  do {
+    const res = await fetchPvlServers({
+      protocol: proto,
+      ...(cc ? { country: cc } : {}),
+      sort,
+      page,
+    });
+    const rows = Array.isArray(res?.data) ? res.data : [];
+    totalPages = Math.max(1, Number(res?.meta?.pages || 1));
+    for (const r of rows) {
+      if (r && r.id && !alreadyDelivered.has(r.id)) {
+        candidates.push(r);
+      }
+    }
+    page += 1;
+  } while (candidates.length < maxCandidatesNeeded && page <= totalPages && page <= 10);
+
+  if (candidates.length === 0) {
+    const countryLabel = cc ? `${countryCodeToFlag(cc)} ${resolveCountryName(cc)}` : '';
+    const text = noneFreshText(lang, formatProtoLabel(proto), countryLabel);
+    const reply_markup = {
+      inline_keyboard: [[
+        { text: isFa(lang) ? '🌍 تغییر کشور' : '🌍 Change country', callback_data: `get_p_${proto}` },
+      ]],
+    };
+    await sendMsg({ chat_id: chatId, text, reply_markup });
+    return { step: 'none_fresh', protocol: proto, country: cc || 'ALL', delivered: 0 };
+  }
+
+  const maxAttempts = requested + 5;
+  let attempts = 0;
+  let delivered = 0;
+  let rateLimited = false;
+  const skippedIds = [];
+  const deliveredMeta = [];
+
+  for (const srv of candidates) {
+    if (delivered >= requested || attempts >= maxAttempts) break;
+    attempts += 1;
+
+    const conn = await fetchConnection(srv.id, userId);
+    if (conn?.error === 'rate_limited') {
+      rateLimited = true;
+      break;
+    }
+    if (conn?.error || !conn?.config_uri) {
+      skippedIds.push({ id: srv.id, reason: conn?.error || 'no_uri' });
+      continue;
+    }
+
+    delivered += 1;
+    alreadyDelivered.add(srv.id);
+
+    const uri = String(conn.config_uri);
+    const schemeIdx = uri.indexOf('://');
+    const schemePrefix = schemeIdx > 0 ? `${uri.slice(0, schemeIdx + 3)}...` : 'unknown';
+    deliveredMeta.push({
+      id: srv.id,
+      scheme: schemePrefix,
+      length: uri.length,
+    });
+
+    const msgHtml = formatConfigMessage(delivered, requested, srv, uri, lang);
+    await sendMsg({
+      chat_id: chatId,
+      text: msgHtml,
+      parse_mode: 'HTML',
+    });
+    await incrementCounter('configs_sent_chat', 1);
+  }
+
+  await saveUserFlow(userId, {
+    step: 'delivered',
+    protocol: proto,
+    country: cc || 'ALL',
+    lastCount: requested,
+    deliveredIds: Array.from(alreadyDelivered),
+  });
+
+  if (delivered === 0 && rateLimited) {
+    const text = rateLimitExhaustedText(lang);
+    await sendMsg({ chat_id: chatId, text });
+    return {
+      step: 'delivered',
+      protocol: proto,
+      country: cc || 'ALL',
+      requested,
+      delivered: 0,
+      rateLimited: true,
+      deliveredMeta,
+      skippedIds,
+    };
+  }
+
+  const summary = batchSummaryText(lang, delivered, requested, { rateLimited });
+  const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL');
+  await sendMsg({
+    chat_id: chatId,
+    text: summary,
+    parse_mode: 'HTML',
+    disable_web_page_preview: true,
+    reply_markup: summaryKb,
+  });
+
+  return {
+    step: 'delivered',
+    protocol: proto,
+    country: cc || 'ALL',
+    requested,
+    delivered,
+    rateLimited,
+    deliveredMeta,
+    skippedIds,
+    summaryText: summary,
+    summaryKeyboard: summaryKb,
+  };
+}
+
+export async function startGetFlow({
+  chatId,
+  userId,
+  lang,
+  sendMsg,
+  preselectProtocol = '',
+  preselectCountry = '',
+}) {
+  await incrementCounter('get_flows_started', 1);
+  const userRow = await getUserRow(userId);
+  const proto = ALLOWED_PROTOCOLS.has(String(preselectProtocol || '').toLowerCase())
+    ? String(preselectProtocol).toLowerCase()
+    : '';
+  const cc = /^[A-Z]{2}$/.test(String(preselectCountry || '').toUpperCase())
+    ? String(preselectCountry).toUpperCase()
+    : '';
+
+  if (!userRow || !userRow.riskAck) {
+    await saveUserFlow(userId, {
+      step: 'risk_ack',
+      pendingProtocol: proto || null,
+      pendingCountry: cc || null,
+    });
+    const text = riskGateText(lang);
+    const reply_markup = riskGateKeyboard(lang);
+    await sendMsg({
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      reply_markup,
+    });
+    return { step: 'risk_ack', text, reply_markup };
+  }
+
+  if (proto && cc) {
+    return await showAmountStep({ chatId, userId, lang, protocol: proto, country: cc, sendMsg });
+  }
+  if (proto) {
+    return await showCountryStep({ chatId, userId, lang, protocol: proto, page: 0, sendMsg });
+  }
+  return await showProtocolStep({ chatId, userId, lang, sendMsg });
+}
+
+export async function handleRiskAckDecision({ chatId, userId, lang, accepted, sendMsg }) {
+  const userRow = await getUserRow(userId);
+  const flow = parseActiveFlow(userRow);
+
+  if (!accepted) {
+    await clearUserFlow(userId);
+    const text = flowCancelledText(lang);
+    await sendMsg({ chat_id: chatId, text });
+    return { step: 'cancelled', text };
+  }
+
+  await setUserRiskAck(userId);
+  const proto = flow?.pendingProtocol || '';
+  const cc = flow?.pendingCountry || '';
+
+  if (proto && cc) {
+    return await showAmountStep({ chatId, userId, lang, protocol: proto, country: cc, sendMsg });
+  }
+  if (proto) {
+    return await showCountryStep({ chatId, userId, lang, protocol: proto, page: 0, sendMsg });
+  }
+  return await showProtocolStep({ chatId, userId, lang, sendMsg });
+}

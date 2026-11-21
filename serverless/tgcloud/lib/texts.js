@@ -19,12 +19,14 @@ export const DESC_FA =
 export const COMMANDS_EN = [
   { command: 'start', description: 'Open VPN Finder' },
   { command: 'app', description: 'Launch the Mini App' },
+  { command: 'get', description: 'Get working VPN configs right in chat' },
   { command: 'help', description: 'How filtering, QR & v2rayNG work + disclaimer' },
 ];
 
 export const COMMANDS_FA = [
   { command: 'start', description: 'باز کردن VPN Finder' },
   { command: 'app', description: 'اجرای مینی‌اپ' },
+  { command: 'get', description: 'دریافت مستقیم کانفیگ در چت' },
   { command: 'help', description: 'راهنمای فیلتر، QR و v2rayNG + سلب مسئولیت' },
 ];
 
@@ -32,12 +34,22 @@ export function isFa(lang) {
   return String(lang || '').toLowerCase().startsWith('fa');
 }
 
-export function buildAppKeyboard(lang, startParam = '') {
+export function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+export function buildAppKeyboard(lang, startParam = '', { includeGetButton = false } = {}) {
   const url = startParam ? `${APP_URL}?start=${encodeURIComponent(startParam)}` : APP_URL;
-  const text = isFa(lang) ? 'باز کردن VPN Finder' : 'Open VPN Finder';
-  return {
-    inline_keyboard: [[{ text, web_app: { url } }]],
-  };
+  const openText = isFa(lang) ? 'باز کردن VPN Finder' : 'Open VPN Finder';
+  const rows = [[{ text: openText, web_app: { url } }]];
+  if (includeGetButton) {
+    const getText = isFa(lang) ? '📥 دریافت کانفیگ' : '📥 Get configs';
+    rows.push([{ text: getText, callback_data: 'get_start' }]);
+  }
+  return { inline_keyboard: rows };
 }
 
 export function welcomeText(lang) {
@@ -89,6 +101,175 @@ export function helpText(lang) {
 
 export function fallbackText(lang) {
   return isFa(lang)
-    ? 'برای مرور کاتالوگ سرورها، دکمه زیر را بزنید یا دستور /help را بفرستید.'
-    : 'Tap the button below to open VPN Finder, or send /help for details.';
+    ? 'برای مرور کاتالوگ سرورها، دکمه زیر را بزنید یا دستور /get یا /help را بفرستید.'
+    : 'Tap a button below to open VPN Finder, use /get for in-chat configs, or send /help.';
+}
+
+export function countryCodeToFlag(code) {
+  if (!code || typeof code !== 'string' || !/^[A-Za-z]{2}$/.test(code)) {
+    return '🌐';
+  }
+  const upper = code.toUpperCase();
+  const cp1 = 0x1f1e6 + (upper.charCodeAt(0) - 65);
+  const cp2 = 0x1f1e6 + (upper.charCodeAt(1) - 65);
+  return String.fromCodePoint(cp1, cp2);
+}
+
+export function formatProtoLabel(proto) {
+  const map = {
+    vless: 'VLESS',
+    vmess: 'VMess',
+    trojan: 'Trojan',
+    shadowsocks: 'Shadowsocks',
+    hysteria2: 'Hysteria2',
+    openvpn: 'OpenVPN',
+    tuic: 'TUIC',
+    wireguard: 'WireGuard',
+    ikev2: 'IKEv2',
+  };
+  return map[String(proto || '').toLowerCase()] || String(proto || '').toUpperCase();
+}
+
+export function formatRelativeTime(isoString, lang) {
+  if (!isoString) return isFa(lang) ? 'نامشخص' : 'unknown';
+  const ts = Date.parse(isoString);
+  if (Number.isNaN(ts)) return isFa(lang) ? 'نامشخص' : 'unknown';
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 60) return isFa(lang) ? 'همین الان' : 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return isFa(lang) ? `${diffMin} دقیقه پیش` : `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return isFa(lang) ? `${diffHr} ساعت پیش` : `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return isFa(lang) ? `${diffDay} روز پیش` : `${diffDay}d ago`;
+}
+
+export function riskGateText(lang) {
+  if (isFa(lang)) {
+    return (
+      '<b>هشدار سرورهای شخص ثالث</b>\n\n' +
+      'سرورهای عمومی فهرست‌شده توسط اشخاص ثالث اداره می‌شوند. بررسی فنی صرفاً اتصال و سرعت را می‌سنجد و تضمین حریم خصوصی، هویت اپراتور یا امنیت نیست. استفاده با مسئولیت خودتان است.'
+    );
+  }
+  return (
+    '<b>Third-Party Server Notice</b>\n\n' +
+    'Public servers listed here are operated by third parties. A technical check verifies reachability and speed only and is not a privacy, identity, or safety guarantee. Use at your own risk.'
+  );
+}
+
+export function riskGateKeyboard(lang) {
+  const ok = isFa(lang) ? '✅ متوجه شدم' : '✅ I understand';
+  const cancel = isFa(lang) ? 'انصراف' : 'Cancel';
+  return {
+    inline_keyboard: [[
+      { text: ok, callback_data: 'risk_ack_ok' },
+      { text: cancel, callback_data: 'risk_ack_cancel' },
+    ]],
+  };
+}
+
+export function flowCancelledText(lang) {
+  return isFa(lang)
+    ? 'درخواست دریافت کانفیگ لغو شد. هر زمان خواستید /get را بفرستید.'
+    : 'Cancelled. Send /get anytime when you want to fetch configs.';
+}
+
+export function chooseProtocolText(lang) {
+  return isFa(lang)
+    ? 'یک پروتکل را انتخاب کنید:'
+    : 'Choose a protocol:';
+}
+
+export function chooseCountryText(lang, total, protocolLabel) {
+  if (isFa(lang)) {
+    return `✅ ${total} کانفیگ تازه برای ${protocolLabel} موجود است. کشور را انتخاب کنید:`;
+  }
+  return `✅ ${total} fresh configs for ${protocolLabel}. Choose a country:`;
+}
+
+export function chooseAmountText(lang, countAvailable, protocolLabel, countryLabel, remainingBudget) {
+  const capLine =
+    remainingBudget < countAvailable && remainingBudget < 10
+      ? isFa(lang)
+        ? `\n\nسقف باقی‌مانده شما در چند دقیقه آینده: حداکثر ${remainingBudget} کانفیگ.`
+        : `\n\nYou can receive up to ${remainingBudget} more in the next few minutes.`
+      : '';
+  if (isFa(lang)) {
+    return `${countAvailable} کانفیگ تازه ${protocolLabel} برای ${countryLabel} موجود است. چند تا می‌خواهید؟${capLine}`;
+  }
+  return `${countAvailable} fresh ${protocolLabel} configs for ${countryLabel}. How many do you want?${capLine}`;
+}
+
+export function noneFreshText(lang, protocolLabel, countryLabel = '') {
+  if (isFa(lang)) {
+    return countryLabel
+      ? `در حال حاضر کانفیگ تازه ${protocolLabel} برای ${countryLabel} موجود نیست. بعداً یا کشور دیگری را امتحان کنید.`
+      : `در حال حاضر کانفیگ تازه برای ${protocolLabel} موجود نیست. بعداً یا پروتکل دیگری را امتحان کنید.`;
+  }
+  return countryLabel
+    ? `No fresh ${protocolLabel} configs for ${countryLabel} right now. Try later or pick another country.`
+    : `No fresh configs for ${protocolLabel} right now. Try later or pick another protocol.`;
+}
+
+export function rateLimitExhaustedText(lang) {
+  return isFa(lang)
+    ? 'به سقف مجاز دریافت (۱۵ کانفیگ در هر ۱۰ دقیقه) رسیدید. لطفاً چند دقیقه صبر کنید.'
+    : 'You have reached the 15-config / 10-minute rate limit. Please wait a few minutes and try again.';
+}
+
+export function flowExpiredText(lang) {
+  return isFa(lang)
+    ? 'نشست قبلی منقضی شده است. لطفاً دوباره /get را بزنید.'
+    : 'This selection expired. Send /get to start a fresh request.';
+}
+
+export function formatConfigMessage(idx, total, srv, configUri, lang) {
+  const protoLabel = formatProtoLabel(srv.protocol);
+  const transport = srv.transport || 'tcp';
+  const speed = srv.speed_mbps !== null && srv.speed_mbps !== undefined
+    ? `${Number(srv.speed_mbps).toFixed(1)} Mbps`
+    : '-';
+  const rel = formatRelativeTime(srv.last_checked_at, lang);
+  const header = isFa(lang)
+    ? `${idx}/${total} · ${protoLabel} · ${transport} · ${speed} · بررسی ${rel}`
+    : `${idx}/${total} · ${protoLabel} · ${transport} · ${speed} · checked ${rel}`;
+  return `${escapeHtml(header)}\n<code>${escapeHtml(configUri)}</code>`;
+}
+
+export function batchSummaryText(lang, delivered, requested, { rateLimited = false } = {}) {
+  const limitNote = rateLimited
+    ? isFa(lang)
+      ? `\n\nسقف درخواست (۱۵ کانفیگ در ۱۰ دقیقه) پر شد: ${delivered} از ${requested} کانفیگ ارسال شد.`
+      : `\n\nStopped early at the shared rate limit (${delivered} of ${requested} delivered).`
+    : '';
+  if (isFa(lang)) {
+    return (
+      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${limitNote}\n\n` +
+      'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>'
+    );
+  }
+  return (
+    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${limitNote}\n\n` +
+    'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>'
+  );
+}
+
+export function batchSummaryKeyboard(lang, protocol, country) {
+  const parts = [];
+  if (protocol) parts.push(`protocol=${encodeURIComponent(protocol)}`);
+  if (country && country !== 'ALL') parts.push(`country=${encodeURIComponent(country)}`);
+  const qs = parts.join('&');
+  const appUrl = qs ? `${APP_URL}?${qs}` : APP_URL;
+
+  return {
+    inline_keyboard: [
+      [
+        { text: isFa(lang) ? '🔁 بیشتر مثل اینها' : '🔁 More like these', callback_data: 'get_more' },
+        { text: isFa(lang) ? '🌍 تغییر کشور' : '🌍 Change country', callback_data: 'get_chg_country' },
+      ],
+      [
+        { text: isFa(lang) ? '📱 باز کردن در مینی‌اپ' : '📱 Open in the app', web_app: { url: appUrl } },
+      ],
+    ],
+  };
 }

@@ -44,6 +44,11 @@ vpn-finder/
             └── texts.js                 # EN & FA bot strings and Web App keyboards
 ```
 
+## Attribution & Licenses
+
+- **Catalog Data**: [PublicVPNList](https://publicvpnlist.com/api/) (API v1)
+- **IP Geolocation**: IP Geolocation by [DB-IP](https://db-ip.com) — DB-IP Country Lite MMDB, licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+
 ## Owner Setup (STOP Points)
 
 1. **BotFather**: Paste the texts in [serverless/BOTFATHER.md](serverless/BOTFATHER.md) into `@BotFather` (or run `npx tgcloud run endpoints/setup` after logging in).

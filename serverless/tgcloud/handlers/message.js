@@ -2,11 +2,14 @@ import { db, api } from 'sdk';
 import { desc, sql } from 'sdk/db';
 import { users, pvlCache } from '../schema.js';
 import {
+  ALLOWED_PROTOCOLS,
   extractSnapshotTimestamp,
+  getCounters,
   getOwnerId,
   getPvlApiKey,
   PVL_CACHE_TTL_SEC,
 } from '../lib/pvl.js';
+import { startGetFlow } from '../lib/getFlow.js';
 import {
   appPromptText,
   buildAppKeyboard,
@@ -77,10 +80,14 @@ async function formatOwnerStats() {
     }
   }
 
+  const counters = await getCounters();
   const lines = [
     'VPN Finder: Owner Stats',
     '',
     `Total users: ${totalUsers}`,
+    `Connections served: ${counters.connections_served}`,
+    `Configs sent in chat: ${counters.configs_sent_chat}`,
+    `Get flows started: ${counters.get_flows_started}`,
     `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required: insert pvl_api_key in bot_config)'}`,
     `Cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
   ];
@@ -123,15 +130,42 @@ export default async function (message) {
   if (parsed && parsed.cmd === 'start') {
     if (isPrivate) {
       await upsertUser(message.from, parsed.param);
+      const sp = String(parsed.param || '').trim();
+      const getMatch = /^get_([a-z0-9]+)(?:_([A-Z]{2}))?$/i.exec(sp);
+      if (getMatch && ALLOWED_PROTOCOLS.has(getMatch[1].toLowerCase())) {
+        const preProto = getMatch[1].toLowerCase();
+        const preCc = getMatch[2] ? getMatch[2].toUpperCase() : '';
+        const flowRes = await startGetFlow({
+          chatId: message.chat.id,
+          userId: fromId,
+          lang,
+          sendMsg,
+          preselectProtocol: preProto,
+          preselectCountry: preCc,
+        });
+        return { action: 'start_get', userId: fromId, lang, ...flowRes };
+      }
     }
     const text = welcomeText(lang);
-    const reply_markup = buildAppKeyboard(lang, parsed.param);
+    const reply_markup = buildAppKeyboard(lang, parsed.param, { includeGetButton: isPrivate });
     await sendMsg({
       chat_id: message.chat.id,
       text,
       reply_markup,
     });
     return { action: 'start', userId: fromId, lang, text, reply_markup };
+  }
+
+  if (parsed && parsed.cmd === 'get') {
+    if (!isPrivate) return { action: 'get_ignored_group' };
+    await upsertUser(message.from, '');
+    const flowRes = await startGetFlow({
+      chatId: message.chat.id,
+      userId: fromId,
+      lang,
+      sendMsg,
+    });
+    return { action: 'get', userId: fromId, lang, ...flowRes };
   }
 
   if (parsed && parsed.cmd === 'app') {
