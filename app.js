@@ -44,11 +44,13 @@
       errUnavailableBody: 'The catalog service is temporarily unavailable. Please try again later.',
       errAuthTitle: 'Open Inside Telegram',
       errAuthBody:
-        'VPN Finder validates Telegram Mini App initData on every proxy request. Please launch this Mini App from the @VPNFinder bot in Telegram.',
+        'VPN Finder validates Telegram Mini App initData on every proxy request. Please launch this Mini App from the @publicvpnlist_bot bot in Telegram.',
       errNetworkBody: 'Could not reach the proxy endpoint. Check your connection and retry.',
       emptyTitle: 'No Active Records',
       emptyBody: 'The current PublicVPNList snapshot returned zero server records.',
       langToggle: 'FA',
+      liveBadge: 'Live',
+      previewBadge: 'Preview data',
     },
     fa: {
       title: 'VPN Finder',
@@ -82,6 +84,8 @@
       emptyTitle: 'سروری یافت نشد',
       emptyBody: 'اسنپ‌شات فعلی هیچ رکورد سروری برنگرداند.',
       langToggle: 'EN',
+      liveBadge: 'زنده',
+      previewBadge: 'داده پیش‌نمایش',
     },
   };
 
@@ -111,6 +115,7 @@
 
   let currentLang = detectInitialLanguage();
   let lastLoadedModel = null;
+  let isUsingSnapshotFallback = false;
 
   function applyTheme() {
     const scheme = tg?.colorScheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -220,6 +225,7 @@
   function callProxyEndpoint(name, input = {}) {
     return new Promise((resolve, reject) => {
       if (typeof window.__VPN_FINDER_MOCK_CALL__ === 'function') {
+        isUsingSnapshotFallback = false;
         Promise.resolve(window.__VPN_FINDER_MOCK_CALL__(name, input)).then(resolve, reject);
         return;
       }
@@ -228,6 +234,7 @@
       const isTgcloudHost = window.location.hostname.endsWith('.tgcloud.ai');
 
       if (isTgcloudHost && hasInitData && tg && tg.Serverless && typeof tg.Serverless.call === 'function') {
+        isUsingSnapshotFallback = false;
         try {
           tg.Serverless.call(name, input, function (err, result) {
             if (err) {
@@ -244,6 +251,7 @@
       }
 
       // Cross-origin GitHub Pages fallback -> read proxy-generated snapshot bundle
+      isUsingSnapshotFallback = true;
       loadSnapshotBundleFallback()
         .then((bundle) => {
           if (!bundle || bundle.error) {
@@ -414,8 +422,10 @@
     );
     const totalRecords = Math.max(explicitTotal || 0, sumProtocolRecords || 0);
 
-    // Compute total country count
+    // Compute total country count (Part A.1: use distinct_country_count across all active protocols)
     const explicitCountries = Number(
+      statsData.distinct_country_count ??
+      statsRes?.distinct_country_count ??
       statsData.country_count ??
       statsData.countries_count ??
       statsData.total_countries ??
@@ -457,6 +467,19 @@
     document.getElementById('val-total-records').textContent = formatNumber(model.totalRecords);
     document.getElementById('val-country-count').textContent = formatNumber(model.countryCount);
     document.getElementById('val-snapshot-time').textContent = formatTimestamp(model.snapshotTimestamp);
+
+    const badgeEl = document.getElementById('freshness-badge');
+    if (badgeEl) {
+      const tsStr = formatTimestamp(model.snapshotTimestamp);
+      if (isUsingSnapshotFallback) {
+        badgeEl.className = 'freshness-badge is-preview';
+        badgeEl.textContent = `${t.previewBadge} · ${tsStr}`;
+      } else {
+        badgeEl.className = 'freshness-badge is-live';
+        badgeEl.textContent = `${t.liveBadge} · ${tsStr}`;
+      }
+      badgeEl.hidden = false;
+    }
 
     const footerTime = document.getElementById('footer-snapshot-date');
     footerTime.textContent = formatDateShort(model.snapshotTimestamp);

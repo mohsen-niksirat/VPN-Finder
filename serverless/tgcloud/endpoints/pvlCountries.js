@@ -3,7 +3,7 @@
 import { EndpointError } from 'sdk';
 import {
   ALLOWED_PROTOCOLS,
-  fetchPvlCached,
+  getProtocolCountriesResolved,
   PVL_CACHE_TTL_SEC,
   requireTelegramAuth,
 } from '../lib/pvl.js';
@@ -29,12 +29,5 @@ export default async function (input, ctx) {
     );
   }
 
-  const cacheKey = `countries?protocol=${rawProtocol}`;
-  const pathAndQuery = `/countries?protocol=${encodeURIComponent(rawProtocol)}`;
-
-  return await fetchPvlCached({
-    cacheKey,
-    pathAndQuery,
-    ttlSec: PVL_CACHE_TTL_SEC,
-  });
+  return await getProtocolCountriesResolved(rawProtocol, PVL_CACHE_TTL_SEC);
 }

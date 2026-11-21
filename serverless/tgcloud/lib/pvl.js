@@ -88,9 +88,10 @@ function safeParseBody(raw) {
  * - On 429, respects `Retry-After` backoff and serves stale cache if present.
  */
 export async function fetchPvlCached({ cacheKey, pathAndQuery, ttlSec = PVL_CACHE_TTL_SEC }) {
-  if (String(pathAndQuery).includes('connection_info')) {
-    throw new EndpointError('Configuration payload fetching is not allowed in Stage 1', {
-      code: 'FORBIDDEN_IN_STAGE_1',
+  const pathPart = String(pathAndQuery).split('?')[0];
+  if (pathPart.includes('connection_info') || pathPart.includes('connection-info') || pathPart.includes('download')) {
+    throw new EndpointError('Configuration payload fetching is not allowed in this stage', {
+      code: 'FORBIDDEN_CONFIG_FETCH',
     });
   }
 
@@ -317,6 +318,124 @@ export function extractSnapshotTimestamp(payload) {
   );
 }
 
+export async function getProtocolCountriesResolved(protocol, ttlSec = PVL_CACHE_TTL_SEC) {
+  if (!ALLOWED_PROTOCOLS.has(protocol)) {
+    throw new EndpointError(
+      `Invalid protocol "${protocol}". Allowed: ${[...ALLOWED_PROTOCOLS].join(', ')}`,
+      { code: 'INVALID_PROTOCOL', parameter: 'protocol' }
+    );
+  }
+
+  const cacheKey = `countries?protocol=${protocol}`;
+  const pathAndQuery = `/countries?protocol=${encodeURIComponent(protocol)}`;
+
+  return await fetchPvlCached({
+    cacheKey,
+    pathAndQuery,
+    ttlSec,
+  });
+}
+
+export async function getGlobalStatsWithDistinctCountries() {
+  const statsRes = await fetchPvlCached({
+    cacheKey: 'stats',
+    pathAndQuery: '/stats',
+    ttlSec: PVL_CACHE_TTL_SEC,
+  });
+
+  if (!statsRes || statsRes.error) return statsRes;
+
+  const existingDistinct = Number(
+    statsRes.distinct_country_count ?? statsRes.data?.distinct_country_count ?? 0
+  );
+  if (existingDistinct > 0) {
+    return {
+      ...statsRes,
+      distinct_country_count: existingDistinct,
+      data: {
+        ...(statsRes.data || {}),
+        distinct_country_count: existingDistinct,
+      },
+    };
+  }
+
+  // Determine active protocols (records > 0)
+  const protoCounts = statsRes.data?.protocol_record_counts || {};
+  let activeProtos = Object.entries(protoCounts)
+    .filter(([, count]) => Number(count) > 0)
+    .map(([proto]) => proto.toLowerCase())
+    .filter((p) => ALLOWED_PROTOCOLS.has(p));
+
+  if (!activeProtos.length) {
+    const protoRes = await fetchPvlCached({
+      cacheKey: 'protocols',
+      pathAndQuery: '/protocols',
+      ttlSec: PVL_CACHE_TTL_SEC,
+    });
+    if (Array.isArray(protoRes?.data)) {
+      activeProtos = protoRes.data
+        .filter((item) => Number(item?.record_count || 0) > 0)
+        .map((item) => String(item.protocol || '').toLowerCase())
+        .filter((p) => ALLOWED_PROTOCOLS.has(p));
+    }
+  }
+
+  const distinctCodes = new Set();
+  const perProtoLists = await Promise.all(
+    activeProtos.map(async (proto) => {
+      try {
+        return await getProtocolCountriesResolved(proto, PVL_CACHE_TTL_SEC);
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  for (const cRes of perProtoLists) {
+    const arr = Array.isArray(cRes?.data) ? cRes.data : [];
+    for (const item of arr) {
+      const code = String(item?.country_code || item?.code || '').trim().toUpperCase();
+      if (code && /^[A-Z]{2}$/.test(code) && Number(item?.record_count ?? item?.count ?? 1) > 0) {
+        distinctCodes.add(code);
+      }
+    }
+  }
+
+  const distinctCountryCount =
+    distinctCodes.size || Number(statsRes.data?.countries_count || 0);
+
+  const enrichedPayload = {
+    data: {
+      ...(statsRes.data || {}),
+      distinct_country_count: distinctCountryCount,
+    },
+    distinct_country_count: distinctCountryCount,
+    meta: statsRes.meta || {},
+    links: statsRes.links || {},
+  };
+
+  // Store enriched body inside the `stats` pvl_cache entry so subsequent hits within the 30-min TTL
+  // preserve the same fetched_at and return distinct_country_count immediately
+  const cachedRow = await db
+    .select()
+    .from(pvlCache)
+    .where(eq(pvlCache.key, 'stats'))
+    .get();
+
+  if (cachedRow) {
+    await db
+      .update(pvlCache)
+      .set({ body: JSON.stringify(enrichedPayload) })
+      .where(eq(pvlCache.key, 'stats'))
+      .run();
+  }
+
+  return {
+    ...enrichedPayload,
+    _cache: statsRes._cache,
+  };
+}
+
 /**
  * Generates an anonymized, non-secret public summary bundle (`stats`, `protocols`, `countries`)
  * from `pvl_cache` so the static Mini App on GitHub Pages can load the latest cached catalog
@@ -325,13 +444,9 @@ export function extractSnapshotTimestamp(payload) {
 export async function buildPublicCatalogSnapshot(protocol = 'openvpn') {
   const safeProto = ALLOWED_PROTOCOLS.has(protocol) ? protocol : 'openvpn';
   const [stats, protocolsRaw, countries] = await Promise.all([
-    fetchPvlCached({ cacheKey: 'stats', pathAndQuery: '/stats', ttlSec: PVL_CACHE_TTL_SEC }),
+    getGlobalStatsWithDistinctCountries(),
     fetchPvlCached({ cacheKey: 'protocols', pathAndQuery: '/protocols', ttlSec: PVL_CACHE_TTL_SEC }),
-    fetchPvlCached({
-      cacheKey: `countries?protocol=${safeProto}`,
-      pathAndQuery: `/countries?protocol=${encodeURIComponent(safeProto)}`,
-      ttlSec: PVL_CACHE_TTL_SEC,
-    }),
+    getProtocolCountriesResolved(safeProto, PVL_CACHE_TTL_SEC),
   ]);
 
   if (stats?.error === 'setup_required' || protocolsRaw?.error === 'setup_required') {

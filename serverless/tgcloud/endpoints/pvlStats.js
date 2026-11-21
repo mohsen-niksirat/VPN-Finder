@@ -5,6 +5,7 @@ import {
   ALLOWED_PROTOCOLS,
   buildPublicCatalogSnapshot,
   fetchPvlCached,
+  getGlobalStatsWithDistinctCountries,
   PVL_CACHE_TTL_SEC,
   requireTelegramAuth,
 } from '../lib/pvl.js';
@@ -35,9 +36,5 @@ export default async function (input, ctx) {
     });
   }
 
-  return await fetchPvlCached({
-    cacheKey: 'stats',
-    pathAndQuery: '/stats',
-    ttlSec: PVL_CACHE_TTL_SEC,
-  });
+  return await getGlobalStatsWithDistinctCountries();
 }
