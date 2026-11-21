@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VPN Finder</title>
+  <meta name="description" content="Browse technically-checked public VPN servers from the PublicVPNList catalog by country and protocol.">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="title-group">
+        <h1 id="app-title">VPN Finder</h1>
+        <p id="app-subtitle" class="subtitle">PublicVPNList Checked Catalog</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="lang-toggle" class="btn-ghost" aria-label="Switch language">FA</button>
+        <button type="button" id="refresh-btn" class="btn-secondary" aria-label="Refresh catalog">Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" id="main-content" aria-live="polite">
+    <!-- Loading Skeleton State (R-27) -->
+    <section id="state-loading" class="state-section" aria-label="Loading catalog data">
+      <div class="summary-grid">
+        <div class="stat-card skeleton-card">
+          <div class="skeleton-line sk-label"></div>
+          <div class="skeleton-line sk-value"></div>
+        </div>
+        <div class="stat-card skeleton-card">
+          <div class="skeleton-line sk-label"></div>
+          <div class="skeleton-line sk-value"></div>
+        </div>
+        <div class="stat-card skeleton-card stat-card-wide">
+          <div class="skeleton-line sk-label"></div>
+          <div class="skeleton-line sk-value-sm"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="skeleton-line sk-heading"></div>
+        </div>
+        <div class="skeleton-table">
+          <div class="skeleton-line sk-row"></div>
+          <div class="skeleton-line sk-row"></div>
+          <div class="skeleton-line sk-row"></div>
+          <div class="skeleton-line sk-row"></div>
+          <div class="skeleton-line sk-row"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="skeleton-line sk-heading"></div>
+        </div>
+        <div class="skeleton-table">
+          <div class="skeleton-line sk-row"></div>
+          <div class="skeleton-line sk-row"></div>
+          <div class="skeleton-line sk-row"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error / Temporarily Unavailable State (R-27) -->
+    <section id="state-error" class="state-section" hidden>
+      <div class="panel error-panel" role="alert">
+        <h2 id="error-title" class="error-heading">Temporarily Unavailable</h2>
+        <p id="error-message" class="error-body">Could not load the live catalog from the proxy. Please try again.</p>
+        <div class="error-actions">
+          <button type="button" id="retry-btn" class="btn-primary">Retry</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Empty State (R-27) -->
+    <section id="state-empty" class="state-section" hidden>
+      <div class="panel empty-panel">
+        <h2 id="empty-title" class="empty-heading">No Active Records</h2>
+        <p id="empty-message" class="empty-body">The current PublicVPNList snapshot returned zero server records.</p>
+        <div class="error-actions">
+          <button type="button" id="empty-retry-btn" class="btn-secondary">Check Again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Data State -->
+    <div id="state-ready" hidden>
+      <!-- Live Catalog Summary Counters -->
+      <section class="summary-grid" aria-labelledby="summary-heading">
+        <h2 id="summary-heading" class="sr-only">Catalog Summary</h2>
+        <div class="stat-card">
+          <span id="label-total-records" class="stat-label">Server Records</span>
+          <strong id="val-total-records" class="stat-value">..</strong>
+        </div>
+        <div class="stat-card">
+          <span id="label-country-count" class="stat-label">Countries</span>
+          <strong id="val-country-count" class="stat-value">..</strong>
+        </div>
+        <div class="stat-card stat-card-wide">
+          <span id="label-snapshot-time" class="stat-label">Snapshot Updated</span>
+          <strong id="val-snapshot-time" class="stat-value stat-value-time">..</strong>
+        </div>
+      </section>
+
+      <!-- Per-Protocol Availability Table -->
+      <section class="panel" aria-labelledby="protocols-heading">
+        <div class="panel-header">
+          <h2 id="protocols-heading" class="panel-title">Protocols &amp; Checker Median Speed</h2>
+          <span id="protocols-note" class="panel-meta">Checker-region throughput</span>
+        </div>
+        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="protocols-heading">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col" id="th-protocol">Protocol</th>
+                <th scope="col" id="th-records" class="num-col">Records</th>
+                <th scope="col" id="th-speed" class="num-col">Median Speed</th>
+              </tr>
+            </thead>
+            <tbody id="protocols-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Top 5 Countries by Record Count -->
+      <section class="panel" aria-labelledby="countries-heading">
+        <div class="panel-header">
+          <h2 id="countries-heading" class="panel-title">Top 5 Countries by Record Count</h2>
+          <span id="countries-meta" class="panel-meta"></span>
+        </div>
+        <ol id="countries-list" class="country-list"></ol>
+      </section>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <p class="footer-attribution">
+        <span id="footer-data-label">Data:</span>
+        <a href="https://publicvpnlist.com/api/" target="_blank" rel="noopener noreferrer">PublicVPNList</a>
+        <span class="footer-sep">·</span>
+        <span id="footer-snapshot-label">Snapshot:</span>
+        <time id="footer-snapshot-date">..</time>
+      </p>
+      <p id="footer-disclaimer" class="footer-disclaimer">
+        Servers are operated by third parties; a technical check verifies reachability and speed only and is not a privacy or safety guarantee.
+      </p>
+    </div>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

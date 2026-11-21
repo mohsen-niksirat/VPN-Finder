@@ -1,0 +1,13 @@
+{
+  "name": "vpn-finder",
+  "version": "0.1.0",
+  "description": "VPN Finder: Telegram Mini App and bot browsing the PublicVPNList catalog via tgcloud serverless proxy",
+  "private": true,
+  "scripts": {
+    "grep-gate": "node scripts/grep-gate.js",
+    "test:proxy": "node scripts/test-proxy-local.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

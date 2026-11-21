@@ -1,0 +1,8 @@
+node_modules/
+serverless/node_modules/
+serverless/.tgcloud/
+serverless/dist/
+.tgcloud/
+*.bak
+*.log
+.DS_Store
