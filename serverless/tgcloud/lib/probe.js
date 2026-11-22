@@ -1,12 +1,14 @@
 import { db, fetch } from 'sdk';
-import { eq } from 'sdk/db';
-import { probeCompare, pvlCache } from '../schema.js';
+import { desc, eq } from 'sdk/db';
+import { deliveryDebug, probeCompare, pvlCache } from '../schema.js';
 import {
   describeFieldValueState,
+  fetchFreshServersPageForDelivery,
   fetchPvlServers,
   fetchServerDetailFresh,
   getPvlApiKey,
   PVL_BASE_URL,
+  PVL_SERVERS_FIELDS,
   validateAndNormalizeServersInput,
 } from './pvl.js';
 
@@ -192,4 +194,125 @@ export async function runDebugProbe(sourceContext = 'handler') {
   ];
 
   return { record, text: lines.join('\n') };
+}
+
+export async function runDebugProbe2(ownerUserId) {
+  const targetId = 'pvl_d520729f887d4b3754a8e4b6';
+  const apiKey = await getPvlApiKey();
+
+  const inspectList = async (url, label) => {
+    if (!apiKey) return 'no_api_key';
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      });
+      if (!res.ok) return `http_${res.status}`;
+      const json = await res.json();
+      const rows = Array.isArray(json?.data) ? json.data : [];
+      const rec = rows.find((r) => r?.id === targetId) || null;
+      return rec ? describeFieldValueState(rec, 'config_download_url') : `not_in_rows(count=${rows.length})`;
+    } catch (err) {
+      return `fetch_${err?.name || 'Error'}`;
+    }
+  };
+
+  // a_prod_query: exact fetchFreshServersPageForDelivery request
+  const prodParams = [
+    'protocol=openvpn',
+    'country=US',
+    'status=online',
+    'fresh_within=259200',
+    'sort=score',
+    'order=desc',
+    'page=1',
+    'per_page=100',
+    `fields=${PVL_SERVERS_FIELDS}`,
+  ];
+  const aRes = await fetchFreshServersPageForDelivery({
+    protocol: 'openvpn',
+    country: 'US',
+    sort: 'score',
+    page: 1,
+    perPage: 100,
+  });
+  let aState = aRes?.error ? aRes.error : 'not_in_page1';
+  if (!aRes?.error) {
+    const rec = (aRes?.data || []).find((r) => r?.id === targetId) || null;
+    aState = rec ? describeFieldValueState(rec, 'config_download_url') : `not_in_rows(count=${(aRes?.data || []).length})`;
+  }
+
+  // b_no_fields
+  const bUrl = `${PVL_BASE_URL}/servers?protocol=openvpn&country=US&status=online&fresh_within=259200&sort=score&order=desc&page=1&per_page=100`;
+  const bState = await inspectList(bUrl, 'b_no_fields');
+
+  // c_fields_only_urls
+  const cUrl = `${PVL_BASE_URL}/servers?protocol=openvpn&country=US&status=online&fresh_within=259200&sort=score&order=desc&page=1&per_page=100&fields=id,config_download_url,connection_info_url`;
+  const cState = await inspectList(cUrl, 'c_fields_only_urls');
+
+  // d_small_page (per_page=20, page=1)
+  const dUrl = `${PVL_BASE_URL}/servers?protocol=openvpn&country=US&status=online&fresh_within=259200&sort=score&order=desc&page=1&per_page=20&fields=${PVL_SERVERS_FIELDS}`;
+  const dState = await inspectList(dUrl, 'd_small_page');
+
+  // e_detail_no_fields
+  let eState = 'no_api_key';
+  if (apiKey) {
+    try {
+      const eRes = await fetch(`${PVL_BASE_URL}/servers/${encodeURIComponent(targetId)}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json', 'Cache-Control': 'no-store' },
+      });
+      if (!eRes.ok) {
+        eState = `http_${eRes.status}`;
+      } else {
+        const eJson = await eRes.json();
+        const eRec = eJson?.data && typeof eJson.data === 'object' ? eJson.data : eJson;
+        eState = describeFieldValueState(eRec, 'config_download_url');
+      }
+    } catch (err) {
+      eState = `fetch_${err?.name || 'Error'}`;
+    }
+  }
+
+  // f_detail_prod: exact fetchServerDetailFresh
+  const fRec = await fetchServerDetailFresh(targetId);
+  const fState = describeFieldValueState(fRec, 'config_download_url');
+
+  // g_scan_examined: latest delivery_debug row for owner
+  let gSummary = 'no_delivery_debug_rows';
+  const lastRow = await db
+    .select()
+    .from(deliveryDebug)
+    .where(eq(deliveryDebug.userId, Number(ownerUserId) || 0))
+    .orderBy(desc(deliveryDebug.id))
+    .limit(1)
+    .get();
+  if (lastRow) {
+    let entries = [];
+    try { entries = JSON.parse(lastRow.detail || '[]'); } catch { entries = []; }
+    const hist = {};
+    for (const e of entries) {
+      const code = String(e?.reason_code || 'unknown');
+      hist[code] = (hist[code] || 0) + 1;
+    }
+    gSummary = `batch=#${lastRow.id} entries=${entries.length} delivered=${lastRow.delivered}/${lastRow.requested} hist=${JSON.stringify(hist)}`;
+  }
+
+  const lines = [
+    `DebugProbe2 (${targetId})`,
+    `a_prod_query: ${aState}`,
+    `a_params: ${prodParams.join('&')}`,
+    `b_no_fields: ${bState}`,
+    `c_fields_only_urls: ${cState}`,
+    `d_small_page(per_page=20,p=1): ${dState}`,
+    `e_detail_no_fields: ${eState}`,
+    `f_detail_prod(GET /servers/{id}, no params): ${fState}`,
+    `g_scan_examined: ${gSummary}`,
+  ];
+
+  return { text: lines.join('\n') };
 }
