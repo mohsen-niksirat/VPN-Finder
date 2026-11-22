@@ -130,16 +130,24 @@ async function formatOwnerDebugLast(userId) {
     entries = [];
   }
 
+  const hist = {};
+  for (const e of entries) {
+    const code = String(e?.reason_code || 'unknown');
+    hist[code] = (hist[code] || 0) + 1;
+  }
+
   const ts = new Date(Number(row.createdAt || 0) * 1000).toISOString();
   const lines = [
     `Last /get delivery (#${row.id})`,
     `Time: ${ts}`,
     `Protocol: ${row.protocol} | Country: ${row.country}`,
     `Requested: ${row.requested} | Delivered: ${row.delivered}`,
-    `Candidates (${entries.length}):`,
+    `Examined: ${entries.length} | Histogram: ${JSON.stringify(hist)}`,
+    `Candidates (first ${Math.min(entries.length, 15)} of ${entries.length}):`,
   ];
 
-  for (let i = 0; i < entries.length; i += 1) {
+  const limit = Math.min(entries.length, 15);
+  for (let i = 0; i < limit; i += 1) {
     const e = entries[i] || {};
     const httpPart = e.http_status !== null && e.http_status !== undefined ? ` | http=${e.http_status}` : '';
     const fbPart = e.fallback_invoked !== undefined
@@ -147,8 +155,11 @@ async function formatOwnerDebugLast(userId) {
       : '';
     lines.push(`${i + 1}. ${e.id} | ${e.stage_reached} | ${e.reason_code}${httpPart}${fbPart}`);
   }
+  if (entries.length > limit) {
+    lines.push(`... (+${entries.length - limit} more; see histogram above)`);
+  }
 
-  return lines.join('\n');
+  return lines.join('\n').slice(0, 3900);
 }
 
 async function formatOwnerDebugProbe() {
