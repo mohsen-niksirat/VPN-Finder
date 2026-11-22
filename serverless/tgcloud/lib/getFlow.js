@@ -1,6 +1,6 @@
 import { db } from 'sdk';
 import { eq, sql } from 'sdk/db';
-import { users } from '../schema.js';
+import { deliveryDebug, users } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
   checkConnectionRateLimit,
@@ -9,11 +9,11 @@ import {
   fetchConnection,
   fetchPvlCached,
   fetchPvlServers,
+  fetchServerDetailFresh,
   getDerivedCountries,
   getRemainingConnectionBudget,
   incrementCounter,
   PVL_CACHE_TTL_SEC,
-  PVL_SERVERS_TTL_SEC,
   resolveCountryName,
 } from './pvl.js';
 import {
@@ -375,6 +375,7 @@ export async function deliverConfigsBatch({
   let rateLimited = false;
   let sendFailedCount = 0;
   const skippedIds = [];
+  const debugEntries = [];
   const deliveredMeta = [];
 
   for (const srv of candidates) {
@@ -383,6 +384,12 @@ export async function deliverConfigsBatch({
 
     if (!srv || !srv.id) {
       skippedIds.push({ id: 'unknown', reason: 'missing_record_id' });
+      debugEntries.push({
+        id: 'unknown',
+        stage_reached: 'record_resolve',
+        reason_code: 'missing_record_id',
+        http_status: null,
+      });
       continue;
     }
 
@@ -390,32 +397,43 @@ export async function deliverConfigsBatch({
       const rateCheck = await checkConnectionRateLimit(userId);
       if (!rateCheck.allowed) {
         rateLimited = true;
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'payload_fetch',
+          reason_code: 'rate_limited',
+          http_status: null,
+        });
         break;
       }
 
       let dlUrl = srv.config_download_url;
       if (!dlUrl) {
-        try {
-          const metaRes = await fetchPvlCached({
-            cacheKey: `server_meta:${srv.id}`,
-            pathAndQuery: `/servers/${encodeURIComponent(srv.id)}`,
-            ttlSec: PVL_SERVERS_TTL_SEC,
-          });
-          const rec = metaRes?.data && typeof metaRes.data === 'object' ? metaRes.data : metaRes;
-          dlUrl = rec?.config_download_url || null;
-        } catch {
-          dlUrl = null;
-        }
+        const freshRec = await fetchServerDetailFresh(srv.id);
+        dlUrl = freshRec?.config_download_url || null;
       }
 
       if (!dlUrl) {
         skippedIds.push({ id: srv.id, reason: 'missing_config_download_url' });
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'record_resolve',
+          reason_code: 'missing_config_download_url',
+          http_status: null,
+        });
         continue;
       }
 
       const ovpn = await downloadAndBrandOvpn(dlUrl);
       if (ovpn?.error || !ovpn?.bytes) {
+        const reasonCode = ovpn?.reasonCode || ovpn?.error || 'ovpn_download_failed';
+        const stageReached = String(reasonCode).startsWith('brand_') ? 'brand' : 'download';
         skippedIds.push({ id: srv.id, reason: ovpn?.error || 'ovpn_download_failed' });
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: stageReached,
+          reason_code: reasonCode,
+          http_status: ovpn?.httpStatus ?? null,
+        });
         continue;
       }
 
@@ -431,8 +449,14 @@ export async function deliverConfigsBatch({
           filename,
           caption,
         });
-      } catch {
+      } catch (err) {
         sendFailedCount += 1;
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'send',
+          reason_code: `send_${err?.name || 'Error'}`,
+          http_status: ovpn.httpStatus ?? 200,
+        });
         continue;
       }
 
@@ -441,6 +465,12 @@ export async function deliverConfigsBatch({
       await consumeConnectionRateLimit(userId);
       await incrementCounter('connections_served', 1);
       await incrementCounter('configs_sent_chat', 1);
+      debugEntries.push({
+        id: srv.id,
+        stage_reached: 'send',
+        reason_code: 'ok',
+        http_status: ovpn.httpStatus ?? 200,
+      });
 
       deliveredMeta.push({
         id: srv.id,
@@ -456,15 +486,33 @@ export async function deliverConfigsBatch({
     const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
     if (conn?.error === 'rate_limited') {
       rateLimited = true;
+      debugEntries.push({
+        id: srv.id,
+        stage_reached: 'payload_fetch',
+        reason_code: 'rate_limited',
+        http_status: null,
+      });
       break;
     }
     if (conn?.error) {
       skippedIds.push({ id: srv.id, reason: conn.error });
+      debugEntries.push({
+        id: srv.id,
+        stage_reached: 'payload_fetch',
+        reason_code: `fetch_${conn.error}`,
+        http_status: null,
+      });
       continue;
     }
 
     if (!conn.config_uri) {
       skippedIds.push({ id: srv.id, reason: 'no_uri' });
+      debugEntries.push({
+        id: srv.id,
+        stage_reached: 'payload_fetch',
+        reason_code: 'missing_config_uri',
+        http_status: null,
+      });
       continue;
     }
 
@@ -480,8 +528,14 @@ export async function deliverConfigsBatch({
         text: msgHtml,
         parse_mode: 'HTML',
       });
-    } catch {
+    } catch (err) {
       sendFailedCount += 1;
+      debugEntries.push({
+        id: srv.id,
+        stage_reached: 'send',
+        reason_code: `send_${err?.name || 'Error'}`,
+        http_status: 200,
+      });
       continue;
     }
 
@@ -490,6 +544,12 @@ export async function deliverConfigsBatch({
     await consumeConnectionRateLimit(userId);
     await incrementCounter('connections_served', 1);
     await incrementCounter('configs_sent_chat', 1);
+    debugEntries.push({
+      id: srv.id,
+      stage_reached: 'send',
+      reason_code: 'ok',
+      http_status: 200,
+    });
 
     deliveredMeta.push({
       id: srv.id,
@@ -497,6 +557,23 @@ export async function deliverConfigsBatch({
       scheme: schemePrefix,
       length: uri.length,
     });
+  }
+
+  try {
+    await db
+      .insert(deliveryDebug)
+      .values({
+        userId: Number(userId) || 0,
+        createdAt: Math.floor(Date.now() / 1000),
+        protocol: proto,
+        country: cc || 'ALL',
+        requested,
+        delivered,
+        detail: JSON.stringify(debugEntries),
+      })
+      .run();
+  } catch {
+    // Telemetry write must never break delivery
   }
 
   await saveUserFlow(userId, {

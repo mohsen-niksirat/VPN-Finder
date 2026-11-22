@@ -1,6 +1,6 @@
 import { db, api } from 'sdk';
-import { desc, sql } from 'sdk/db';
-import { users, pvlCache } from '../schema.js';
+import { desc, eq, sql } from 'sdk/db';
+import { deliveryDebug, users, pvlCache } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
   extractSnapshotTimestamp,
@@ -109,6 +109,44 @@ async function formatOwnerStats() {
   return lines.join('\n');
 }
 
+async function formatOwnerDebugLast(userId) {
+  const row = await db
+    .select()
+    .from(deliveryDebug)
+    .where(eq(deliveryDebug.userId, Number(userId) || 0))
+    .orderBy(desc(deliveryDebug.id))
+    .limit(1)
+    .get();
+
+  if (!row) {
+    return 'No delivery_debug rows recorded yet for your account.';
+  }
+
+  let entries = [];
+  try {
+    entries = JSON.parse(row.detail || '[]');
+  } catch {
+    entries = [];
+  }
+
+  const ts = new Date(Number(row.createdAt || 0) * 1000).toISOString();
+  const lines = [
+    `Last /get delivery (#${row.id})`,
+    `Time: ${ts}`,
+    `Protocol: ${row.protocol} | Country: ${row.country}`,
+    `Requested: ${row.requested} | Delivered: ${row.delivered}`,
+    `Candidates (${entries.length}):`,
+  ];
+
+  for (let i = 0; i < entries.length; i += 1) {
+    const e = entries[i] || {};
+    const httpPart = e.http_status !== null && e.http_status !== undefined ? ` | http=${e.http_status}` : '';
+    lines.push(`${i + 1}. ${e.id} | ${e.stage_reached} | ${e.reason_code}${httpPart}`);
+  }
+
+  return lines.join('\n');
+}
+
 export default async function (message) {
   if (!message || !message.chat) return;
   const chatType = message.chat.type;
@@ -193,6 +231,28 @@ export default async function (message) {
       reply_markup,
     });
     return { action: 'help', userId: fromId, lang, text, reply_markup };
+  }
+
+  if (parsed && parsed.cmd === 'debuglast') {
+    const ownerId = await getOwnerId();
+    if (isPrivate && ownerId && fromId === ownerId) {
+      const debugText = await formatOwnerDebugLast(fromId);
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: debugText,
+      });
+      return { action: 'debuglast', owner: true, debugText };
+    }
+    const text = helpText(lang);
+    const reply_markup = buildAppKeyboard(lang, '');
+    await sendMsg({
+      chat_id: message.chat.id,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      reply_markup,
+    });
+    return { action: 'debuglast_denied', owner: false };
   }
 
   if (parsed && parsed.cmd === 'stats') {

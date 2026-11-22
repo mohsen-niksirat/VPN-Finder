@@ -65,6 +65,9 @@ vpn-finder/
    npx tgcloud migrate --safe
    ```
 4. **Insert `pvl_api_key` and `OWNER_ID` into `bot_config`** (in your own private session).
+5. **Owner-Only Bot Commands**:
+   - `/stats`: user count, `connections_served` / `configs_sent_chat` / `get_flows_started` counters, `pvl_cache` status, and last PVL snapshot time.
+   - `/debuglast`: prints the most recent `delivery_debug` row (per-candidate `stage_reached`, `reason_code`, `http_status`) for troubleshooting `/get` deliveries.
 
 ## Attribution & Disclaimer
 

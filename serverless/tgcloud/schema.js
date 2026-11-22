@@ -41,3 +41,14 @@ export const counters = table('counters', {
   value:     integer('value').notNull().default(0),
   updatedAt: integer('updated_at').notNull(),
 });
+
+export const deliveryDebug = table('delivery_debug', {
+  id:        integer('id').primaryKey({ autoIncrement: true }),
+  userId:    integer('user_id').notNull(),
+  createdAt: integer('created_at').notNull(),
+  protocol:  text('protocol').notNull(),
+  country:   text('country').notNull(),
+  requested: integer('requested').notNull(),
+  delivered: integer('delivered').notNull(),
+  detail:    text('detail').notNull(),
+});

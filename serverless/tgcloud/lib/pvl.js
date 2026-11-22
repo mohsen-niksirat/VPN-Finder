@@ -672,11 +672,11 @@ const OVPN_DIRECTIVE_RE = /^(client|dev|proto|remote|resolv-retry|nobind|tls-cli
  */
 export async function downloadAndBrandOvpn(downloadUrl) {
   if (!downloadUrl || typeof downloadUrl !== 'string') {
-    return { error: 'undeliverable' };
+    return { error: 'undeliverable', reasonCode: 'missing_config_download_url', httpStatus: null };
   }
   const apiKey = await getPvlApiKey();
   if (!apiKey) {
-    return { error: 'setup_required' };
+    return { error: 'setup_required', reasonCode: 'setup_required', httpStatus: null };
   }
 
   let res;
@@ -694,36 +694,48 @@ export async function downloadAndBrandOvpn(downloadUrl) {
         headers: { 'Cache-Control': 'no-store' },
       });
     }
-  } catch {
-    return { error: 'source_unavailable' };
+  } catch (err) {
+    return {
+      error: 'source_unavailable',
+      reasonCode: `download_fetch_${err?.name || 'Error'}`,
+      httpStatus: 0,
+    };
   }
 
-  if (res.status === 404 || res.status === 410) {
-    return { error: 'config_gone' };
+  const httpStatus = Number(res.status || 0);
+  if (httpStatus === 404 || httpStatus === 410) {
+    return { error: 'config_gone', reasonCode: `download_http_${httpStatus}`, httpStatus };
   }
-  if (res.status === 503 || res.status === 429) {
-    return { error: 'source_unavailable' };
+  if (httpStatus === 503 || httpStatus === 429) {
+    return { error: 'source_unavailable', reasonCode: `download_http_${httpStatus}`, httpStatus };
   }
   if (!res.ok) {
-    return { error: 'fetch_failed' };
+    return { error: 'fetch_failed', reasonCode: `download_http_${httpStatus}`, httpStatus };
   }
 
   let ab;
   try {
     ab = await res.arrayBuffer();
-  } catch {
-    return { error: 'fetch_failed' };
+  } catch (err) {
+    return {
+      error: 'fetch_failed',
+      reasonCode: `download_read_${err?.name || 'Error'}`,
+      httpStatus,
+    };
   }
 
-  if (!ab || ab.byteLength === 0 || ab.byteLength > MAX_OVPN_BYTES) {
-    return { error: 'undeliverable' };
+  if (!ab || ab.byteLength === 0) {
+    return { error: 'undeliverable', reasonCode: 'download_empty_body', httpStatus };
+  }
+  if (ab.byteLength > MAX_OVPN_BYTES) {
+    return { error: 'undeliverable', reasonCode: 'download_too_large', httpStatus };
   }
 
   let text;
   try {
     text = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(ab));
   } catch {
-    return { error: 'undeliverable' };
+    return { error: 'undeliverable', reasonCode: 'download_not_utf8', httpStatus };
   }
 
   const firstNonEmpty = text
@@ -731,7 +743,7 @@ export async function downloadAndBrandOvpn(downloadUrl) {
     .map((l) => l.trim())
     .find(Boolean) || '';
   if (!firstNonEmpty.startsWith('#') && !OVPN_DIRECTIVE_RE.test(firstNonEmpty)) {
-    return { error: 'undeliverable' };
+    return { error: 'undeliverable', reasonCode: 'download_not_ovpn', httpStatus };
   }
 
   const brandLine = '# Provided by @MyLeitner · Data: PublicVPNList';
@@ -741,14 +753,40 @@ export async function downloadAndBrandOvpn(downloadUrl) {
     : `${brandLine}\n${normalized}`;
   const bytes = new TextEncoder().encode(brandedText);
   if (bytes.byteLength > MAX_OVPN_BYTES + 256) {
-    return { error: 'undeliverable' };
+    return { error: 'undeliverable', reasonCode: 'brand_too_large', httpStatus };
   }
 
   return {
     bytes,
     byteLength: bytes.byteLength,
     firstLine: brandLine,
+    httpStatus,
   };
+}
+
+/**
+ * Fetches a single server record's detail directly from GET /servers/{id} (bypassing pvl_cache)
+ * so belt-and-braces recovery never sees a stale cached record.
+ */
+export async function fetchServerDetailFresh(id) {
+  const cleanId = typeof id === 'string' ? id.trim() : '';
+  if (!PUBLIC_ID_RE.test(cleanId)) return null;
+  const apiKey = await getPvlApiKey();
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(`${PVL_BASE_URL}/servers/${encodeURIComponent(cleanId)}`, {
+      method: 'GET',
+      headers: {
+        ...buildAuthHeaders(apiKey, null),
+        'Cache-Control': 'no-store',
+      },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data && typeof json.data === 'object' ? json.data : json;
+  } catch {
+    return null;
+  }
 }
 
 export function extractSnapshotTimestamp(payload) {
@@ -1131,7 +1169,7 @@ export function validateAndNormalizeServersInput(input) {
   ];
 
   const queryString = queryParts.join('&');
-  const cacheKey = `servers?${queryString}`;
+  const cacheKey = `servers_v2?${queryString}`;
   const pathAndQuery = `/servers?${queryString}`;
 
   return {
