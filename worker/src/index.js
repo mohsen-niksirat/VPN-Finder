@@ -93,20 +93,18 @@ export default {
       let protoCount = 0;
       for (const srv of rows) {
         if (protoCount >= MAX_PER_PROTOCOL || uris.length >= MAX_TOTAL) break;
-        if (!srv || !srv.id) continue;
-        let rawUri = typeof srv.v2rayng_url === 'string' && srv.v2rayng_url ? srv.v2rayng_url : null;
-        if (!rawUri && srv.connection_info_url) {
-          try {
-            const cRes = await fetch(srv.connection_info_url, { headers });
-            if (cRes.ok) {
-              const cJson = await cRes.json();
-              rawUri = cJson?.v2rayng_url || cJson?.config_url || cJson?.uri || null;
-            }
-          } catch {
-            continue;
+        if (!srv || !srv.id || !srv.connection_info_url) continue;
+        let rawUri = null;
+        try {
+          const cRes = await fetch(srv.connection_info_url, { headers });
+          if (cRes.ok) {
+            const cJson = await cRes.json();
+            rawUri = cJson?.qr_payload || cJson?.config_url || cJson?.uri || null;
           }
+        } catch {
+          continue;
         }
-        if (!rawUri || typeof rawUri !== 'string') continue;
+        if (!rawUri || typeof rawUri !== 'string' || rawUri.startsWith('v2rayng://')) continue;
         uris.push(brandConfigUri(rawUri, srv.country_code, proto));
         protoCount += 1;
       }
