@@ -5,6 +5,7 @@ import {
   ALLOWED_PROTOCOLS,
   checkConnectionRateLimit,
   consumeConnectionRateLimit,
+  describeFieldValueState,
   downloadAndBrandOvpn,
   fetchConnection,
   fetchPvlCached,
@@ -407,10 +408,18 @@ export async function deliverConfigsBatch({
       }
 
       let dlUrl = srv.config_download_url;
+      let fallbackInvoked = false;
+      let fallbackValueState = 'not_invoked';
       if (!dlUrl) {
+        fallbackInvoked = true;
         const freshRec = await fetchServerDetailFresh(srv.id);
+        fallbackValueState = describeFieldValueState(freshRec, 'config_download_url');
         dlUrl = freshRec?.config_download_url || null;
       }
+
+      const extraFirst = attempts === 1
+        ? { fallback_invoked: fallbackInvoked, fallback_value_state: fallbackValueState }
+        : {};
 
       if (!dlUrl) {
         skippedIds.push({ id: srv.id, reason: 'missing_config_download_url' });
@@ -419,6 +428,7 @@ export async function deliverConfigsBatch({
           stage_reached: 'record_resolve',
           reason_code: 'missing_config_download_url',
           http_status: null,
+          ...extraFirst,
         });
         continue;
       }
@@ -433,6 +443,7 @@ export async function deliverConfigsBatch({
           stage_reached: stageReached,
           reason_code: reasonCode,
           http_status: ovpn?.httpStatus ?? null,
+          ...extraFirst,
         });
         continue;
       }
@@ -456,6 +467,7 @@ export async function deliverConfigsBatch({
           stage_reached: 'send',
           reason_code: `send_${err?.name || 'Error'}`,
           http_status: ovpn.httpStatus ?? 200,
+          ...extraFirst,
         });
         continue;
       }
@@ -470,6 +482,7 @@ export async function deliverConfigsBatch({
         stage_reached: 'send',
         reason_code: 'ok',
         http_status: ovpn.httpStatus ?? 200,
+        ...extraFirst,
       });
 
       deliveredMeta.push({

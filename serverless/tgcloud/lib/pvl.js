@@ -764,6 +764,17 @@ export async function downloadAndBrandOvpn(downloadUrl) {
   };
 }
 
+export function describeFieldValueState(obj, key = 'config_download_url') {
+  if (!obj || typeof obj !== 'object') return 'missing_object';
+  if (!Object.prototype.hasOwnProperty.call(obj, key)) return 'missing_key';
+  const val = obj[key];
+  if (val === null || val === undefined) return 'null';
+  if (typeof val === 'string') {
+    return val.length === 0 ? 'empty_string' : `string(len=${val.length})`;
+  }
+  return typeof val;
+}
+
 /**
  * Fetches a single server record's detail directly from GET /servers/{id} (bypassing pvl_cache)
  * so belt-and-braces recovery never sees a stale cached record.
