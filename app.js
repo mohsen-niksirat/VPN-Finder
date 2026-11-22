@@ -1390,37 +1390,6 @@
         const details = document.createElement('div');
         details.className = 'server-card-details';
 
-        const grid = document.createElement('div');
-        grid.className = 'details-grid';
-
-        const addDetail = (label, val, wide = false) => {
-          const cell = document.createElement('div');
-          cell.className = `detail-cell${wide ? ' detail-cell-wide' : ''}`;
-          const l = document.createElement('span');
-          l.className = 'detail-label';
-          l.textContent = label;
-          const v = document.createElement('span');
-          v.className = 'detail-value';
-          v.textContent = val || t.unknownDash;
-          cell.appendChild(l);
-          cell.appendChild(v);
-          grid.appendChild(cell);
-        };
-
-        if (srv.uptime_percent_7d !== null && srv.uptime_percent_7d !== undefined) {
-          addDetail(t.detailUptime7d, `${formatDecimal(srv.uptime_percent_7d, 1)}%`);
-        }
-        if (srv.freshness_status) {
-          addDetail(t.detailFreshness, srv.freshness_status);
-        }
-        if (Array.isArray(srv.risk_flags) && srv.risk_flags.length > 0) {
-          addDetail(t.riskTooltipPrefix, srv.risk_flags.join(', '), true);
-        }
-
-        if (grid.childNodes.length > 0) {
-          details.appendChild(grid);
-        }
-
         const publicPageUrl = (record) => {
           const raw = typeof record?.server_page_url === 'string' ? record.server_page_url.trim() : '';
           if (raw && !raw.includes('/api/')) return raw;

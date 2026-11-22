@@ -89,7 +89,6 @@ export const PANEL_BTN = {
 
 export function buildReplyPanelKeyboard(lang, { isOwner = false } = {}) {
   const fa = isFa(lang);
-  const appUrl = buildAppUrl(lang);
   const row3 = [{ text: fa ? PANEL_BTN.helpFa : PANEL_BTN.helpEn }];
   if (isOwner) {
     row3.push({ text: fa ? PANEL_BTN.statsFa : PANEL_BTN.statsEn });
@@ -101,7 +100,7 @@ export function buildReplyPanelKeyboard(lang, { isOwner = false } = {}) {
         { text: fa ? PANEL_BTN.subFa : PANEL_BTN.subEn },
       ],
       [
-        { text: fa ? PANEL_BTN.appFa : PANEL_BTN.appEn, web_app: { url: appUrl } },
+        { text: fa ? PANEL_BTN.appFa : PANEL_BTN.appEn },
         { text: fa ? PANEL_BTN.settingsFa : PANEL_BTN.settingsEn },
       ],
       row3,

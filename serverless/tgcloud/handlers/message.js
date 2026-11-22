@@ -263,6 +263,13 @@ export default async function (message) {
       await sendSubResponse({ chatId: message.chat.id, userId: fromId, lang, sendMsg });
       return { action: 'panel_sub', userId: fromId, lang };
     }
+    if (t === PANEL_BTN.appEn || t === PANEL_BTN.appFa) {
+      await upsertUser(message.from, '');
+      const text = appPromptText(lang);
+      const reply_markup = buildAppKeyboard(lang, '');
+      await sendMsg({ chat_id: message.chat.id, text, reply_markup });
+      return { action: 'panel_app', userId: fromId, lang };
+    }
     if (t === PANEL_BTN.settingsEn || t === PANEL_BTN.settingsFa) {
       await upsertUser(message.from, '');
       await sendMsg({

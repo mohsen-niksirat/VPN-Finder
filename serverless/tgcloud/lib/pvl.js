@@ -1550,6 +1550,46 @@ export async function getProtocolSpeedSummary(activeProtocols = []) {
 
 export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
   const ccFilter = String(countryCode || '').trim().toUpperCase();
+  const subBase = await getConfigValue('sub_link_base').catch(() => null);
+  const nowIso = new Date().toISOString();
+
+  if (subBase) {
+    try {
+      const workerUrl = `${subBase.replace(/\/+$/, '')}/ovpn?cc=${encodeURIComponent(ccFilter || 'ALL')}&limit=${limit}`;
+      const wRes = await Promise.race([
+        fetch(workerUrl, { method: 'GET' }),
+        new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+      ]);
+      if (wRes && wRes.ok) {
+        const wJson = await wRes.json();
+        const servers = Array.isArray(wJson?.servers) ? wJson.servers : [];
+        const mapped = [];
+        for (const s of servers) {
+          if (!s?.ovpn_b64) continue;
+          const rawText = decodeBase64Utf8(s.ovpn_b64);
+          if (!rawText || !/(?:^|\n)(client|dev|proto|remote)\b/i.test(rawText)) continue;
+          const branded = `# Provided by @MyLeitner · Data: VPNGate\n${rawText.replace(/^\uFEFF/, '').trimStart()}`;
+          const bytes = utf8Enc.encode(branded);
+          if (bytes.byteLength > MAX_OVPN_BYTES) continue;
+          mapped.push({
+            id: s.id,
+            country_code: s.country_code || 'XX',
+            country_name: s.country_name || s.country_code || '',
+            exit_ip: s.exit_ip || '',
+            score: Number(s.score || 0) || 0,
+            latency_ms: s.latency_ms ?? null,
+            speed_mbps: s.speed_mbps ?? null,
+            last_checked_at: nowIso,
+            bytes,
+          });
+        }
+        if (mapped.length > 0) return mapped;
+      }
+    } catch {
+      // fall through to direct fetch
+    }
+  }
+
   let res = null;
   try {
     res = await Promise.race([
@@ -1567,7 +1607,6 @@ export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
     return [];
   }
 
-  const nowIso = new Date().toISOString();
   const rows = [];
   for (const line of text.split(/\r?\n/)) {
     if (!line || line.startsWith('*') || line.startsWith('#')) continue;

@@ -240,6 +240,45 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.pathname === '/ovpn') {
+      const ccFilter = (url.searchParams.get('cc') || '').trim().toUpperCase();
+      const limit = Math.min(15, Math.max(1, Number(url.searchParams.get('limit') || 8)));
+      try {
+        const res = await fetch('https://www.vpngate.net/api/iphone/', {
+          cf: { cacheTtl: 300, cacheEverything: true },
+        });
+        if (!res.ok) return Response.json({ servers: [] }, { status: 502 });
+        const text = await res.text();
+        const rows = [];
+        for (const line of text.split(/\r?\n/)) {
+          if (!line || line.startsWith('*') || line.startsWith('#')) continue;
+          const cols = line.split(',');
+          if (cols.length < 15) continue;
+          const cc = String(cols[6] || '').trim().toUpperCase();
+          if (ccFilter && ccFilter !== 'ALL' && cc !== ccFilter) continue;
+          const ovpnB64 = String(cols[14] || '').trim();
+          if (!ovpnB64) continue;
+          rows.push({
+            id: `vpngate_${cols[1] || rows.length}`,
+            country_code: cc || 'XX',
+            country_name: String(cols[5] || cc).trim(),
+            exit_ip: String(cols[1] || '').trim(),
+            score: Number(cols[2] || 0) || 0,
+            latency_ms: Number(cols[3] || 0) || null,
+            speed_mbps: Number(cols[4] || 0) > 0 ? Number((Number(cols[4]) / 1e6).toFixed(1)) : null,
+            ovpn_b64: ovpnB64,
+          });
+        }
+        rows.sort((a, b) => b.score - a.score);
+        return Response.json(
+          { servers: rows.slice(0, limit) },
+          { headers: { 'Cache-Control': 'no-store' } }
+        );
+      } catch {
+        return Response.json({ servers: [] }, { status: 502 });
+      }
+    }
+
     const match = SUB_PATH_RE.exec(url.pathname);
     if (!match) {
       return plainText('Not found', 404);
