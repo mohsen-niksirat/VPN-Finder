@@ -26,10 +26,24 @@ function toBase64Utf8(str) {
   return btoa(bin);
 }
 
+function countryCodeToFlag(code) {
+  if (!code || typeof code !== 'string' || !/^[A-Za-z]{2}$/.test(code)) {
+    return '🌐';
+  }
+  const upper = code.toUpperCase();
+  return String.fromCodePoint(
+    0x1f1e6 + (upper.charCodeAt(0) - 65),
+    0x1f1e6 + (upper.charCodeAt(1) - 65)
+  );
+}
+
 function brandConfigUri(uri, countryCode, protocol) {
-  const cc = (countryCode || 'XX').toUpperCase();
+  const cc = (countryCode || '').toUpperCase();
+  const flag = countryCodeToFlag(cc);
   const protoLabel = String(protocol || '').toUpperCase();
-  const remark = `@MyLeitner | ${cc} ${protoLabel}`;
+  const remark = cc
+    ? `${flag} @MyLeitner | ${cc} ${protoLabel}`
+    : `${flag} @MyLeitner | ${protoLabel}`;
   const vmessPrefix = 'vmess' + '://';
   if (uri.startsWith(vmessPrefix)) {
     try {
