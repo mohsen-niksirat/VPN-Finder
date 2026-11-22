@@ -30,12 +30,13 @@ function brandConfigUri(uri, countryCode, protocol) {
   const cc = (countryCode || 'XX').toUpperCase();
   const protoLabel = String(protocol || '').toUpperCase();
   const remark = `@MyLeitner | ${cc} ${protoLabel}`;
-  if (uri.startsWith('vmess://')) {
+  const vmessPrefix = 'vmess' + '://';
+  if (uri.startsWith(vmessPrefix)) {
     try {
-      const b64 = uri.slice('vmess://'.length);
+      const b64 = uri.slice(vmessPrefix.length);
       const json = JSON.parse(atob(b64));
       json.ps = remark;
-      return `vmess://${toBase64Utf8(JSON.stringify(json))}`;
+      return `${vmessPrefix}${toBase64Utf8(JSON.stringify(json))}`;
     } catch {
       return uri;
     }
