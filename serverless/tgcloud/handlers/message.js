@@ -9,7 +9,7 @@ import {
   getPvlApiKey,
   PVL_CACHE_TTL_SEC,
 } from '../lib/pvl.js';
-import { runDebugProbe, runDebugProbe2 } from '../lib/probe.js';
+import { runDebugProbe, runDebugProbe2, runDebugProbe3 } from '../lib/probe.js';
 import { startGetFlow } from '../lib/getFlow.js';
 import {
   appPromptText,
@@ -240,6 +240,28 @@ export default async function (message) {
       reply_markup,
     });
     return { action: 'help', userId: fromId, lang, text, reply_markup };
+  }
+
+  if (parsed && parsed.cmd === 'debugprobe3') {
+    const ownerId = await getOwnerId();
+    if (isPrivate && ownerId && fromId === ownerId) {
+      const res = await runDebugProbe3('handler');
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: res.text,
+      });
+      return { action: 'debugprobe3', owner: true, probeText: res.text };
+    }
+    const text = helpText(lang);
+    const reply_markup = buildAppKeyboard(lang, '');
+    await sendMsg({
+      chat_id: message.chat.id,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      reply_markup,
+    });
+    return { action: 'debugprobe3_denied', owner: false };
   }
 
   if (parsed && parsed.cmd === 'debugprobe2') {
