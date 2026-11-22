@@ -55,19 +55,41 @@ export default async function (cq) {
     }
     const token = await regenerateSubToken(userId);
     const url = `${base}/sub/${token}`;
-    await sendMsg({
-      chat_id: chatId,
-      text: subLinkText(url, lang, { regenerated: true }),
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-      reply_markup: subKeyboard(lang),
-    });
+    const text = subLinkText(url, lang, { regenerated: true });
+    const reply_markup = subKeyboard(lang);
+    const msgId = cq.message?.message_id;
+    if (!dryRun && msgId) {
+      await api
+        .editMessageText({
+          chat_id: chatId,
+          message_id: msgId,
+          text,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+          reply_markup,
+        })
+        .catch(() => sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup }));
+    } else {
+      await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
+    }
     return { action: 'sub_regen', userId };
   }
 
   if (data === 'sub:revoke') {
     await revokeSubToken(userId);
-    await sendMsg({ chat_id: chatId, text: subRevokedText(lang) });
+    const text = subRevokedText(lang);
+    const msgId = cq.message?.message_id;
+    if (!dryRun && msgId) {
+      await api
+        .editMessageText({
+          chat_id: chatId,
+          message_id: msgId,
+          text,
+        })
+        .catch(() => sendMsg({ chat_id: chatId, text }));
+    } else {
+      await sendMsg({ chat_id: chatId, text });
+    }
     return { action: 'sub_revoke', userId };
   }
 
