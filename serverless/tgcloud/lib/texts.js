@@ -23,7 +23,8 @@ export const COMMANDS_EN = [
   { command: 'get', description: 'Get working VPN configs right in chat' },
   { command: 'sub', description: 'Get your personal subscription link' },
   { command: 'app', description: 'Launch the Mini App' },
-  { command: 'menu', description: 'Show or hide the in-chat quick panel' },
+  { command: 'settings', description: 'Language and bot settings' },
+  { command: 'menu', description: 'Refresh the in-chat quick panel' },
   { command: 'help', description: 'How filtering, QR & v2rayNG work + disclaimer' },
 ];
 
@@ -32,7 +33,8 @@ export const COMMANDS_FA = [
   { command: 'get', description: 'دریافت مستقیم کانفیگ در چت' },
   { command: 'sub', description: 'دریافت لینک اشتراک شخصی' },
   { command: 'app', description: 'اجرای مینی‌اپ' },
-  { command: 'menu', description: 'نمایش یا مخفی کردن پنل سریع چت' },
+  { command: 'settings', description: 'تنظیمات زبان ربات' },
+  { command: 'menu', description: 'به‌روزرسانی پنل سریع چت' },
   { command: 'help', description: 'راهنمای فیلتر، QR و v2rayNG + سلب مسئولیت' },
 ];
 
@@ -47,8 +49,15 @@ export function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
+export function buildAppUrl(lang, startParam = '') {
+  const l = isFa(lang) ? 'fa' : 'en';
+  const params = [`lang=${l}`];
+  if (startParam) params.push(`start=${encodeURIComponent(startParam)}`);
+  return `${APP_URL}?${params.join('&')}`;
+}
+
 export function buildAppKeyboard(lang, startParam = '', { includeGetButton = false } = {}) {
-  const url = startParam ? `${APP_URL}?start=${encodeURIComponent(startParam)}` : APP_URL;
+  const url = buildAppUrl(lang, startParam);
   const openText = isFa(lang) ? 'باز کردن VPN Finder' : 'Open VPN Finder';
   const rows = [[{ text: openText, web_app: { url } }]];
   if (includeGetButton) {
@@ -70,14 +79,21 @@ export const PANEL_BTN = {
   subFa: '🔗 اشتراک',
   appEn: '🌐 Mini App',
   appFa: '🌐 مینی‌اپ',
+  settingsEn: '⚙️ Settings',
+  settingsFa: '⚙️ تنظیمات',
   helpEn: '❓ Help',
   helpFa: '❓ راهنما',
-  hideEn: '🔽 Hide panel',
-  hideFa: '🔽 مخفی کردن پنل',
+  statsEn: '📊 Stats',
+  statsFa: '📊 آمار',
 };
 
-export function buildReplyPanelKeyboard(lang) {
+export function buildReplyPanelKeyboard(lang, { isOwner = false } = {}) {
   const fa = isFa(lang);
+  const appUrl = buildAppUrl(lang);
+  const row3 = [{ text: fa ? PANEL_BTN.helpFa : PANEL_BTN.helpEn }];
+  if (isOwner) {
+    row3.push({ text: fa ? PANEL_BTN.statsFa : PANEL_BTN.statsEn });
+  }
   return {
     keyboard: [
       [
@@ -85,10 +101,10 @@ export function buildReplyPanelKeyboard(lang) {
         { text: fa ? PANEL_BTN.subFa : PANEL_BTN.subEn },
       ],
       [
-        { text: fa ? PANEL_BTN.appFa : PANEL_BTN.appEn, web_app: { url: APP_URL } },
-        { text: fa ? PANEL_BTN.helpFa : PANEL_BTN.helpEn },
+        { text: fa ? PANEL_BTN.appFa : PANEL_BTN.appEn, web_app: { url: appUrl } },
+        { text: fa ? PANEL_BTN.settingsFa : PANEL_BTN.settingsEn },
       ],
-      [{ text: fa ? PANEL_BTN.hideFa : PANEL_BTN.hideEn }],
+      row3,
     ],
     resize_keyboard: true,
     is_persistent: true,
@@ -97,20 +113,30 @@ export function buildReplyPanelKeyboard(lang) {
 
 export function panelShownText(lang) {
   return isFa(lang)
-    ? '🎛 پنل سریع پایین صفحه فعال شد. هر زمان خواستید با دکمه «🔽 مخفی کردن پنل» یا دستور /menu آن را ببندید.'
-    : '🎛 Quick panel is active below. Tap "🔽 Hide panel" or send /menu anytime to hide it.';
+    ? '🎛 پنل سریع پایین صفحه فعال شد. با دکمه چهارنقطه‌ای کنار کادر پیام می‌توانید هر زمان پنل را جمع یا باز کنید.'
+    : '🎛 Quick panel is active below. Use the 4-dot icon in the message bar anytime to collapse or expand it.';
 }
 
-export function panelHiddenText(lang) {
+export function settingsText(lang) {
   return isFa(lang)
-    ? '👌 پنل سریع مخفی شد. برای نمایش دوباره، دستور /menu را بفرستید یا دکمه زیر را بزنید.'
-    : '👌 Quick panel hidden. Send /menu or tap the button below to show it again.';
+    ? '⚙️ <b>تنظیمات ربات</b>\n\nزبان مورد نظر خود را انتخاب کنید:'
+    : '⚙️ <b>Bot Settings</b>\n\nChoose your preferred language:';
 }
 
-export function showPanelInlineKeyboard(lang) {
+export function langUpdatedText(lang) {
+  return isFa(lang)
+    ? '✅ زبان ربات به <b>فارسی</b> تغییر یافت.'
+    : '✅ Bot language updated to <b>English</b>.';
+}
+
+export function settingsKeyboard(lang) {
+  const fa = isFa(lang);
   return {
     inline_keyboard: [
-      [{ text: isFa(lang) ? '🔼 نمایش پنل' : '🔼 Show panel', callback_data: 'panel:show' }],
+      [
+        { text: fa ? '🇺🇸 English' : '✓ 🇺🇸 English', callback_data: 'lang:set:en' },
+        { text: fa ? '✓ 🇮🇷 فارسی' : '🇮🇷 فارسی', callback_data: 'lang:set:fa' },
+      ],
     ],
   };
 }
@@ -403,7 +429,7 @@ export function batchSummaryText(
 }
 
 export function batchSummaryKeyboard(lang, protocol, country, { allFailed = false } = {}) {
-  const parts = [];
+  const parts = [`lang=${isFa(lang) ? 'fa' : 'en'}`];
   if (protocol) parts.push(`protocol=${encodeURIComponent(protocol)}`);
   if (country && country !== 'ALL') parts.push(`country=${encodeURIComponent(country)}`);
   const qs = parts.join('&');

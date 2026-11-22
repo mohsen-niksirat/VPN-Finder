@@ -1,6 +1,6 @@
 import { db, fetch, EndpointError } from 'sdk';
 import { eq, sql } from 'sdk/db';
-import { botConfig, connectionRateLimits, counters, pvlCache } from '../schema.js';
+import { botConfig, connectionRateLimits, counters, pvlCache, users } from '../schema.js';
 import { lookupIpCountry } from './geo.js';
 
 export const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
@@ -95,6 +95,45 @@ export async function getOwnerId() {
 
 export async function getPvlApiKey() {
   return await getConfigValue('pvl_api_key');
+}
+
+export async function getEffectiveUserLang(userId, fallbackCode = 'en') {
+  if (userId) {
+    try {
+      const row = await db
+        .select({ language: users.language })
+        .from(users)
+        .where(eq(users.id, userId))
+        .get();
+      if (row?.language) {
+        const l = String(row.language).toLowerCase();
+        if (l.startsWith('fa')) return 'fa';
+        if (l.startsWith('en')) return 'en';
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return String(fallbackCode || '').toLowerCase().startsWith('fa') ? 'fa' : 'en';
+}
+
+export async function setUserLang(userId, lang) {
+  if (!userId) return;
+  const normalized = String(lang || '').toLowerCase().startsWith('fa') ? 'fa' : 'en';
+  await db
+    .insert(users)
+    .values({
+      id: userId,
+      language: normalized,
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: {
+        language: normalized,
+        lastSeen: sql`(unixepoch())`,
+      },
+    })
+    .run();
 }
 
 function buildAuthHeaders(apiKey, etag) {

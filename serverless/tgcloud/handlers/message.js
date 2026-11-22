@@ -1,10 +1,11 @@
 import { db, api } from 'sdk';
-import { desc, eq, sql } from 'sdk/db';
+import { desc, eq, gte, sql } from 'sdk/db';
 import { deliveryDebug, users, pvlCache, subTokens } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
   extractSnapshotTimestamp,
   getCounters,
+  getEffectiveUserLang,
   getOwnerId,
   getPvlApiKey,
   PVL_CACHE_TTL_SEC,
@@ -19,9 +20,9 @@ import {
   fallbackText,
   helpText,
   PANEL_BTN,
-  panelHiddenText,
   panelShownText,
-  showPanelInlineKeyboard,
+  settingsKeyboard,
+  settingsText,
   welcomeText,
 } from '../lib/texts.js';
 
@@ -47,9 +48,8 @@ async function upsertUser(from, startParam) {
     .onConflictDoUpdate({
       target: users.id,
       set: {
-        language: from.language_code || null,
         lastSeen: sql`(unixepoch())`,
-        startParam: startParam || null,
+        ...(startParam ? { startParam } : {}),
       },
     })
     .run();
@@ -57,14 +57,15 @@ async function upsertUser(from, startParam) {
 
 async function formatOwnerStats() {
   const totalUsers = await db.$count(users);
+  const now = Math.floor(Date.now() / 1000);
+  const active24h = await db.$count(users, gte(users.lastSeen, now - 86400)).catch(() => 0);
+  const active7d = await db.$count(users, gte(users.lastSeen, now - 7 * 86400)).catch(() => 0);
   const apiKey = await getPvlApiKey();
   const cacheRows = await db
     .select()
     .from(pvlCache)
     .orderBy(desc(pvlCache.fetchedAt))
     .all();
-
-  const now = Math.floor(Date.now() / 1000);
   let lastSnapshotTime = 'N/A';
 
   for (const row of cacheRows) {
@@ -92,12 +93,13 @@ async function formatOwnerStats() {
   const lines = [
     'VPN Finder: Owner Stats',
     '',
-    `Total users: ${totalUsers}`,
+    `Total users: ${totalUsers} (24h active: ${active24h}, 7d: ${active7d})`,
     `Connections served: ${counters.connections_served}`,
     `Configs sent in chat: ${counters.configs_sent_chat}`,
     `Get flows started: ${counters.get_flows_started}`,
     `Sub tokens issued: ${totalSubTokens}`,
     `Subs served: ${counters.subs_served || 0}`,
+    'VPN traffic: N/A (clients connect directly to third-party servers; bot does not proxy VPN data)',
     `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required: insert pvl_api_key in bot_config)'}`,
     `Cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
   ];
@@ -191,8 +193,10 @@ export default async function (message) {
   const parsed = parseCommand(message.text || '');
   if (isGroup && !parsed) return;
 
-  const lang = message.from?.language_code || 'en';
   const fromId = message.from?.id || 0;
+  const lang = await getEffectiveUserLang(fromId, message.from?.language_code || 'en');
+  const ownerId = isPrivate ? await getOwnerId() : 0;
+  const isOwner = Boolean(isPrivate && ownerId && fromId === ownerId);
   const dryRun = Boolean(message._dry_run);
   const sendMsg = async (params) => {
     if (dryRun) return { dry_run: true, ...params };
@@ -229,32 +233,28 @@ export default async function (message) {
       await sendMsg({
         chat_id: message.chat.id,
         text: panelShownText(lang),
-        reply_markup: buildReplyPanelKeyboard(lang),
+        reply_markup: buildReplyPanelKeyboard(lang, { isOwner }),
       });
     }
     return { action: 'start', userId: fromId, lang, text, reply_markup };
   }
 
-  if (parsed && parsed.cmd === 'menu') {
-    if (!isPrivate) return { action: 'menu_ignored_group' };
+  if (parsed && (parsed.cmd === 'menu' || parsed.cmd === 'settings')) {
+    if (!isPrivate) return { action: `${parsed.cmd}_ignored_group` };
     await upsertUser(message.from, '');
-    if (String(parsed.param || '').toLowerCase() === 'hide') {
+    if (parsed.cmd === 'settings') {
       await sendMsg({
         chat_id: message.chat.id,
-        text: '🔽',
-        reply_markup: { remove_keyboard: true },
+        text: settingsText(lang),
+        parse_mode: 'HTML',
+        reply_markup: settingsKeyboard(lang),
       });
-      await sendMsg({
-        chat_id: message.chat.id,
-        text: panelHiddenText(lang),
-        reply_markup: showPanelInlineKeyboard(lang),
-      });
-      return { action: 'menu_hide', userId: fromId, lang };
+      return { action: 'settings', userId: fromId, lang };
     }
     await sendMsg({
       chat_id: message.chat.id,
       text: panelShownText(lang),
-      reply_markup: buildReplyPanelKeyboard(lang),
+      reply_markup: buildReplyPanelKeyboard(lang, { isOwner }),
     });
     return { action: 'menu_show', userId: fromId, lang };
   }
@@ -271,6 +271,16 @@ export default async function (message) {
       await sendSubResponse({ chatId: message.chat.id, userId: fromId, lang, sendMsg });
       return { action: 'panel_sub', userId: fromId, lang };
     }
+    if (t === PANEL_BTN.settingsEn || t === PANEL_BTN.settingsFa) {
+      await upsertUser(message.from, '');
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: settingsText(lang),
+        parse_mode: 'HTML',
+        reply_markup: settingsKeyboard(lang),
+      });
+      return { action: 'panel_settings', userId: fromId, lang };
+    }
     if (t === PANEL_BTN.helpEn || t === PANEL_BTN.helpFa) {
       await upsertUser(message.from, '');
       await sendMsg({
@@ -281,18 +291,10 @@ export default async function (message) {
       });
       return { action: 'panel_help', userId: fromId, lang };
     }
-    if (t === PANEL_BTN.hideEn || t === PANEL_BTN.hideFa) {
-      await sendMsg({
-        chat_id: message.chat.id,
-        text: '🔽',
-        reply_markup: { remove_keyboard: true },
-      });
-      await sendMsg({
-        chat_id: message.chat.id,
-        text: panelHiddenText(lang),
-        reply_markup: showPanelInlineKeyboard(lang),
-      });
-      return { action: 'panel_hide', userId: fromId, lang };
+    if ((t === PANEL_BTN.statsEn || t === PANEL_BTN.statsFa) && isOwner) {
+      const statsText = await formatOwnerStats();
+      await sendMsg({ chat_id: message.chat.id, text: statsText });
+      return { action: 'panel_stats', owner: true, statsText };
     }
   }
 

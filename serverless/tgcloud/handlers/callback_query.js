@@ -9,7 +9,14 @@ import {
   showProtocolStep,
   startGetFlow,
 } from '../lib/getFlow.js';
-import { buildReplyPanelKeyboard, flowExpiredText, panelShownText } from '../lib/texts.js';
+import { getEffectiveUserLang, getOwnerId, setUserLang } from '../lib/pvl.js';
+import {
+  buildReplyPanelKeyboard,
+  flowExpiredText,
+  langUpdatedText,
+  panelShownText,
+  settingsKeyboard,
+} from '../lib/texts.js';
 import {
   getActiveSubToken,
   getSubLinkBase,
@@ -36,7 +43,7 @@ export default async function (cq) {
 
   const userId = cq.from.id;
   const chatId = chat.id;
-  const lang = cq.from.language_code || 'en';
+  const lang = await getEffectiveUserLang(userId, cq.from.language_code || 'en');
   const data = String(cq.data || '');
   const dryRun = Boolean(cq._dry_run);
 
@@ -69,12 +76,43 @@ export default async function (cq) {
   };
 
   if (data === 'panel:show') {
+    const ownerId = await getOwnerId();
+    const isOwner = Boolean(ownerId && userId === ownerId);
     await sendMsg({
       chat_id: chatId,
       text: panelShownText(lang),
-      reply_markup: buildReplyPanelKeyboard(lang),
+      reply_markup: buildReplyPanelKeyboard(lang, { isOwner }),
     });
     return { action: 'panel_show', userId };
+  }
+
+  if (data === 'lang:set:en' || data === 'lang:set:fa') {
+    const chosen = data === 'lang:set:fa' ? 'fa' : 'en';
+    await setUserLang(userId, chosen);
+    const ownerId = await getOwnerId();
+    const isOwner = Boolean(ownerId && userId === ownerId);
+    const msgId = cq.message?.message_id;
+    const text = langUpdatedText(chosen);
+    const reply_markup = settingsKeyboard(chosen);
+    if (!dryRun && msgId) {
+      await api
+        .editMessageText({
+          chat_id: chatId,
+          message_id: msgId,
+          text,
+          parse_mode: 'HTML',
+          reply_markup,
+        })
+        .catch(() => sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', reply_markup }));
+    } else {
+      await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', reply_markup });
+    }
+    await sendMsg({
+      chat_id: chatId,
+      text: panelShownText(chosen),
+      reply_markup: buildReplyPanelKeyboard(chosen, { isOwner }),
+    });
+    return { action: 'lang_set', userId, lang: chosen };
   }
 
   if (data === 'sub:open') {

@@ -106,11 +106,16 @@ const SUB_COUNTRIES = [
 
 export function subKeyboard(lang, selectedCc = 'ALL') {
   const active = (selectedCc || 'ALL').toUpperCase();
-  const row1 = SUB_COUNTRIES.slice(0, 4).map(([code, label]) => ({
+  const fa = isFa(lang);
+  const countries = SUB_COUNTRIES.map(([code, label]) => [
+    code,
+    code === 'ALL' && fa ? '🌍 همه' : label,
+  ]);
+  const row1 = countries.slice(0, 4).map(([code, label]) => ({
     text: active === code ? `✓ ${label}` : label,
     callback_data: `sub:cc:${code}`,
   }));
-  const row2 = SUB_COUNTRIES.slice(4, 8).map(([code, label]) => ({
+  const row2 = countries.slice(4, 8).map(([code, label]) => ({
     text: active === code ? `✓ ${label}` : label,
     callback_data: `sub:cc:${code}`,
   }));
