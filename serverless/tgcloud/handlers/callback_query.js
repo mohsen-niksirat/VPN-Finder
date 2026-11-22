@@ -9,7 +9,7 @@ import {
   showProtocolStep,
   startGetFlow,
 } from '../lib/getFlow.js';
-import { flowExpiredText } from '../lib/texts.js';
+import { buildReplyPanelKeyboard, flowExpiredText, panelShownText } from '../lib/texts.js';
 import {
   getActiveSubToken,
   getSubLinkBase,
@@ -67,6 +67,15 @@ export default async function (cq) {
       caption,
     });
   };
+
+  if (data === 'panel:show') {
+    await sendMsg({
+      chat_id: chatId,
+      text: panelShownText(lang),
+      reply_markup: buildReplyPanelKeyboard(lang),
+    });
+    return { action: 'panel_show', userId };
+  }
 
   if (data === 'sub:open') {
     await sendSubResponse({ chatId, userId, lang, sendMsg });

@@ -20,17 +20,19 @@ export const DESC_FA =
 
 export const COMMANDS_EN = [
   { command: 'start', description: 'Open VPN Finder' },
-  { command: 'app', description: 'Launch the Mini App' },
   { command: 'get', description: 'Get working VPN configs right in chat' },
   { command: 'sub', description: 'Get your personal subscription link' },
+  { command: 'app', description: 'Launch the Mini App' },
+  { command: 'menu', description: 'Show or hide the in-chat quick panel' },
   { command: 'help', description: 'How filtering, QR & v2rayNG work + disclaimer' },
 ];
 
 export const COMMANDS_FA = [
   { command: 'start', description: 'باز کردن VPN Finder' },
-  { command: 'app', description: 'اجرای مینی‌اپ' },
   { command: 'get', description: 'دریافت مستقیم کانفیگ در چت' },
   { command: 'sub', description: 'دریافت لینک اشتراک شخصی' },
+  { command: 'app', description: 'اجرای مینی‌اپ' },
+  { command: 'menu', description: 'نمایش یا مخفی کردن پنل سریع چت' },
   { command: 'help', description: 'راهنمای فیلتر، QR و v2rayNG + سلب مسئولیت' },
 ];
 
@@ -59,6 +61,58 @@ export function buildAppKeyboard(lang, startParam = '', { includeGetButton = fal
     rows.push([{ text: '📣 MyLeitner', url: 'https://t.me/MyLeitner' }]);
   }
   return { inline_keyboard: rows };
+}
+
+export const PANEL_BTN = {
+  getEn: '📥 Get configs',
+  getFa: '📥 دریافت کانفیگ',
+  subEn: '🔗 Subscription',
+  subFa: '🔗 اشتراک',
+  appEn: '🌐 Mini App',
+  appFa: '🌐 مینی‌اپ',
+  helpEn: '❓ Help',
+  helpFa: '❓ راهنما',
+  hideEn: '🔽 Hide panel',
+  hideFa: '🔽 مخفی کردن پنل',
+};
+
+export function buildReplyPanelKeyboard(lang) {
+  const fa = isFa(lang);
+  return {
+    keyboard: [
+      [
+        { text: fa ? PANEL_BTN.getFa : PANEL_BTN.getEn },
+        { text: fa ? PANEL_BTN.subFa : PANEL_BTN.subEn },
+      ],
+      [
+        { text: fa ? PANEL_BTN.appFa : PANEL_BTN.appEn, web_app: { url: APP_URL } },
+        { text: fa ? PANEL_BTN.helpFa : PANEL_BTN.helpEn },
+      ],
+      [{ text: fa ? PANEL_BTN.hideFa : PANEL_BTN.hideEn }],
+    ],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
+
+export function panelShownText(lang) {
+  return isFa(lang)
+    ? '🎛 پنل سریع پایین صفحه فعال شد. هر زمان خواستید با دکمه «🔽 مخفی کردن پنل» یا دستور /menu آن را ببندید.'
+    : '🎛 Quick panel is active below. Tap "🔽 Hide panel" or send /menu anytime to hide it.';
+}
+
+export function panelHiddenText(lang) {
+  return isFa(lang)
+    ? '👌 پنل سریع مخفی شد. برای نمایش دوباره، دستور /menu را بفرستید یا دکمه زیر را بزنید.'
+    : '👌 Quick panel hidden. Send /menu or tap the button below to show it again.';
+}
+
+export function showPanelInlineKeyboard(lang) {
+  return {
+    inline_keyboard: [
+      [{ text: isFa(lang) ? '🔼 نمایش پنل' : '🔼 Show panel', callback_data: 'panel:show' }],
+    ],
+  };
 }
 
 export function welcomeText(lang) {

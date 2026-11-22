@@ -15,8 +15,13 @@ import { sendSubResponse } from '../lib/sub.js';
 import {
   appPromptText,
   buildAppKeyboard,
+  buildReplyPanelKeyboard,
   fallbackText,
   helpText,
+  PANEL_BTN,
+  panelHiddenText,
+  panelShownText,
+  showPanelInlineKeyboard,
   welcomeText,
 } from '../lib/texts.js';
 
@@ -213,7 +218,75 @@ export default async function (message) {
       text,
       reply_markup,
     });
+    if (isPrivate) {
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: panelShownText(lang),
+        reply_markup: buildReplyPanelKeyboard(lang),
+      });
+    }
     return { action: 'start', userId: fromId, lang, text, reply_markup };
+  }
+
+  if (parsed && parsed.cmd === 'menu') {
+    if (!isPrivate) return { action: 'menu_ignored_group' };
+    await upsertUser(message.from, '');
+    if (String(parsed.param || '').toLowerCase() === 'hide') {
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: '🔽',
+        reply_markup: { remove_keyboard: true },
+      });
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: panelHiddenText(lang),
+        reply_markup: showPanelInlineKeyboard(lang),
+      });
+      return { action: 'menu_hide', userId: fromId, lang };
+    }
+    await sendMsg({
+      chat_id: message.chat.id,
+      text: panelShownText(lang),
+      reply_markup: buildReplyPanelKeyboard(lang),
+    });
+    return { action: 'menu_show', userId: fromId, lang };
+  }
+
+  if (isPrivate && message.text) {
+    const t = message.text.trim();
+    if (t === PANEL_BTN.getEn || t === PANEL_BTN.getFa) {
+      await upsertUser(message.from, '');
+      const flowRes = await startGetFlow({ chatId: message.chat.id, userId: fromId, lang, sendMsg });
+      return { action: 'panel_get', userId: fromId, lang, ...flowRes };
+    }
+    if (t === PANEL_BTN.subEn || t === PANEL_BTN.subFa) {
+      await upsertUser(message.from, '');
+      await sendSubResponse({ chatId: message.chat.id, userId: fromId, lang, sendMsg });
+      return { action: 'panel_sub', userId: fromId, lang };
+    }
+    if (t === PANEL_BTN.helpEn || t === PANEL_BTN.helpFa) {
+      await upsertUser(message.from, '');
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: helpText(lang),
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      });
+      return { action: 'panel_help', userId: fromId, lang };
+    }
+    if (t === PANEL_BTN.hideEn || t === PANEL_BTN.hideFa) {
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: '🔽',
+        reply_markup: { remove_keyboard: true },
+      });
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: panelHiddenText(lang),
+        reply_markup: showPanelInlineKeyboard(lang),
+      });
+      return { action: 'panel_hide', userId: fromId, lang };
+    }
   }
 
   if (parsed && parsed.cmd === 'get') {
