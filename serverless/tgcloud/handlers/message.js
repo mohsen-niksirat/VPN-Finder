@@ -1,5 +1,5 @@
 import { db, api } from 'sdk';
-import { desc, eq, gte, sql } from 'sdk/db';
+import { desc, eq, sql } from 'sdk/db';
 import { deliveryDebug, users, pvlCache, subTokens } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
@@ -56,74 +56,68 @@ async function upsertUser(from, startParam) {
 }
 
 async function formatOwnerStats() {
-  const totalUsers = await db.$count(users);
-  const now = Math.floor(Date.now() / 1000);
-  const active24h = await db.$count(users, gte(users.lastSeen, now - 86400)).catch(() => 0);
-  const active7d = await db.$count(users, gte(users.lastSeen, now - 7 * 86400)).catch(() => 0);
-  const apiKey = await getPvlApiKey();
-  const cacheRows = await db
-    .select()
-    .from(pvlCache)
-    .orderBy(desc(pvlCache.fetchedAt))
-    .all();
-  let lastSnapshotTime = 'N/A';
-
-  for (const row of cacheRows) {
-    if (row.key === 'stats' || row.key === 'protocols') {
-      try {
-        const parsed = JSON.parse(row.body);
-        const snap = extractSnapshotTimestamp(parsed);
-        if (snap) {
-          lastSnapshotTime = String(snap);
-          break;
-        }
-      } catch {}
+  try {
+    const totalUsers = await db.$count(users).catch(() => 0);
+    const now = Math.floor(Date.now() / 1000);
+    const allUsers = await db
+      .select({ id: users.id, lastSeen: users.lastSeen })
+      .from(users)
+      .all()
+      .catch(() => []);
+    let active24h = 0;
+    let active7d = 0;
+    for (const u of allUsers) {
+      const ts = u.lastSeen instanceof Date
+        ? Math.floor(u.lastSeen.getTime() / 1000)
+        : Number(u.lastSeen || 0);
+      if (ts >= now - 86400) active24h += 1;
+      if (ts >= now - 7 * 86400) active7d += 1;
     }
+
+    const apiKey = await getPvlApiKey();
+    const cacheRows = await db
+      .select({
+        key: pvlCache.key,
+        etag: pvlCache.etag,
+        fetchedAt: pvlCache.fetchedAt,
+      })
+      .from(pvlCache)
+      .orderBy(desc(pvlCache.fetchedAt))
+      .limit(20)
+      .all()
+      .catch(() => []);
+
+    const counters = await getCounters();
+    const totalSubTokens = await db.$count(subTokens).catch(() => 0);
+    const lines = [
+      '📊 VPN Finder: Owner Stats',
+      '',
+      `Total users: ${totalUsers} (24h active: ${active24h}, 7d: ${active7d})`,
+      `Connections served: ${counters.connections_served}`,
+      `Configs sent in chat: ${counters.configs_sent_chat}`,
+      `Get flows started: ${counters.get_flows_started}`,
+      `Sub tokens issued: ${totalSubTokens}`,
+      `Subs served: ${counters.subs_served || 0}`,
+      'VPN traffic: N/A (clients connect directly to third-party servers; bot does not proxy VPN data)',
+      `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required)'}`,
+      `Recent cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
+    ];
+
+    if (!cacheRows.length) {
+      lines.push('  (empty)');
+    } else {
+      for (const r of cacheRows.slice(0, 10)) {
+        const ageSec = Math.max(0, now - Number(r.fetchedAt || 0));
+        const fresh = ageSec < PVL_CACHE_TTL_SEC ? 'fresh' : 'expired';
+        lines.push(`  • ${r.key} (${fresh}, ${ageSec}s ago)`);
+      }
+    }
+
+    const out = lines.join('\n');
+    return out.length > 3950 ? `${out.slice(0, 3947)}...` : out;
+  } catch (err) {
+    return `Stats error: ${err?.message || String(err)}`;
   }
-
-  if (lastSnapshotTime === 'N/A' && cacheRows.length > 0) {
-    const latestFetch = Number(cacheRows[0].fetchedAt || 0);
-    if (latestFetch > 0) {
-      lastSnapshotTime = new Date(latestFetch * 1000).toISOString();
-    }
-  }
-
-  const counters = await getCounters();
-  const totalSubTokens = await db.$count(subTokens).catch(() => 0);
-  const lines = [
-    'VPN Finder: Owner Stats',
-    '',
-    `Total users: ${totalUsers} (24h active: ${active24h}, 7d: ${active7d})`,
-    `Connections served: ${counters.connections_served}`,
-    `Configs sent in chat: ${counters.configs_sent_chat}`,
-    `Get flows started: ${counters.get_flows_started}`,
-    `Sub tokens issued: ${totalSubTokens}`,
-    `Subs served: ${counters.subs_served || 0}`,
-    'VPN traffic: N/A (clients connect directly to third-party servers; bot does not proxy VPN data)',
-    `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required: insert pvl_api_key in bot_config)'}`,
-    `Cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
-  ];
-
-  if (!cacheRows.length) {
-    lines.push('  (empty)');
-  } else {
-    const shown = cacheRows.slice(0, 12);
-    for (const r of shown) {
-      const ageSec = Math.max(0, now - Number(r.fetchedAt || 0));
-      const fresh = ageSec < PVL_CACHE_TTL_SEC ? 'fresh' : 'expired';
-      const etagInfo = r.etag ? `etag=${r.etag}` : 'no-etag';
-      lines.push(`  • ${r.key} (${fresh}, ${ageSec}s ago, fetched_at=${r.fetchedAt}, ${etagInfo})`);
-    }
-    if (cacheRows.length > shown.length) {
-      lines.push(`  ... (+${cacheRows.length - shown.length} more cache entries)`);
-    }
-  }
-
-  lines.push('');
-  lines.push(`Last PVL snapshot time: ${lastSnapshotTime}`);
-
-  const out = lines.join('\n');
-  return out.length > 3950 ? `${out.slice(0, 3947)}...` : out;
 }
 
 async function formatOwnerDebugLast(userId) {

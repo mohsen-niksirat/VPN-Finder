@@ -463,6 +463,7 @@ export async function getCounters() {
     connections_served: map.connections_served || 0,
     configs_sent_chat: map.configs_sent_chat || 0,
     get_flows_started: map.get_flows_started || 0,
+    subs_served: map.subs_served || 0,
   };
 }
 
