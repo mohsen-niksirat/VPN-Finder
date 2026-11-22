@@ -1,6 +1,6 @@
 import { db, api } from 'sdk';
 import { desc, eq, sql } from 'sdk/db';
-import { deliveryDebug, users, pvlCache } from '../schema.js';
+import { deliveryDebug, users, pvlCache, subTokens } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
   extractSnapshotTimestamp,
@@ -88,6 +88,7 @@ async function formatOwnerStats() {
   }
 
   const counters = await getCounters();
+  const totalSubTokens = await db.$count(subTokens).catch(() => 0);
   const lines = [
     'VPN Finder: Owner Stats',
     '',
@@ -95,6 +96,7 @@ async function formatOwnerStats() {
     `Connections served: ${counters.connections_served}`,
     `Configs sent in chat: ${counters.configs_sent_chat}`,
     `Get flows started: ${counters.get_flows_started}`,
+    `Sub tokens issued: ${totalSubTokens}`,
     `Subs served: ${counters.subs_served || 0}`,
     `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required: insert pvl_api_key in bot_config)'}`,
     `Cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
@@ -103,18 +105,23 @@ async function formatOwnerStats() {
   if (!cacheRows.length) {
     lines.push('  (empty)');
   } else {
-    for (const r of cacheRows) {
+    const shown = cacheRows.slice(0, 12);
+    for (const r of shown) {
       const ageSec = Math.max(0, now - Number(r.fetchedAt || 0));
       const fresh = ageSec < PVL_CACHE_TTL_SEC ? 'fresh' : 'expired';
       const etagInfo = r.etag ? `etag=${r.etag}` : 'no-etag';
       lines.push(`  • ${r.key} (${fresh}, ${ageSec}s ago, fetched_at=${r.fetchedAt}, ${etagInfo})`);
+    }
+    if (cacheRows.length > shown.length) {
+      lines.push(`  ... (+${cacheRows.length - shown.length} more cache entries)`);
     }
   }
 
   lines.push('');
   lines.push(`Last PVL snapshot time: ${lastSnapshotTime}`);
 
-  return lines.join('\n');
+  const out = lines.join('\n');
+  return out.length > 3950 ? `${out.slice(0, 3947)}...` : out;
 }
 
 async function formatOwnerDebugLast(userId) {
