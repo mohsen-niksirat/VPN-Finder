@@ -59,3 +59,12 @@ export const probeCompare = table('probe_compare', {
   createdAt:     integer('created_at').notNull(),
   detail:        text('detail').notNull(),
 });
+
+export const subTokens = table('sub_tokens', {
+  id:         integer('id').primaryKey({ autoIncrement: true }),
+  userId:     integer('user_id').notNull(),
+  token:      text('token').notNull().unique(),
+  createdAt:  integer('created_at').notNull(),
+  lastUsedAt: integer('last_used_at'),
+  revokedAt:  integer('revoked_at'),
+});

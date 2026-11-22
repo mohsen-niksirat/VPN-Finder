@@ -22,6 +22,7 @@ export const COMMANDS_EN = [
   { command: 'start', description: 'Open VPN Finder' },
   { command: 'app', description: 'Launch the Mini App' },
   { command: 'get', description: 'Get working VPN configs right in chat' },
+  { command: 'sub', description: 'Get your personal subscription link' },
   { command: 'help', description: 'How filtering, QR & v2rayNG work + disclaimer' },
 ];
 
@@ -29,6 +30,7 @@ export const COMMANDS_FA = [
   { command: 'start', description: 'باز کردن VPN Finder' },
   { command: 'app', description: 'اجرای مینی‌اپ' },
   { command: 'get', description: 'دریافت مستقیم کانفیگ در چت' },
+  { command: 'sub', description: 'دریافت لینک اشتراک شخصی' },
   { command: 'help', description: 'راهنمای فیلتر، QR و v2rayNG + سلب مسئولیت' },
 ];
 
@@ -49,7 +51,11 @@ export function buildAppKeyboard(lang, startParam = '', { includeGetButton = fal
   const rows = [[{ text: openText, web_app: { url } }]];
   if (includeGetButton) {
     const getText = isFa(lang) ? '📥 دریافت کانفیگ' : '📥 Get configs';
-    rows.push([{ text: getText, callback_data: 'get_start' }]);
+    const subText = isFa(lang) ? '🔗 اشتراک' : '🔗 Subscription';
+    rows.push([
+      { text: getText, callback_data: 'get_start' },
+      { text: subText, callback_data: 'sub:open' },
+    ]);
     rows.push([{ text: '📣 MyLeitner', url: 'https://t.me/MyLeitner' }]);
   }
   return { inline_keyboard: rows };
@@ -90,7 +96,8 @@ export function helpText(lang) {
     return (
       '<b>راهنمای VPN Finder</b>\n\n' +
       '• <b>فیلتر و جستجو:</b> کاتالوگ PublicVPNList را بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) فیلتر کنید و سرعت و تأخیر اندازه‌گیری‌شده در ناحیه بررسی‌کننده و زمان آخرین تست فنی را ببینید.\n' +
-      '• <b>کد QR و v2rayNG:</b> برای هر سرور می‌توانید کد QR محلی دریافت کنید یا با لینک مستقیم در برنامه v2rayNG (اندروید) یا کلاینت OpenVPN وارد نمایید.\n\n' +
+      '• <b>کد QR و v2rayNG:</b> برای هر سرور می‌توانید کد QR محلی دریافت کنید یا با لینک مستقیم در برنامه v2rayNG (اندروید) یا کلاینت OpenVPN وارد نمایید.\n' +
+      '• <b>لینک اشتراک (/sub):</b> یک لینک اشتراک شخصی برای v2rayNG، Streisand و NekoBox بسازید که در هر بار به‌روزرسانی، کانفیگ‌های تازه می‌سازد (بدون OpenVPN).\n\n' +
       '<b>سلب مسئولیت:</b> تمام سرورها توسط اشخاص ثالث اداره می‌شوند. بررسی فنی صرفاً دسترس‌پذیری و سرعت عبور ترافیک را در لحظه تست نشان می‌دهد و به هیچ عنوان تضمین حریم خصوصی، هویت اپراتور یا امنیت نیست.\n\n' +
       'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
       'سازنده: <a href="https://t.me/MyLeitner">@MyLeitner</a>'
@@ -99,7 +106,8 @@ export function helpText(lang) {
   return (
     '<b>How VPN Finder Works</b>\n\n' +
     '• <b>Filtering & Metrics:</b> Filter checked public servers by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan). Speed and latency figures are representative measurements from the checker region alongside each server\'s last-checked timestamp.\n' +
-    '• <b>QR Code & v2rayNG:</b> Connect via locally rendered QR codes, one-tap v2rayNG Android deep-link imports, or OpenVPN configuration downloads.\n\n' +
+    '• <b>QR Code & v2rayNG:</b> Connect via locally rendered QR codes, one-tap v2rayNG Android deep-link imports, or OpenVPN configuration downloads.\n' +
+    '• <b>Subscription (/sub):</b> Get a personal subscription URL for v2rayNG, Streisand, or NekoBox that assembles fresh URI configs on each refresh (OpenVPN excluded).\n\n' +
     '<b>Disclaimer:</b> All listed servers are operated by third parties. A technical check verifies reachability and throughput only and is not a privacy, identity, or safety guarantee.\n\n' +
     'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
     'Creator: <a href="https://t.me/MyLeitner">@MyLeitner</a>'

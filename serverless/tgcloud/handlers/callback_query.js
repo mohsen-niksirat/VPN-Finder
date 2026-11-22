@@ -10,6 +10,16 @@ import {
   startGetFlow,
 } from '../lib/getFlow.js';
 import { flowExpiredText } from '../lib/texts.js';
+import {
+  getSubLinkBase,
+  regenerateSubToken,
+  revokeSubToken,
+  sendSubResponse,
+  subKeyboard,
+  subLinkText,
+  subRevokedText,
+  subSetupPendingText,
+} from '../lib/sub.js';
 
 export default async function (cq) {
   if (!cq || !cq.from || !cq.message || !cq.message.chat) return;
@@ -30,6 +40,35 @@ export default async function (cq) {
 
   if (!dryRun && cq.id) {
     await api.answerCallbackQuery({ callback_query_id: cq.id }).catch(() => {});
+  }
+
+  if (data === 'sub:open') {
+    await sendSubResponse({ chatId, userId, lang, sendMsg });
+    return { action: 'sub_open', userId };
+  }
+
+  if (data === 'sub:regen') {
+    const base = await getSubLinkBase();
+    if (!base) {
+      await sendMsg({ chat_id: chatId, text: subSetupPendingText(lang) });
+      return { action: 'sub_regen_pending', userId };
+    }
+    const token = await regenerateSubToken(userId);
+    const url = `${base}/sub/${token}`;
+    await sendMsg({
+      chat_id: chatId,
+      text: subLinkText(url, lang, { regenerated: true }),
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      reply_markup: subKeyboard(lang),
+    });
+    return { action: 'sub_regen', userId };
+  }
+
+  if (data === 'sub:revoke') {
+    await revokeSubToken(userId);
+    await sendMsg({ chat_id: chatId, text: subRevokedText(lang) });
+    return { action: 'sub_revoke', userId };
   }
 
   const sendMsg = async (params) => {

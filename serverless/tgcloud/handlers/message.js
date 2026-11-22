@@ -11,6 +11,7 @@ import {
 } from '../lib/pvl.js';
 import { runDebugProbe, runDebugProbe2, runDebugProbe3 } from '../lib/probe.js';
 import { startGetFlow } from '../lib/getFlow.js';
+import { sendSubResponse } from '../lib/sub.js';
 import {
   appPromptText,
   buildAppKeyboard,
@@ -89,6 +90,7 @@ async function formatOwnerStats() {
     `Connections served: ${counters.connections_served}`,
     `Configs sent in chat: ${counters.configs_sent_chat}`,
     `Get flows started: ${counters.get_flows_started}`,
+    `Subs served: ${counters.subs_served || 0}`,
     `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required: insert pvl_api_key in bot_config)'}`,
     `Cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
   ];
@@ -224,6 +226,18 @@ export default async function (message) {
       sendMsg,
     });
     return { action: 'get', userId: fromId, lang, ...flowRes };
+  }
+
+  if (parsed && parsed.cmd === 'sub') {
+    if (!isPrivate) return { action: 'sub_ignored_group' };
+    await upsertUser(message.from, '');
+    await sendSubResponse({
+      chatId: message.chat.id,
+      userId: fromId,
+      lang,
+      sendMsg,
+    });
+    return { action: 'sub', userId: fromId, lang };
   }
 
   if (parsed && parsed.cmd === 'app') {
