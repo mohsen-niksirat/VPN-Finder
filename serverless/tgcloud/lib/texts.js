@@ -266,9 +266,10 @@ export function formatOvpnServerPageMessage(idx, total, srv, lang) {
     ? `${Math.round(Number(srv.latency_ms))} ms`
     : '-';
   const rel = formatRelativeTime(srv.last_checked_at, lang);
+  const ipPart = srv.exit_ip ? ` · ${srv.exit_ip}` : '';
   return isFa(lang)
-    ? `${idx}/${total} · ${flag} ${country} · ${speed} · ${latency} · بررسی ${rel} · @MyLeitner`
-    : `${idx}/${total} · ${flag} ${country} · ${speed} · ${latency} · checked ${rel} · @MyLeitner`;
+    ? `${idx}/${total} · ${flag} ${country}${ipPart} · ${speed} · ${latency} · بررسی ${rel} · @MyLeitner`
+    : `${idx}/${total} · ${flag} ${country}${ipPart} · ${speed} · ${latency} · checked ${rel} · @MyLeitner`;
 }
 
 export function batchSummaryText(
@@ -319,8 +320,8 @@ export function batchSummaryText(
   const openVpnPageLine =
     openVpnPageMode && delivered > 0
       ? isFa(lang)
-        ? '\n\nفایل‌های OpenVPN در صفحه سرور ارائه می‌شوند — روی دانلود بزنید.'
-        : "\n\nOpenVPN files are provided on the server's page — tap Download."
+        ? '\n\nفایل‌های OpenVPN در کاتالوگ PublicVPNList ارائه می‌شوند — روی دانلود بزنید.'
+        : "\n\nOpenVPN files are provided in the PublicVPNList catalog — tap Download."
       : '';
 
   if (isFa(lang)) {

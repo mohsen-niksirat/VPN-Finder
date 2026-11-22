@@ -14,6 +14,7 @@ import {
   getDerivedCountries,
   getRemainingConnectionBudget,
   incrementCounter,
+  publicPageUrl,
   PVL_CACHE_TTL_SEC,
   resolveCountryName,
 } from './pvl.js';
@@ -389,7 +390,7 @@ export async function deliverConfigsBatch({
           candidates.push(r);
           if (
             (typeof r.config_download_url === 'string' && r.config_download_url.length > 0) ||
-            (typeof r.server_page_url === 'string' && r.server_page_url.length > 0)
+            Boolean(publicPageUrl(r))
           ) {
             deliverableCount += 1;
             if (deliverableCount >= neededDeliverable) break;
@@ -463,9 +464,7 @@ export async function deliverConfigsBatch({
       const dlUrl = typeof srv.config_download_url === 'string' && srv.config_download_url.length > 0
         ? srv.config_download_url
         : null;
-      const serverPageUrl = typeof srv.server_page_url === 'string' && srv.server_page_url.length > 0
-        ? srv.server_page_url
-        : null;
+      const serverPageUrl = publicPageUrl(srv);
 
       // Skip dead-husk records with neither download URL nor server page URL WITHOUT consuming an attempt
       if (!dlUrl && !serverPageUrl) {
@@ -497,8 +496,8 @@ export async function deliverConfigsBatch({
         const nextIdx = delivered + 1;
         const msgText = formatOvpnServerPageMessage(nextIdx, requested, srv, lang);
         const btnText = isFa(lang)
-          ? '🌐 دانلود .ovpn از صفحه سرور'
-          : '🌐 Download .ovpn from the server page';
+          ? '🌐 دانلود .ovpn از کاتالوگ'
+          : '🌐 Download .ovpn from the catalog';
         try {
           await sendMsg({
             chat_id: chatId,

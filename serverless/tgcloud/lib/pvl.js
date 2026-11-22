@@ -33,6 +33,18 @@ export const PVL_SERVERS_FIELDS = [
   'server_page_url',
 ].join(',');
 
+export function publicPageUrl(record) {
+  const raw = typeof record?.server_page_url === 'string' ? record.server_page_url.trim() : '';
+  if (raw && !raw.includes('/api/')) {
+    return raw;
+  }
+  const proto = String(record?.protocol || '').toLowerCase();
+  if (proto === 'openvpn') {
+    return 'https://publicvpnlist.com/openvpn-configs/';
+  }
+  return 'https://publicvpnlist.com/';
+}
+
 export const ALLOWED_PROTOCOLS = new Set([
   'openvpn',
   'vless',
