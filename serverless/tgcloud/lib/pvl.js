@@ -1548,3 +1548,59 @@ export async function getProtocolSpeedSummary(activeProtocols = []) {
   return summary;
 }
 
+export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
+  const ccFilter = String(countryCode || '').trim().toUpperCase();
+  let res;
+  try {
+    res = await fetch('https://www.vpngate.net/api/iphone/', {
+      method: 'GET',
+      signal: AbortSignal.timeout(7000),
+    });
+  } catch {
+    return [];
+  }
+  if (!res || !res.ok) return [];
+  let text = '';
+  try {
+    text = await res.text();
+  } catch {
+    return [];
+  }
+
+  const nowIso = new Date().toISOString();
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (!line || line.startsWith('*') || line.startsWith('#')) continue;
+    const cols = line.split(',');
+    if (cols.length < 15) continue;
+    const cc = String(cols[6] || '').trim().toUpperCase();
+    if (ccFilter && ccFilter !== 'ALL' && cc !== ccFilter) continue;
+    const b64 = String(cols[14] || '').trim();
+    if (!b64) continue;
+    const rawText = decodeBase64Utf8(b64);
+    if (!rawText || !OVPN_DIRECTIVE_RE.test(rawText.trim())) continue;
+    const ip = String(cols[1] || '').trim();
+    const score = Number(cols[2] || 0) || 0;
+    const ping = Number(cols[3] || 0);
+    const speedBps = Number(cols[4] || 0);
+    const countryName = String(cols[5] || cc).trim();
+    const branded = `# Provided by @MyLeitner · Data: VPNGate\n${rawText.replace(/^\uFEFF/, '').trimStart()}`;
+    const bytes = utf8Enc.encode(branded);
+    if (bytes.byteLength > MAX_OVPN_BYTES) continue;
+    rows.push({
+      id: `vpngate_${ip || rows.length}`,
+      country_code: cc || 'XX',
+      country_name: countryName,
+      exit_ip: ip,
+      score,
+      latency_ms: Number.isFinite(ping) && ping > 0 ? ping : null,
+      speed_mbps: Number.isFinite(speedBps) && speedBps > 0 ? Number((speedBps / 1e6).toFixed(1)) : null,
+      last_checked_at: nowIso,
+      bytes,
+    });
+  }
+
+  rows.sort((a, b) => b.score - a.score);
+  return rows.slice(0, limit);
+}
+

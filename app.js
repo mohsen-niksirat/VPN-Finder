@@ -1407,25 +1407,19 @@
           grid.appendChild(cell);
         };
 
-        addDetail(t.detailSource, srv.source_name || t.unknownDash, true);
-        addDetail(
-          t.detailFirstSeen,
-          srv.first_seen_at ? formatTimestamp(srv.first_seen_at) : t.unknownDash
-        );
-        addDetail(
-          t.detailUptime7d,
-          srv.uptime_percent_7d !== null && srv.uptime_percent_7d !== undefined
-            ? `${formatDecimal(srv.uptime_percent_7d, 1)}%`
-            : t.unknownDash
-        );
-        addDetail(t.detailFreshness, srv.freshness_status || t.unknownDash);
-        addDetail(t.detailServerId, cardId);
-
+        if (srv.uptime_percent_7d !== null && srv.uptime_percent_7d !== undefined) {
+          addDetail(t.detailUptime7d, `${formatDecimal(srv.uptime_percent_7d, 1)}%`);
+        }
+        if (srv.freshness_status) {
+          addDetail(t.detailFreshness, srv.freshness_status);
+        }
         if (Array.isArray(srv.risk_flags) && srv.risk_flags.length > 0) {
           addDetail(t.riskTooltipPrefix, srv.risk_flags.join(', '), true);
         }
 
-        details.appendChild(grid);
+        if (grid.childNodes.length > 0) {
+          details.appendChild(grid);
+        }
 
         const publicPageUrl = (record) => {
           const raw = typeof record?.server_page_url === 'string' ? record.server_page_url.trim() : '';
@@ -1434,21 +1428,6 @@
             ? 'https://publicvpnlist.com/openvpn-configs/'
             : 'https://publicvpnlist.com/';
         };
-
-        if (srv.server_page_url || srv.protocol === 'openvpn') {
-          const linkRow = document.createElement('div');
-          linkRow.className = 'detail-link-row';
-
-          const extLink = document.createElement('a');
-          extLink.className = 'detail-ext-link';
-          extLink.href = publicPageUrl(srv);
-          extLink.target = '_blank';
-          extLink.rel = 'noopener noreferrer';
-          extLink.textContent = t.detailCatalogLink;
-
-          linkRow.appendChild(extLink);
-          details.appendChild(linkRow);
-        }
 
         // Stage 3 Connect Actions
         const connectBlock = document.createElement('div');

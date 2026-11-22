@@ -55,8 +55,9 @@ async function upsertUser(from, startParam) {
     .run();
 }
 
-async function formatOwnerStats() {
+async function formatOwnerStats(lang = 'en') {
   try {
+    const fa = String(lang || '').toLowerCase().startsWith('fa');
     const totalUsers = await db.$count(users).catch(() => 0);
     const now = Math.floor(Date.now() / 1000);
     const allUsers = await db
@@ -76,45 +77,47 @@ async function formatOwnerStats() {
 
     const apiKey = await getPvlApiKey();
     const cacheRows = await db
-      .select({
-        key: pvlCache.key,
-        etag: pvlCache.etag,
-        fetchedAt: pvlCache.fetchedAt,
-      })
+      .select({ fetchedAt: pvlCache.fetchedAt })
       .from(pvlCache)
-      .orderBy(desc(pvlCache.fetchedAt))
-      .limit(20)
       .all()
       .catch(() => []);
+    let freshCache = 0;
+    for (const r of cacheRows) {
+      if (Math.max(0, now - Number(r.fetchedAt || 0)) < PVL_CACHE_TTL_SEC) freshCache += 1;
+    }
 
     const counters = await getCounters();
     const totalSubTokens = await db.$count(subTokens).catch(() => 0);
-    const lines = [
-      '📊 VPN Finder: Owner Stats',
-      '',
-      `Total users: ${totalUsers} (24h active: ${active24h}, 7d: ${active7d})`,
-      `Connections served: ${counters.connections_served}`,
-      `Configs sent in chat: ${counters.configs_sent_chat}`,
-      `Get flows started: ${counters.get_flows_started}`,
-      `Sub tokens issued: ${totalSubTokens}`,
-      `Subs served: ${counters.subs_served || 0}`,
-      'VPN traffic: N/A (clients connect directly to third-party servers; bot does not proxy VPN data)',
-      `PVL API key: ${apiKey ? 'Configured' : 'MISSING (setup_required)'}`,
-      `Recent cache entries (${cacheRows.length}, TTL ${PVL_CACHE_TTL_SEC / 60}m):`,
-    ];
 
-    if (!cacheRows.length) {
-      lines.push('  (empty)');
-    } else {
-      for (const r of cacheRows.slice(0, 10)) {
-        const ageSec = Math.max(0, now - Number(r.fetchedAt || 0));
-        const fresh = ageSec < PVL_CACHE_TTL_SEC ? 'fresh' : 'expired';
-        lines.push(`  • ${r.key} (${fresh}, ${ageSec}s ago)`);
-      }
+    if (fa) {
+      return [
+        '📊 <b>آمار مدیریتی VPN Finder</b>',
+        '',
+        `👥 <b>کاربران:</b> ${totalUsers} نفر (۲۴ ساعت اخیر: ${active24h} · ۷ روز اخیر: ${active7d})`,
+        `📥 <b>کانفیگ‌های ارسالی در چت:</b> ${counters.configs_sent_chat}`,
+        `⚡ <b>اتصال‌های مینی‌اپ:</b> ${counters.connections_served}`,
+        `🧭 <b>فرایندهای /get شروع‌شده:</b> ${counters.get_flows_started}`,
+        `🔗 <b>لینک‌های اشتراک ساخته‌شده:</b> ${totalSubTokens}`,
+        '',
+        '📶 <b>مصرف اینترنت کاربران:</b> قابل اندازه‌گیری نیست (کاربران مستقیماً به سرورهای شخص ثالث وصل می‌شوند و ترافیک از ربات عبور نمی‌کند).',
+        '',
+        `⚙️ <b>وضعیت سیستم:</b> کلید PVL ${apiKey ? 'فعال ✅' : 'تنظیم‌نشده ❌'} · کش: ${freshCache}/${cacheRows.length} تازه`,
+      ].join('\n');
     }
 
-    const out = lines.join('\n');
-    return out.length > 3950 ? `${out.slice(0, 3947)}...` : out;
+    return [
+      '📊 <b>VPN Finder — Admin Stats</b>',
+      '',
+      `👥 <b>Users:</b> ${totalUsers} total (${active24h} active 24h · ${active7d} active 7d)`,
+      `📥 <b>Configs sent in chat:</b> ${counters.configs_sent_chat}`,
+      `⚡ <b>Connections served:</b> ${counters.connections_served}`,
+      `🧭 <b>/get flows started:</b> ${counters.get_flows_started}`,
+      `🔗 <b>Sub tokens issued:</b> ${totalSubTokens}`,
+      '',
+      '📶 <b>VPN Bandwidth:</b> Not measurable (users connect directly to third-party servers; bot does not proxy VPN traffic).',
+      '',
+      `⚙️ <b>System:</b> PVL Key ${apiKey ? 'Configured ✅' : 'Missing ❌'} · Cache: ${freshCache}/${cacheRows.length} fresh`,
+    ].join('\n');
   } catch (err) {
     return `Stats error: ${err?.message || String(err)}`;
   }
@@ -217,19 +220,14 @@ export default async function (message) {
       }
     }
     const text = welcomeText(lang);
-    const reply_markup = buildAppKeyboard(lang, parsed.param, { includeGetButton: isPrivate });
+    const reply_markup = isPrivate
+      ? buildReplyPanelKeyboard(lang, { isOwner })
+      : buildAppKeyboard(lang, parsed.param, { includeGetButton: false });
     await sendMsg({
       chat_id: message.chat.id,
       text,
       reply_markup,
     });
-    if (isPrivate) {
-      await sendMsg({
-        chat_id: message.chat.id,
-        text: panelShownText(lang),
-        reply_markup: buildReplyPanelKeyboard(lang, { isOwner }),
-      });
-    }
     return { action: 'start', userId: fromId, lang, text, reply_markup };
   }
 
@@ -286,8 +284,8 @@ export default async function (message) {
       return { action: 'panel_help', userId: fromId, lang };
     }
     if ((t === PANEL_BTN.statsEn || t === PANEL_BTN.statsFa) && isOwner) {
-      const statsText = await formatOwnerStats();
-      await sendMsg({ chat_id: message.chat.id, text: statsText });
+      const statsText = await formatOwnerStats(lang);
+      await sendMsg({ chat_id: message.chat.id, text: statsText, parse_mode: 'HTML' });
       return { action: 'panel_stats', owner: true, statsText };
     }
   }
@@ -434,10 +432,11 @@ export default async function (message) {
   if (parsed && parsed.cmd === 'stats') {
     const ownerId = await getOwnerId();
     if (isPrivate && ownerId && fromId === ownerId) {
-      const statsText = await formatOwnerStats();
+      const statsText = await formatOwnerStats(lang);
       await sendMsg({
         chat_id: message.chat.id,
         text: statsText,
+        parse_mode: 'HTML',
       });
       return { action: 'stats', owner: true, statsText };
     }

@@ -11,6 +11,7 @@ import {
   fetchFreshServersPageForDelivery,
   fetchPvlCached,
   fetchPvlServers,
+  fetchVpnGateOpenVpn,
   getDerivedCountries,
   getRemainingConnectionBudget,
   incrementCounter,
@@ -444,6 +445,67 @@ export async function deliverConfigsBatch({
   const skippedIds = [];
   const debugEntries = [];
   const deliveredMeta = [];
+
+  if (proto === 'openvpn') {
+    const vgRows = await fetchVpnGateOpenVpn(cc, requested + 3).catch(() => []);
+    for (const vg of vgRows) {
+      if (delivered >= requested || attempts >= maxAttempts) break;
+      if (!vg || !vg.id || alreadyDelivered.has(vg.id) || !vg.bytes) continue;
+
+      attempts += 1;
+      const rateCheck = await checkConnectionRateLimit(userId);
+      if (!rateCheck.allowed) {
+        rateLimited = true;
+        debugEntries.push({
+          id: vg.id,
+          stage_reached: 'payload_fetch',
+          reason_code: 'rate_limited',
+          http_status: null,
+        });
+        break;
+      }
+
+      const nextIdx = delivered + 1;
+      const ccPart = (vg.country_code || cc || 'OpenVPN').toUpperCase();
+      const filename = `MyLeitner-${ccPart === 'OPENVPN' ? 'OpenVPN' : ccPart}-${nextIdx}.ovpn`;
+      const caption = formatOvpnCaption(nextIdx, requested, vg, lang);
+
+      try {
+        await sendDoc({
+          chat_id: chatId,
+          documentBytes: vg.bytes,
+          filename,
+          caption,
+        });
+      } catch (err) {
+        sendFailedCount += 1;
+        debugEntries.push({
+          id: vg.id,
+          stage_reached: 'send',
+          reason_code: `send_${err?.name || 'Error'}`,
+          http_status: 200,
+        });
+        continue;
+      }
+
+      delivered = nextIdx;
+      alreadyDelivered.add(vg.id);
+      await consumeConnectionRateLimit(userId);
+      await incrementCounter('connections_served', 1);
+      await incrementCounter('configs_sent_chat', 1);
+      debugEntries.push({
+        id: vg.id,
+        stage_reached: 'send',
+        reason_code: 'ok_via_vpngate',
+        http_status: 200,
+      });
+      deliveredMeta.push({
+        id: vg.id,
+        type: 'ovpn_vpngate',
+        filename,
+      });
+    }
+  }
 
   for (const srv of candidates) {
     if (delivered >= requested || attempts >= maxAttempts) break;
