@@ -136,6 +136,60 @@ export function settingsKeyboard(lang) {
         { text: fa ? '🇺🇸 English' : '✓ 🇺🇸 English', callback_data: 'lang:set:en' },
         { text: fa ? '✓ 🇮🇷 فارسی' : '🇮🇷 فارسی', callback_data: 'lang:set:fa' },
       ],
+      [
+        {
+          text: fa ? '📲 دانلود نرم‌افزارهای VPN / V2Ray' : '📲 Download VPN / V2Ray Apps',
+          callback_data: 'apps:menu',
+        },
+      ],
+    ],
+  };
+}
+
+export function appsMenuText(lang) {
+  if (isFa(lang)) {
+    return (
+      '📲 <b>دانلود کلاینت‌های رسمی V2Ray و OpenVPN</b>\n\n' +
+      'بر اساس سیستم‌عامل خود یکی از برنامه‌های زیر را از منبع رسمی دانلود و نصب کنید، سپس لینک اشتراک (/sub) یا کانفیگ را داخل آن وارد نمایید:\n\n' +
+      '• <b>اندروید:</b> Hiddify، v2rayNG، Karing، NekoBox\n' +
+      '• <b>آیفون / مک (iOS/macOS):</b> Streisand، Karing، Hiddify\n' +
+      '• <b>ویندوز / لینوکس:</b> v2rayN، Hiddify، Karing'
+    );
+  }
+  return (
+    '📲 <b>Official V2Ray & OpenVPN Client Downloads</b>\n\n' +
+    'Download a client for your platform from its official release page, then import your /sub link or config:\n\n' +
+    '• <b>Android:</b> Hiddify, v2rayNG, Karing, NekoBox\n' +
+    '• <b>iOS / macOS:</b> Streisand, Karing, Hiddify\n' +
+    '• <b>Windows / Linux:</b> v2rayN, Hiddify, Karing'
+  );
+}
+
+export function appsMenuKeyboard(lang) {
+  const fa = isFa(lang);
+  return {
+    inline_keyboard: [
+      [
+        { text: '🤖 Hiddify (All OS)', url: 'https://github.com/hiddify/hiddify-app/releases' },
+        { text: '⚡ Karing (All OS)', url: 'https://github.com/KaringX/karing/releases' },
+      ],
+      [
+        { text: '📱 v2rayNG (Android)', url: 'https://github.com/2dust/v2rayNG/releases' },
+        { text: '📦 NekoBox (Android)', url: 'https://github.com/MatsuriDayo/NekoBoxForAndroid/releases' },
+      ],
+      [
+        { text: '🍏 Streisand (iOS)', url: 'https://apps.apple.com/us/app/streisand/id6443654642' },
+        { text: '💻 v2rayN (Win/Mac/Linux)', url: 'https://github.com/2dust/v2rayN/releases' },
+      ],
+      [
+        { text: '🔐 OpenVPN Connect', url: 'https://openvpn.net/client/' },
+      ],
+      [
+        {
+          text: fa ? '⬅️ بازگشت به تنظیمات' : '⬅️ Back to Settings',
+          callback_data: 'settings:open',
+        },
+      ],
     ],
   };
 }

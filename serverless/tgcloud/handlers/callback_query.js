@@ -11,11 +11,14 @@ import {
 } from '../lib/getFlow.js';
 import { getEffectiveUserLang, getOwnerId, setUserLang } from '../lib/pvl.js';
 import {
+  appsMenuKeyboard,
+  appsMenuText,
   buildReplyPanelKeyboard,
   flowExpiredText,
   langUpdatedText,
   panelShownText,
   settingsKeyboard,
+  settingsText,
 } from '../lib/texts.js';
 import {
   getActiveSubToken,
@@ -113,6 +116,28 @@ export default async function (cq) {
       reply_markup: buildReplyPanelKeyboard(chosen, { isOwner }),
     });
     return { action: 'lang_set', userId, lang: chosen };
+  }
+
+  if (data === 'apps:menu' || data === 'settings:open') {
+    const isApps = data === 'apps:menu';
+    const text = isApps ? appsMenuText(lang) : settingsText(lang);
+    const reply_markup = isApps ? appsMenuKeyboard(lang) : settingsKeyboard(lang);
+    const msgId = cq.message?.message_id;
+    if (!dryRun && msgId) {
+      await api
+        .editMessageText({
+          chat_id: chatId,
+          message_id: msgId,
+          text,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+          reply_markup,
+        })
+        .catch(() => sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup }));
+    } else {
+      await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
+    }
+    return { action: isApps ? 'apps_menu' : 'settings_open', userId };
   }
 
   if (data === 'sub:open') {
