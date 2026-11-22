@@ -253,11 +253,29 @@ export function formatOvpnCaption(idx, total, srv, lang) {
     : `${idx}/${total} · OpenVPN · ${speed} · checked ${rel} · @MyLeitner`;
 }
 
+export function formatOvpnServerPageMessage(idx, total, srv, lang) {
+  const cc = (srv.country_code || '').toUpperCase();
+  const flag = cc.length === 2
+    ? String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
+    : '🌐';
+  const country = srv.country_name || cc || 'OpenVPN';
+  const speed = srv.speed_mbps !== null && srv.speed_mbps !== undefined
+    ? `${Number(srv.speed_mbps).toFixed(1)} Mbps`
+    : '-';
+  const latency = srv.latency_ms !== null && srv.latency_ms !== undefined
+    ? `${Math.round(Number(srv.latency_ms))} ms`
+    : '-';
+  const rel = formatRelativeTime(srv.last_checked_at, lang);
+  return isFa(lang)
+    ? `${idx}/${total} · ${flag} ${country} · ${speed} · ${latency} · بررسی ${rel} · @MyLeitner`
+    : `${idx}/${total} · ${flag} ${country} · ${speed} · ${latency} · checked ${rel} · @MyLeitner`;
+}
+
 export function batchSummaryText(
   lang,
   delivered,
   requested,
-  { rateLimited = false, skippedCount = 0, sendFailedCount = 0, fewerWorkingNote = false } = {}
+  { rateLimited = false, skippedCount = 0, sendFailedCount = 0, fewerWorkingNote = false, openVpnPageMode = false } = {}
 ) {
   const fewerLine =
     fewerWorkingNote && !rateLimited
@@ -298,15 +316,22 @@ export function batchSummaryText(
     );
   }
 
+  const openVpnPageLine =
+    openVpnPageMode && delivered > 0
+      ? isFa(lang)
+        ? '\n\nفایل‌های OpenVPN در صفحه سرور ارائه می‌شوند — روی دانلود بزنید.'
+        : "\n\nOpenVPN files are provided on the server's page — tap Download."
+      : '';
+
   if (isFa(lang)) {
     return (
-      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${fewerLine}${skippedLine}${sendFailedLine}${limitNote}\n\n` +
+      `✅ ${delivered} کانفیگ ارسال شد. این سرورها توسط PublicVPNList بررسی فنی شده‌اند؛ سرورها شخص ثالث هستند و استفاده با مسئولیت خودتان است.${openVpnPageLine}${fewerLine}${skippedLine}${sendFailedLine}${limitNote}\n\n` +
       'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
       'ساخته‌ی <a href="https://t.me/MyLeitner">@MyLeitner</a>'
     );
   }
   return (
-    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${fewerLine}${skippedLine}${sendFailedLine}${limitNote}\n\n` +
+    `✅ ${delivered} configs sent. They were checked by PublicVPNList; servers are third-party, use at your own risk.${openVpnPageLine}${fewerLine}${skippedLine}${sendFailedLine}${limitNote}\n\n` +
     'Data: <a href="https://publicvpnlist.com/api/">PublicVPNList</a>\n' +
     'Made by <a href="https://t.me/MyLeitner">@MyLeitner</a>'
   );

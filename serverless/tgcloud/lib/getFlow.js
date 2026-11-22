@@ -28,6 +28,7 @@ import {
   flowExpiredText,
   formatConfigMessage,
   formatOvpnCaption,
+  formatOvpnServerPageMessage,
   formatProtoLabel,
   isFa,
   noneFreshText,
@@ -386,7 +387,10 @@ export async function deliverConfigsBatch({
           if (!r || !r.id || alreadyDelivered.has(r.id)) continue;
           examined += 1;
           candidates.push(r);
-          if (typeof r.config_download_url === 'string' && r.config_download_url.length > 0) {
+          if (
+            (typeof r.config_download_url === 'string' && r.config_download_url.length > 0) ||
+            (typeof r.server_page_url === 'string' && r.server_page_url.length > 0)
+          ) {
             deliverableCount += 1;
             if (deliverableCount >= neededDeliverable) break;
           }
@@ -435,6 +439,7 @@ export async function deliverConfigsBatch({
   let huskCount = 0;
   let rateLimited = false;
   let sendFailedCount = 0;
+  let openVpnPageUsed = false;
   const skippedIds = [];
   const debugEntries = [];
   const deliveredMeta = [];
@@ -458,9 +463,12 @@ export async function deliverConfigsBatch({
       const dlUrl = typeof srv.config_download_url === 'string' && srv.config_download_url.length > 0
         ? srv.config_download_url
         : null;
+      const serverPageUrl = typeof srv.server_page_url === 'string' && srv.server_page_url.length > 0
+        ? srv.server_page_url
+        : null;
 
-      // Skip dead-husk null-URL records WITHOUT consuming an attempt
-      if (!dlUrl) {
+      // Skip dead-husk records with neither download URL nor server page URL WITHOUT consuming an attempt
+      if (!dlUrl && !serverPageUrl) {
         huskCount += 1;
         debugEntries.push({
           id: srv.id,
@@ -483,6 +491,53 @@ export async function deliverConfigsBatch({
           http_status: null,
         });
         break;
+      }
+
+      if (!dlUrl && serverPageUrl) {
+        const nextIdx = delivered + 1;
+        const msgText = formatOvpnServerPageMessage(nextIdx, requested, srv, lang);
+        const btnText = isFa(lang)
+          ? '🌐 دانلود .ovpn از صفحه سرور'
+          : '🌐 Download .ovpn from the server page';
+        try {
+          await sendMsg({
+            chat_id: chatId,
+            text: msgText,
+            disable_web_page_preview: true,
+            reply_markup: {
+              inline_keyboard: [[{ text: btnText, url: serverPageUrl }]],
+            },
+          });
+        } catch (err) {
+          sendFailedCount += 1;
+          debugEntries.push({
+            id: srv.id,
+            stage_reached: 'send',
+            reason_code: `send_${err?.name || 'Error'}`,
+            http_status: 200,
+          });
+          continue;
+        }
+
+        delivered = nextIdx;
+        openVpnPageUsed = true;
+        alreadyDelivered.add(srv.id);
+        await consumeConnectionRateLimit(userId);
+        await incrementCounter('connections_served', 1);
+        await incrementCounter('configs_sent_chat', 1);
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'send',
+          reason_code: 'ok_via_server_page',
+          http_status: 200,
+        });
+
+        deliveredMeta.push({
+          id: srv.id,
+          type: 'ovpn_server_page',
+          url: serverPageUrl,
+        });
+        continue;
       }
 
       const ovpn = await downloadAndBrandOvpn(dlUrl);
@@ -672,6 +727,7 @@ export async function deliverConfigsBatch({
     skippedCount: skippedIds.length,
     sendFailedCount,
     fewerWorkingNote,
+    openVpnPageMode: openVpnPageUsed,
   });
   const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL', { allFailed });
   await sendMsg({

@@ -152,3 +152,7 @@ The platform manages the bot's webhook for you, derived from your deployed
 `handlers/*`, and refreshes it on `push`. If it ever drifts — e.g. someone called
 `setWebhook` with the raw bot token — `npx tgcloud webhook` shows the mismatch and
 `npx tgcloud webhook sync` repairs it.
+
+## Acceptance Evidence Rule
+
+Acceptance evidence for bot behavior comes **ONLY** from the production context — the deployed bot (owner's live tests + `/debuglast` / `/debugprobe` outputs) or deployed endpoints invoked over HTTP against the cloud app. `tgcloud run` results must be labeled `"local"` in every report and never presented as production proof.
