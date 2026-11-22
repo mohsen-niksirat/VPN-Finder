@@ -24,7 +24,7 @@ export default async function (input, ctx) {
   const savedKeys = [];
 
   if (input && typeof input === 'object') {
-    for (const key of ['pvl_api_key', 'OWNER_ID']) {
+    for (const key of ['pvl_api_key', 'OWNER_ID', 'sub_worker_secret', 'sub_link_base']) {
       if (input[key] !== undefined && input[key] !== null && String(input[key]).trim() !== '') {
         const val = String(input[key]).trim();
         await db
