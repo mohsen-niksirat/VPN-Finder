@@ -65,14 +65,16 @@ export function welcomeText(lang) {
   if (isFa(lang)) {
     return (
       'به VPN Finder خوش آمدید.\n\n' +
-      'سرورهای VPN عمومی بررسی‌شده از کاتالوگ PublicVPNList را بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) همراه با سرعت، تأخیر و زمان آخرین بررسی فنی مرور کنید.\n\n' +
+      '🔗 سریع‌ترین راه: دکمه «اشتراک» یا دستور /sub را بزنید تا یک لینک اشتراک شخصی و خودآپدیت (برای Hiddify، v2rayNG، Streisand و NekoBox) بگیرید.\n\n' +
+      'سرورهای VPN عمومی بررسی‌شده را بر اساس کشور و پروتکل (VLESS، Shadowsocks، VMess، OpenVPN، Hysteria2، Trojan) همراه با سرعت، تأخیر و زمان آخرین بررسی مرور کنید.\n\n' +
       'سلب مسئولیت: تمام سرورها متعلق به اشخاص ثالث هستند؛ بررسی فنی صرفاً اتصال را می‌سنجد و تضمین حریم خصوصی یا امنیت نیست.\n\n' +
       'ساخته‌ی @MyLeitner'
     );
   }
   return (
     'Welcome to VPN Finder.\n\n' +
-    'Browse technically-checked public VPN servers from the PublicVPNList catalog by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan) with measured speed, latency, and last-checked times.\n\n' +
+    '🔗 Fastest option: tap Subscription or send /sub to get a personal auto-updating subscription link for Hiddify, v2rayNG, Streisand, or NekoBox.\n\n' +
+    'Browse technically-checked public VPN servers by country and protocol (VLESS, Shadowsocks, VMess, OpenVPN, Hysteria2, Trojan) with measured speed, latency, and last-checked times.\n\n' +
     'Disclaimer: Servers are operated by third parties; a technical check is not a privacy or safety guarantee.\n\n' +
     'Made by @MyLeitner'
   );
@@ -328,8 +330,8 @@ export function batchSummaryText(
   const openVpnPageLine =
     openVpnPageMode && delivered > 0
       ? isFa(lang)
-        ? '\n\nفایل‌های OpenVPN در کاتالوگ PublicVPNList ارائه می‌شوند — روی دانلود بزنید.'
-        : "\n\nOpenVPN files are provided in the PublicVPNList catalog — tap Download."
+        ? '\n\nفایل‌های OpenVPN در کاتالوگ PublicVPNList ارائه می‌شوند — روی دانلود بزنید.\n💡 پیشنهاد: برای اتصال فوری بدون دانلود دستی، از /sub یا پروتکل‌های VLESS / Hysteria2 در /get استفاده کنید.'
+        : "\n\nOpenVPN files are provided in the PublicVPNList catalog — tap Download.\n💡 Tip: For instant import without manual downloads, use /sub or pick VLESS / Hysteria2 in /get."
       : '';
 
   if (isFa(lang)) {

@@ -11,7 +11,9 @@ import {
 } from '../lib/getFlow.js';
 import { flowExpiredText } from '../lib/texts.js';
 import {
+  getActiveSubToken,
   getSubLinkBase,
+  issueSubToken,
   regenerateSubToken,
   revokeSubToken,
   sendSubResponse,
@@ -42,9 +44,63 @@ export default async function (cq) {
     await api.answerCallbackQuery({ callback_query_id: cq.id }).catch(() => {});
   }
 
+  const sendMsg = async (params) => {
+    if (dryRun) return { dry_run: true, ...params };
+    return await api.sendMessage(params);
+  };
+  const sendDoc = async ({ chat_id, documentBytes, filename, caption }) => {
+    const inputFile = new InputFile(documentBytes, filename, {
+      type: 'application/x-openvpn-profile',
+    });
+    if (dryRun) {
+      return {
+        dry_run: true,
+        filename,
+        byteLength: documentBytes?.byteLength || 0,
+        caption,
+        hasInputFile: Boolean(inputFile),
+      };
+    }
+    return await api.sendDocument({
+      chat_id,
+      document: inputFile,
+      caption,
+    });
+  };
+
   if (data === 'sub:open') {
     await sendSubResponse({ chatId, userId, lang, sendMsg });
     return { action: 'sub_open', userId };
+  }
+
+  if (data.startsWith('sub:cc:')) {
+    const cc = data.slice('sub:cc:'.length).toUpperCase() || 'ALL';
+    const base = await getSubLinkBase();
+    if (!base) {
+      await sendMsg({ chat_id: chatId, text: subSetupPendingText(lang) });
+      return { action: 'sub_cc_pending', userId };
+    }
+    let row = await getActiveSubToken(userId);
+    const token = row?.token || (await issueSubToken(userId));
+    const url = cc === 'ALL' ? `${base}/sub/${token}` : `${base}/sub/${token}?cc=${cc}`;
+    const text = subLinkText(url, lang, { cc });
+    const reply_markup = subKeyboard(lang, cc);
+    const msgId = cq.message?.message_id;
+    if (!dryRun && msgId) {
+      await api
+        .editMessageText({
+          chat_id: chatId,
+          message_id: msgId,
+          text,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true,
+          reply_markup,
+        })
+        .catch(() => sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup }));
+    } else {
+      await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
+    }
+    return { action: 'sub_cc', userId, cc };
   }
 
   if (data === 'sub:regen') {
@@ -92,30 +148,6 @@ export default async function (cq) {
     }
     return { action: 'sub_revoke', userId };
   }
-
-  const sendMsg = async (params) => {
-    if (dryRun) return { dry_run: true, ...params };
-    return await api.sendMessage(params);
-  };
-  const sendDoc = async ({ chat_id, documentBytes, filename, caption }) => {
-    const inputFile = new InputFile(documentBytes, filename, {
-      type: 'application/x-openvpn-profile',
-    });
-    if (dryRun) {
-      return {
-        dry_run: true,
-        filename,
-        byteLength: documentBytes?.byteLength || 0,
-        caption,
-        hasInputFile: Boolean(inputFile),
-      };
-    }
-    return await api.sendDocument({
-      chat_id,
-      document: inputFile,
-      caption,
-    });
-  };
 
   if (data === 'get_start' || data === 'get_back_proto') {
     return await startGetFlow({ chatId, userId, lang, sendMsg });
