@@ -75,7 +75,7 @@
       btnCopyConfig: 'Copy config',
       btnDownloadOvpn: 'Download .ovpn',
       v2rayNgHint: 'Opens v2rayNG (Android)',
-      ovpnNoQrNote: 'QR code and v2rayNG import are not available for OpenVPN.',
+      ovpnNoQrNote: 'OpenVPN files are provided in the PublicVPNList catalog — tap Download. Tip: use /sub in the bot or pick VLESS / Hysteria2 for instant import.',
       previewConnectNote: 'Open this app inside Telegram to connect.',
       unavailableLabel: 'Unavailable',
       riskTitle: 'Third-Party Server Notice',
@@ -88,6 +88,14 @@
       qrTooLarge:
         'Configuration exceeds the 2,400-byte QR limit. Use Copy config or Open in v2rayNG instead.',
       toastCopied: 'Copied',
+      selectLabel: 'Select',
+      selectAllLabel: 'Select top 10',
+      clearLabel: 'Clear',
+      copySelectedLabel: 'Copy selected',
+      copyingLabel: 'Fetching…',
+      quickCopyLabel: '📋 Copy URI',
+      selectedCountLabel: '{n} selected',
+      toastCopiedCount: 'Copied {n} configs to clipboard',
       toastConfigGone: 'This configuration is no longer available. Pick another server.',
       toastRateLimited: 'Too many connection requests. Please wait a minute.',
       errSourceUnavailable: 'Upstream source temporarily unavailable. Please retry.',
@@ -171,7 +179,7 @@
       btnCopyConfig: 'کپی کانفیگ',
       btnDownloadOvpn: 'دانلود فایل .ovpn',
       v2rayNgHint: 'باز شدن در v2rayNG (اندروید)',
-      ovpnNoQrNote: 'کد QR و ورود مستقیم v2rayNG برای OpenVPN در دسترس نیست.',
+      ovpnNoQrNote: 'فایل‌های OpenVPN در کاتالوگ PublicVPNList ارائه می‌شوند — روی دانلود بزنید. پیشنهاد: برای اتصال فوری بدون دانلود دستی از /sub یا VLESS / Hysteria2 استفاده کنید.',
       previewConnectNote: 'برای اتصال، این برنامه را داخل تلگرام باز کنید.',
       unavailableLabel: 'ناموجود',
       riskTitle: 'هشدار سرورهای شخص ثالث',
@@ -184,6 +192,14 @@
       qrTooLarge:
         'حجم کانفیگ از سقف ۲٬۴۰۰ بایت کد QR بیشتر است. از دکمه کپی کانفیگ یا باز کردن در v2rayNG استفاده کنید.',
       toastCopied: 'کپی شد',
+      selectLabel: 'انتخاب',
+      selectAllLabel: 'انتخاب ۱۰ تای اول',
+      clearLabel: 'پاک کردن',
+      copySelectedLabel: 'کپی انتخاب‌شده‌ها',
+      copyingLabel: 'در حال دریافت…',
+      quickCopyLabel: '📋 کپی لینک',
+      selectedCountLabel: '{n} انتخاب شده',
+      toastCopiedCount: '{n} کانفیگ با موفقیت کپی شد',
       toastConfigGone: 'این کانفیگ دیگر در دسترس نیست. سرور دیگری انتخاب کنید.',
       toastRateLimited: 'تعداد درخواست‌ها زیاد است. لطفاً یک دقیقه صبر کنید.',
       errSourceUnavailable: 'منبع بالادستی موقتاً در دسترس نیست. لطفاً دوباره تلاش کنید.',
@@ -301,6 +317,8 @@
     servers: [],
     expandedCardIds: new Set(),
     unavailableCardIds: new Set(),
+    selectedServerIds: new Set(),
+    isBatchCopying: false,
     activeConnectionPayload: null,
     activeConnectionServerId: null,
     pendingRiskAction: null,
@@ -1057,6 +1075,95 @@
     }
   }
 
+  function updateMultiSelectBar() {
+    const t = I18N[state.lang];
+    const bar = document.getElementById('multi-select-bar');
+    const countEl = document.getElementById('multi-select-count');
+    const copyBtn = document.getElementById('multi-copy-btn');
+    const clearBtn = document.getElementById('multi-clear-btn');
+    const selectAllBtn = document.getElementById('select-all-btn');
+    const selectClearBtn = document.getElementById('select-clear-btn');
+
+    const isUriProto =
+      state.selectedProtocol !== 'openvpn' &&
+      !state.isPreviewFallback &&
+      state.servers.length > 0 &&
+      !state.isLoadingList;
+
+    if (selectAllBtn) {
+      selectAllBtn.hidden = !isUriProto;
+      selectAllBtn.textContent = t.selectAllLabel;
+    }
+    if (selectClearBtn) {
+      selectClearBtn.hidden = !isUriProto || state.selectedServerIds.size === 0;
+      selectClearBtn.textContent = t.clearLabel;
+    }
+
+    const count = state.selectedServerIds.size;
+    if (bar) {
+      bar.hidden = !isUriProto || count === 0;
+    }
+    if (countEl) {
+      countEl.textContent = t.selectedCountLabel.replace('{n}', formatNumber(count));
+    }
+    if (clearBtn) {
+      clearBtn.textContent = t.clearLabel;
+    }
+    if (copyBtn) {
+      copyBtn.disabled = state.isBatchCopying || count === 0;
+      copyBtn.textContent = state.isBatchCopying
+        ? t.copyingLabel
+        : `${t.copySelectedLabel} (${formatNumber(count)})`;
+    }
+  }
+
+  async function handleBatchCopyConfigs() {
+    if (state.isBatchCopying || state.selectedServerIds.size === 0) return;
+    const t = I18N[state.lang];
+    state.isBatchCopying = true;
+    updateMultiSelectBar();
+
+    const ids = Array.from(state.selectedServerIds).slice(0, 15);
+    const uris = [];
+    let rateLimited = false;
+
+    try {
+      for (const id of ids) {
+        try {
+          const res = await callProxyEndpoint('pvlConnection', { id });
+          if (res?.error === 'rate_limited') {
+            rateLimited = true;
+            break;
+          }
+          if (res && !res.error && res.config_uri) {
+            uris.push(res.config_uri);
+          } else {
+            state.unavailableCardIds.add(id);
+          }
+        } catch {
+          // continue remaining
+        }
+      }
+
+      if (uris.length > 0) {
+        const ok = await copyTextToClipboard(uris.join('\n'));
+        showToast(
+          ok
+            ? t.toastCopiedCount.replace('{n}', formatNumber(uris.length))
+            : t.errFetchFailed
+        );
+      } else if (rateLimited) {
+        showToast(t.toastRateLimited);
+      } else {
+        showToast(t.errFetchFailed);
+      }
+    } finally {
+      state.isBatchCopying = false;
+      updateMultiSelectBar();
+      renderServerCards();
+    }
+  }
+
   function renderServerCards() {
     const t = I18N[state.lang];
     const listEl = document.getElementById('servers-list');
@@ -1233,6 +1340,51 @@
 
       card.appendChild(trigger);
 
+      if (srv.protocol !== 'openvpn' && !state.isPreviewFallback) {
+        if (state.selectedServerIds.has(cardId)) {
+          card.classList.add('is-selected');
+        }
+        const quickBar = document.createElement('div');
+        quickBar.className = 'card-quick-bar';
+
+        const selectLabel = document.createElement('label');
+        selectLabel.className = 'card-select-label';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'card-select-checkbox';
+        cb.checked = state.selectedServerIds.has(cardId);
+        cb.disabled = isUnavailable;
+        cb.addEventListener('change', (e) => {
+          e.stopPropagation();
+          if (cb.checked) {
+            state.selectedServerIds.add(cardId);
+            card.classList.add('is-selected');
+          } else {
+            state.selectedServerIds.delete(cardId);
+            card.classList.remove('is-selected');
+          }
+          updateMultiSelectBar();
+        });
+        const cbSpan = document.createElement('span');
+        cbSpan.textContent = t.selectLabel;
+        selectLabel.appendChild(cb);
+        selectLabel.appendChild(cbSpan);
+
+        const quickCopyBtn = document.createElement('button');
+        quickCopyBtn.type = 'button';
+        quickCopyBtn.className = 'card-quick-copy-btn';
+        quickCopyBtn.textContent = t.quickCopyLabel;
+        quickCopyBtn.disabled = isUnavailable;
+        quickCopyBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          runWithRiskGate(() => handleCopyConfig(srv, quickCopyBtn));
+        });
+
+        quickBar.appendChild(selectLabel);
+        quickBar.appendChild(quickCopyBtn);
+        card.appendChild(quickBar);
+      }
+
       // Inline Detail Area (Expanded on Tap)
       if (isExpanded) {
         const details = document.createElement('div');
@@ -1275,13 +1427,21 @@
 
         details.appendChild(grid);
 
-        if (srv.server_page_url) {
+        const publicPageUrl = (record) => {
+          const raw = typeof record?.server_page_url === 'string' ? record.server_page_url.trim() : '';
+          if (raw && !raw.includes('/api/')) return raw;
+          return String(record?.protocol || '').toLowerCase() === 'openvpn'
+            ? 'https://publicvpnlist.com/openvpn-configs/'
+            : 'https://publicvpnlist.com/';
+        };
+
+        if (srv.server_page_url || srv.protocol === 'openvpn') {
           const linkRow = document.createElement('div');
           linkRow.className = 'detail-link-row';
 
           const extLink = document.createElement('a');
           extLink.className = 'detail-ext-link';
-          extLink.href = srv.server_page_url;
+          extLink.href = publicPageUrl(srv);
           extLink.target = '_blank';
           extLink.rel = 'noopener noreferrer';
           extLink.textContent = t.detailCatalogLink;
@@ -1303,7 +1463,7 @@
           const actionsRow = document.createElement('div');
           actionsRow.className = 'connect-actions-row';
 
-          const ovpnUrl = srv.config_download_url || srv.server_page_url;
+          const ovpnUrl = srv.config_download_url || publicPageUrl(srv);
           if (ovpnUrl) {
             const ovpnLink = document.createElement('a');
             ovpnLink.className = 'btn-secondary';
@@ -1383,6 +1543,8 @@
     } else {
       paginationBar.hidden = true;
     }
+
+    updateMultiSelectBar();
   }
 
   function applyLanguageSettings() {
@@ -1435,6 +1597,7 @@
     document.getElementById('footer-disclaimer').textContent = t.disclaimer;
 
     renderHeaderAndCounters();
+    updateMultiSelectBar();
     renderProtocolChips();
     renderCountryTrigger();
     renderSortButtons();
@@ -1458,6 +1621,7 @@
       state.page = 1;
       state.servers = [];
       state.expandedCardIds.clear();
+      state.selectedServerIds.clear();
       state.isLoadingList = true;
       state.listError = false;
       renderServerCards();
@@ -1536,6 +1700,7 @@
       state.isLoadingMore = false;
       state.listError = false;
       renderHeaderAndCounters();
+    updateMultiSelectBar();
       renderServerCards();
     } catch {
       if (seq !== state.reqSeq) return;
@@ -1746,6 +1911,7 @@
 
       state.selectedSort = protocolSupportsScore(state.selectedProtocol) ? 'score' : 'last_checked';
       renderHeaderAndCounters();
+    updateMultiSelectBar();
       renderProtocolChips();
       renderCountryTrigger();
       renderSortButtons();
@@ -1812,6 +1978,25 @@
     document.getElementById('lang-toggle').addEventListener('click', () => {
       state.lang = state.lang === 'fa' ? 'en' : 'fa';
       applyLanguageSettings();
+    });
+
+    document.getElementById('select-all-btn').addEventListener('click', () => {
+      const eligible = state.servers.filter(
+        (s) => s && s.id && s.protocol !== 'openvpn' && !state.unavailableCardIds.has(String(s.id))
+      );
+      for (const s of eligible.slice(0, 10)) {
+        state.selectedServerIds.add(String(s.id));
+      }
+      renderServerCards();
+    });
+    const clearSelection = () => {
+      state.selectedServerIds.clear();
+      renderServerCards();
+    };
+    document.getElementById('select-clear-btn').addEventListener('click', clearSelection);
+    document.getElementById('multi-clear-btn').addEventListener('click', clearSelection);
+    document.getElementById('multi-copy-btn').addEventListener('click', () => {
+      runWithRiskGate(() => handleBatchCopyConfigs());
     });
 
     // Sort segmented control listeners

@@ -147,8 +147,14 @@
       <!-- Server List Section -->
       <section class="servers-section" aria-labelledby="servers-heading">
         <div class="servers-toolbar">
-          <h2 id="servers-heading" class="servers-title">Online Servers</h2>
-          <span id="showing-count-text" class="showing-meta"></span>
+          <div class="servers-toolbar-left">
+            <h2 id="servers-heading" class="servers-title">Online Servers</h2>
+            <span id="showing-count-text" class="showing-meta"></span>
+          </div>
+          <div class="servers-toolbar-actions">
+            <button type="button" id="select-all-btn" class="btn-ghost btn-sm" hidden>Select all</button>
+            <button type="button" id="select-clear-btn" class="btn-ghost btn-sm" hidden>Clear</button>
+          </div>
         </div>
         <p id="checker-region-note" class="checker-note">Speed and latency are representative measurements from the PublicVPNList checker region.</p>
 
@@ -288,6 +294,17 @@
           <a id="qr-v2rayng-link" class="btn-secondary" hidden>Open in v2rayNG</a>
           <button type="button" id="qr-close-btn" class="btn-ghost">Close</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Select Floating Bar -->
+  <div id="multi-select-bar" class="multi-select-bar" hidden>
+    <div class="multi-select-inner">
+      <span id="multi-select-count" class="multi-select-count">0 selected</span>
+      <div class="multi-select-actions">
+        <button type="button" id="multi-clear-btn" class="btn-ghost btn-sm">Clear</button>
+        <button type="button" id="multi-copy-btn" class="btn-primary btn-sm">Copy selected</button>
       </div>
     </div>
   </div>
