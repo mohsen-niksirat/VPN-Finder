@@ -52,3 +52,10 @@ export const deliveryDebug = table('delivery_debug', {
   delivered: integer('delivered').notNull(),
   detail:    text('detail').notNull(),
 });
+
+export const probeCompare = table('probe_compare', {
+  id:            integer('id').primaryKey({ autoIncrement: true }),
+  sourceContext: text('source_context').notNull(),
+  createdAt:     integer('created_at').notNull(),
+  detail:        text('detail').notNull(),
+});

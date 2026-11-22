@@ -1,19 +1,15 @@
-import { db, api, fetch } from 'sdk';
+import { db, api } from 'sdk';
 import { desc, eq, sql } from 'sdk/db';
 import { deliveryDebug, users, pvlCache } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
-  describeFieldValueState,
   extractSnapshotTimestamp,
-  fetchPvlServers,
-  fetchServerDetailFresh,
   getCounters,
   getOwnerId,
   getPvlApiKey,
-  PVL_BASE_URL,
   PVL_CACHE_TTL_SEC,
-  validateAndNormalizeServersInput,
 } from '../lib/pvl.js';
+import { runDebugProbe } from '../lib/probe.js';
 import { startGetFlow } from '../lib/getFlow.js';
 import {
   appPromptText,
@@ -156,85 +152,8 @@ async function formatOwnerDebugLast(userId) {
 }
 
 async function formatOwnerDebugProbe() {
-  const targetId = 'pvl_06e3a641e26fd238f0c37947';
-  const norm = validateAndNormalizeServersInput({
-    protocol: 'openvpn',
-    country: 'US',
-    sort: 'score',
-    page: 1,
-  });
-
-  // a. Exact candidate record deliverConfigsBatch receives via fetchPvlServers
-  const listRes = await fetchPvlServers({ protocol: 'openvpn', country: 'US', sort: 'score', page: 1 });
-  const candidate = (listRes?.data || []).find((r) => r?.id === targetId) || null;
-  const aState = candidate ? describeFieldValueState(candidate, 'config_download_url') : 'not_in_page1';
-
-  // b. pvl_cache servers list entry the handler would read
-  const cacheListRow = await db.select().from(pvlCache).where(eq(pvlCache.key, norm.cacheKey)).get();
-  let bState = 'cache_miss';
-  if (cacheListRow?.body) {
-    try {
-      const parsed = JSON.parse(cacheListRow.body);
-      const rec = (parsed?.data || []).find((r) => r?.id === targetId) || null;
-      bState = rec ? describeFieldValueState(rec, 'config_download_url') : 'not_in_cached_list';
-    } catch {
-      bState = 'parse_error';
-    }
-  }
-
-  // c. pvl_cache server_meta:<id> entry if present
-  const cacheMetaRow = await db.select().from(pvlCache).where(eq(pvlCache.key, `server_meta:${targetId}`)).get();
-  let cState = 'cache_miss';
-  if (cacheMetaRow?.body) {
-    try {
-      const parsed = JSON.parse(cacheMetaRow.body);
-      const rec = parsed?.data && typeof parsed.data === 'object' ? parsed.data : parsed;
-      cState = describeFieldValueState(rec, 'config_download_url');
-    } catch {
-      cState = 'parse_error';
-    }
-  }
-
-  // d. Fresh list fetch through fetchPvlServers (temporarily clear norm.cacheKey)
-  await db.delete(pvlCache).where(eq(pvlCache.key, norm.cacheKey)).run();
-  const freshListRes = await fetchPvlServers({ protocol: 'openvpn', country: 'US', sort: 'score', page: 1 });
-  const freshRec = (freshListRes?.data || []).find((r) => r?.id === targetId) || null;
-  const dState = freshRec ? describeFieldValueState(freshRec, 'config_download_url') : 'not_in_page1';
-
-  // e. fetchServerDetailFresh(id)
-  const detailFresh = await fetchServerDetailFresh(targetId);
-  const eState = describeFieldValueState(detailFresh, 'config_download_url');
-
-  // f. Raw PVL API list call WITHOUT fields parameter
-  let fState = 'no_api_key';
-  const apiKey = await getPvlApiKey();
-  if (apiKey) {
-    try {
-      const rawRes = await fetch(
-        `${PVL_BASE_URL}/servers?protocol=openvpn&country=US&status=online&fresh_within=259200&sort=score&order=desc&page=1&per_page=20`,
-        { headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' } }
-      );
-      if (!rawRes.ok) {
-        fState = `http_${rawRes.status}`;
-      } else {
-        const rawJson = await rawRes.json();
-        const rawRec = (rawJson?.data || []).find((r) => r?.id === targetId) || null;
-        fState = rawRec ? describeFieldValueState(rawRec, 'config_download_url') : 'not_in_page1';
-      }
-    } catch (err) {
-      fState = `fetch_${err?.name || 'Error'}`;
-    }
-  }
-
-  return [
-    `DebugProbe (${targetId})`,
-    `a_candidate: ${aState}`,
-    `b_cache_servers_list: ${bState}`,
-    `c_cache_server_meta: ${cState}`,
-    `d_fresh_fetchPvlServers: ${dState}`,
-    `e_fetchServerDetailFresh: ${eState}`,
-    `f_raw_no_fields_list: ${fState}`,
-  ].join('\n');
+  const res = await runDebugProbe('handler');
+  return res.text;
 }
 
 export default async function (message) {
