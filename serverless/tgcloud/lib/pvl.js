@@ -1550,12 +1550,12 @@ export async function getProtocolSpeedSummary(activeProtocols = []) {
 
 export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
   const ccFilter = String(countryCode || '').trim().toUpperCase();
-  let res;
+  let res = null;
   try {
-    res = await fetch('https://www.vpngate.net/api/iphone/', {
-      method: 'GET',
-      signal: AbortSignal.timeout(7000),
-    });
+    res = await Promise.race([
+      fetch('https://www.vpngate.net/api/iphone/', { method: 'GET' }),
+      new Promise((resolve) => setTimeout(() => resolve(null), 7500)),
+    ]);
   } catch {
     return [];
   }
@@ -1578,7 +1578,7 @@ export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
     const b64 = String(cols[14] || '').trim();
     if (!b64) continue;
     const rawText = decodeBase64Utf8(b64);
-    if (!rawText || !OVPN_DIRECTIVE_RE.test(rawText.trim())) continue;
+    if (!rawText || !/(?:^|\n)(client|dev|proto|remote)\b/i.test(rawText)) continue;
     const ip = String(cols[1] || '').trim();
     const score = Number(cols[2] || 0) || 0;
     const ping = Number(cols[3] || 0);

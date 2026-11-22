@@ -448,6 +448,14 @@ export async function deliverConfigsBatch({
 
   if (proto === 'openvpn') {
     const vgRows = await fetchVpnGateOpenVpn(cc, requested + 3).catch(() => []);
+    if (vgRows.length === 0) {
+      debugEntries.push({
+        id: 'vpngate',
+        stage_reached: 'pool_fetch',
+        reason_code: `vpngate_0_for_${cc || 'ALL'}`,
+        http_status: null,
+      });
+    }
     for (const vg of vgRows) {
       if (delivered >= requested || attempts >= maxAttempts) break;
       if (!vg || !vg.id || alreadyDelivered.has(vg.id) || !vg.bytes) continue;
