@@ -105,6 +105,7 @@ export default async function (cq) {
       sendDoc,
       extraCandidateIds: Array.isArray(cq._extra_candidate_ids) ? cq._extra_candidate_ids : [],
       forceOnlyExtra: Boolean(cq._force_only_extra),
+      expectedStep: 'amount',
     });
   }
 
@@ -123,6 +124,7 @@ export default async function (cq) {
       count: Number(flow.lastCount || 3),
       sendMsg,
       sendDoc,
+      expectedStep: 'more',
     });
   }
 

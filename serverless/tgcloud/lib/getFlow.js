@@ -1,5 +1,5 @@
 import { db } from 'sdk';
-import { eq, sql } from 'sdk/db';
+import { and, eq, sql } from 'sdk/db';
 import { deliveryDebug, users } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
@@ -8,9 +8,9 @@ import {
   describeFieldValueState,
   downloadAndBrandOvpn,
   fetchConnection,
+  fetchFreshServersPageForDelivery,
   fetchPvlCached,
   fetchPvlServers,
-  fetchServerDetailFresh,
   getDerivedCountries,
   getRemainingConnectionBudget,
   incrementCounter,
@@ -296,6 +296,8 @@ export async function showAmountStep({ chatId, userId, lang, protocol, country, 
     country: cc,
     available,
     deliveredIds: [],
+    delivering: false,
+    batchToken: `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
   });
 
   const text = chooseAmountText(lang, available, protoLabel, countryLabel, remaining);
@@ -313,6 +315,7 @@ export async function deliverConfigsBatch({
   sendDoc,
   extraCandidateIds = [],
   forceOnlyExtra = false,
+  expectedStep = null,
 }) {
   const userRow = await getUserRow(userId);
   const flow = parseActiveFlow(userRow);
@@ -320,6 +323,29 @@ export async function deliverConfigsBatch({
     const text = flowExpiredText(lang);
     await sendMsg({ chat_id: chatId, text });
     return { step: 'expired', text };
+  }
+
+  // Idempotency guard against duplicate callback deliveries / re-entrant taps
+  if (flow.delivering === true) {
+    return { step: 'duplicate_ignored', duplicateIgnored: true };
+  }
+  if (expectedStep === 'amount' && flow.step !== 'amount') {
+    return { step: 'duplicate_ignored', duplicateIgnored: true };
+  }
+  if (expectedStep === 'more' && flow.step !== 'delivered') {
+    return { step: 'duplicate_ignored', duplicateIgnored: true };
+  }
+
+  // Atomically stamp delivering=true before any network/delivery work
+  const lockedState = JSON.stringify({ ...flow, delivering: true });
+  const nowLock = Math.floor(Date.now() / 1000);
+  const lockRes = await db
+    .update(users)
+    .set({ flowState: lockedState, flowExpiresAt: nowLock + FLOW_TTL_SEC })
+    .where(and(eq(users.id, Number(userId) || 0), eq(users.flowState, userRow.flowState)))
+    .run();
+  if (!lockRes || Number(lockRes.rowsAffected ?? lockRes.changes ?? 1) === 0) {
+    return { step: 'duplicate_ignored', duplicateIgnored: true };
   }
 
   const proto = flow.protocol;
@@ -337,28 +363,61 @@ export async function deliverConfigsBatch({
   }
 
   if (!forceOnlyExtra) {
-    let page = 1;
-    let totalPages = 1;
-    const maxCandidatesNeeded = requested + 5;
-    do {
-      const res = await fetchPvlServers({
-        protocol: proto,
-        ...(cc ? { country: cc } : {}),
-        sort,
-        page,
-      });
-      const rows = Array.isArray(res?.data) ? res.data : [];
-      totalPages = Math.max(1, Number(res?.meta?.pages || 1));
-      for (const r of rows) {
-        if (r && r.id && !alreadyDelivered.has(r.id)) {
+    if (proto === 'openvpn') {
+      // Scan country pool fresh (cache-bypassed), bounded to at most 5 pages / 100 records per page
+      let page = 1;
+      let totalPages = 1;
+      let examined = 0;
+      let deliverableCount = 0;
+      const neededDeliverable = requested + 5;
+      do {
+        const res = await fetchFreshServersPageForDelivery({
+          protocol: 'openvpn',
+          country: cc,
+          sort,
+          page,
+          perPage: 100,
+        });
+        if (!res || res.error) break;
+        const rows = Array.isArray(res.data) ? res.data : [];
+        totalPages = Math.max(1, Number(res.meta?.pages || 1));
+        for (const r of rows) {
+          if (examined >= 100) break;
+          if (!r || !r.id || alreadyDelivered.has(r.id)) continue;
+          examined += 1;
           candidates.push(r);
+          if (typeof r.config_download_url === 'string' && r.config_download_url.length > 0) {
+            deliverableCount += 1;
+            if (deliverableCount >= neededDeliverable) break;
+          }
         }
-      }
-      page += 1;
-    } while (candidates.length < maxCandidatesNeeded && page <= totalPages && page <= 10);
+        page += 1;
+      } while (deliverableCount < neededDeliverable && examined < 100 && page <= totalPages && page <= 5);
+    } else {
+      let page = 1;
+      let totalPages = 1;
+      const maxCandidatesNeeded = requested + 5;
+      do {
+        const res = await fetchPvlServers({
+          protocol: proto,
+          ...(cc ? { country: cc } : {}),
+          sort,
+          page,
+        });
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        totalPages = Math.max(1, Number(res?.meta?.pages || 1));
+        for (const r of rows) {
+          if (r && r.id && !alreadyDelivered.has(r.id)) {
+            candidates.push(r);
+          }
+        }
+        page += 1;
+      } while (candidates.length < maxCandidatesNeeded && page <= totalPages && page <= 10);
+    }
   }
 
   if (candidates.length === 0) {
+    await saveUserFlow(userId, { ...flow, delivering: false });
     const countryLabel = cc ? `${countryCodeToFlag(cc)} ${resolveCountryName(cc)}` : '';
     const text = noneFreshText(lang, formatProtoLabel(proto), countryLabel);
     const reply_markup = {
@@ -373,6 +432,7 @@ export async function deliverConfigsBatch({
   const maxAttempts = requested + 5;
   let attempts = 0;
   let delivered = 0;
+  let huskCount = 0;
   let rateLimited = false;
   let sendFailedCount = 0;
   const skippedIds = [];
@@ -381,9 +441,9 @@ export async function deliverConfigsBatch({
 
   for (const srv of candidates) {
     if (delivered >= requested || attempts >= maxAttempts) break;
-    attempts += 1;
 
     if (!srv || !srv.id) {
+      attempts += 1;
       skippedIds.push({ id: 'unknown', reason: 'missing_record_id' });
       debugEntries.push({
         id: 'unknown',
@@ -395,6 +455,24 @@ export async function deliverConfigsBatch({
     }
 
     if (proto === 'openvpn') {
+      const dlUrl = typeof srv.config_download_url === 'string' && srv.config_download_url.length > 0
+        ? srv.config_download_url
+        : null;
+
+      // Skip dead-husk null-URL records WITHOUT consuming an attempt
+      if (!dlUrl) {
+        huskCount += 1;
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'record_resolve',
+          reason_code: 'not_deliverable_null_url',
+          http_status: null,
+          ...(debugEntries.length === 0 ? { fallback_invoked: false, fallback_value_state: 'null' } : {}),
+        });
+        continue;
+      }
+
+      attempts += 1;
       const rateCheck = await checkConnectionRateLimit(userId);
       if (!rateCheck.allowed) {
         rateLimited = true;
@@ -407,32 +485,6 @@ export async function deliverConfigsBatch({
         break;
       }
 
-      let dlUrl = srv.config_download_url;
-      let fallbackInvoked = false;
-      let fallbackValueState = 'not_invoked';
-      if (!dlUrl) {
-        fallbackInvoked = true;
-        const freshRec = await fetchServerDetailFresh(srv.id);
-        fallbackValueState = describeFieldValueState(freshRec, 'config_download_url');
-        dlUrl = freshRec?.config_download_url || null;
-      }
-
-      const extraFirst = attempts === 1
-        ? { fallback_invoked: fallbackInvoked, fallback_value_state: fallbackValueState }
-        : {};
-
-      if (!dlUrl) {
-        skippedIds.push({ id: srv.id, reason: 'missing_config_download_url' });
-        debugEntries.push({
-          id: srv.id,
-          stage_reached: 'record_resolve',
-          reason_code: 'missing_config_download_url',
-          http_status: null,
-          ...extraFirst,
-        });
-        continue;
-      }
-
       const ovpn = await downloadAndBrandOvpn(dlUrl);
       if (ovpn?.error || !ovpn?.bytes) {
         const reasonCode = ovpn?.reasonCode || ovpn?.error || 'ovpn_download_failed';
@@ -443,7 +495,6 @@ export async function deliverConfigsBatch({
           stage_reached: stageReached,
           reason_code: reasonCode,
           http_status: ovpn?.httpStatus ?? null,
-          ...extraFirst,
         });
         continue;
       }
@@ -467,7 +518,6 @@ export async function deliverConfigsBatch({
           stage_reached: 'send',
           reason_code: `send_${err?.name || 'Error'}`,
           http_status: ovpn.httpStatus ?? 200,
-          ...extraFirst,
         });
         continue;
       }
@@ -482,7 +532,6 @@ export async function deliverConfigsBatch({
         stage_reached: 'send',
         reason_code: 'ok',
         http_status: ovpn.httpStatus ?? 200,
-        ...extraFirst,
       });
 
       deliveredMeta.push({
@@ -496,6 +545,7 @@ export async function deliverConfigsBatch({
       continue;
     }
 
+    attempts += 1;
     const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
     if (conn?.error === 'rate_limited') {
       rateLimited = true;
@@ -595,6 +645,8 @@ export async function deliverConfigsBatch({
     country: cc || 'ALL',
     lastCount: requested,
     deliveredIds: Array.from(alreadyDelivered),
+    delivering: false,
+    batchToken: `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
   });
 
   if (delivered === 0 && rateLimited) {
@@ -614,10 +666,12 @@ export async function deliverConfigsBatch({
   }
 
   const allFailed = delivered === 0 && !rateLimited;
+  const fewerWorkingNote = delivered < requested && !rateLimited && huskCount > 0 && skippedIds.length === 0;
   const summary = batchSummaryText(lang, delivered, requested, {
     rateLimited,
     skippedCount: skippedIds.length,
     sendFailedCount,
+    fewerWorkingNote,
   });
   const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL', { allFailed });
   await sendMsg({
@@ -634,6 +688,7 @@ export async function deliverConfigsBatch({
     country: cc || 'ALL',
     requested,
     delivered,
+    huskCount,
     rateLimited,
     allFailed,
     deliveredMeta,

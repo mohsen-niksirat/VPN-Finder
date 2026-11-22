@@ -1289,6 +1289,50 @@ export async function fetchPvlServers(input) {
 }
 
 /**
+ * Fetches a fresh, cache-bypassed server page for on-demand delivery resolution.
+ * Display/list endpoints keep their 5-minute pvl_cache; delivery needs live URLs.
+ */
+export async function fetchFreshServersPageForDelivery({
+  protocol,
+  country = '',
+  sort = 'score',
+  page = 1,
+  perPage = 100,
+}) {
+  const apiKey = await getPvlApiKey();
+  if (!apiKey) return { error: 'setup_required' };
+  const sortCfg = SERVER_SORT_MAP[sort] || SERVER_SORT_MAP.score;
+  const parts = [
+    `protocol=${encodeURIComponent(protocol)}`,
+    ...(country ? [`country=${encodeURIComponent(country)}`] : []),
+    'status=online',
+    'fresh_within=259200',
+    `sort=${sortCfg.sort}`,
+    `order=${sortCfg.order}`,
+    `page=${page}`,
+    `per_page=${perPage}`,
+    `fields=${PVL_SERVERS_FIELDS}`,
+  ];
+  try {
+    const res = await fetch(`${PVL_BASE_URL}/servers?${parts.join('&')}`, {
+      method: 'GET',
+      headers: {
+        ...buildAuthHeaders(apiKey, null),
+        'Cache-Control': 'no-store',
+      },
+    });
+    if (!res.ok) return { error: `http_${res.status}` };
+    const json = await res.json();
+    return {
+      data: Array.isArray(json?.data) ? json.data : [],
+      meta: json?.meta || {},
+    };
+  } catch {
+    return { error: 'source_unavailable' };
+  }
+}
+
+/**
  * Generates an anonymized, non-secret public summary bundle v2 (`stats`, `protocols`, `countries`,
  * `countries_by_protocol`, and `servers_preview`) from `pvl_cache` so the static Mini App on
  * GitHub Pages can load the latest cached catalog snapshot directly alongside `Telegram.WebApp.Serverless.call`.
