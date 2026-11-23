@@ -1,7 +1,7 @@
 const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 const SUB_PATH_RE = /^\/sub\/([a-f0-9]{48})$/;
-const SUB_PROTOCOLS = ['vless', 'vmess', 'shadowsocks', 'trojan', 'hysteria2'];
-const MAX_PVL_PER_PROTOCOL = 5;
+const SUB_PROTOCOLS = ['hysteria2', 'vless', 'trojan', 'vmess', 'shadowsocks'];
+const MAX_PVL_PER_PROTOCOL = 6;
 const MAX_TOTAL = 50;
 const RATE_FLOOR_MS = 60_000;
 
@@ -17,19 +17,19 @@ const COMMUNITY_FEEDS = [
     name: 'F0rc3Run',
     url: 'https://raw.githubusercontent.com/F0rc3Run/F0rc3Run/refs/heads/main/Best-Results/proxies.txt',
     base64: false,
-    limit: 20,
+    limit: 35,
   },
   {
     name: 'mahdibland',
     url: 'https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity',
     base64: true,
-    limit: 15,
+    limit: 25,
   },
   {
     name: 'Au1rxx',
     url: 'https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt',
     base64: true,
-    limit: 15,
+    limit: 30,
   },
 ];
 
@@ -306,6 +306,43 @@ export default {
     for (const batch of feedBatches) {
       combined.push(...batch);
     }
+
+    const TLS_PORTS_RE = /:(?:443|8443|2053|2083|2087|2096)(?:[/?#]|$)/;
+    const iranUriScore = (uri) => {
+      const lower = uri.toLowerCase();
+      if (lower.startsWith(HY2_PREFIX) || lower.startsWith(HY2_SHORT_PREFIX)) return 120;
+      if (lower.startsWith(VLESS_PREFIX)) {
+        let s = 40;
+        if (lower.includes('security=reality')) s += 80;
+        else if (lower.includes('security=tls')) s += 45;
+        if (/(?:type=ws|type=grpc|type=xhttp|type=httpupgrade)/.test(lower)) s += 30;
+        if (TLS_PORTS_RE.test(lower)) s += 20;
+        if (lower.includes('security=none')) s -= 40;
+        return s;
+      }
+      if (lower.startsWith(TROJAN_PREFIX)) {
+        let s = 60;
+        if (/(?:type=ws|type=grpc)/.test(lower)) s += 25;
+        if (TLS_PORTS_RE.test(lower)) s += 15;
+        return s;
+      }
+      if (lower.startsWith(VMESS_PREFIX)) {
+        try {
+          const json = JSON.parse(fromBase64Utf8(uri.slice(VMESS_PREFIX.length)));
+          let s = 30;
+          if (json?.tls === 'tls') s += 35;
+          if (json?.net === 'ws' || json?.net === 'grpc') s += 25;
+          if ([443, 8443, 2053, 2083, 2087, 2096].includes(Number(json?.port))) s += 15;
+          return s;
+        } catch {
+          return 10;
+        }
+      }
+      if (lower.startsWith(SS_PREFIX)) return 20;
+      return 0;
+    };
+
+    combined.sort((a, b) => iranUriScore(b.uri) - iranUriScore(a.uri));
 
     const seen = new Set();
     const finalUris = [];

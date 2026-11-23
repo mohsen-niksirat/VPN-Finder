@@ -325,8 +325,8 @@ export function flowCancelledText(lang) {
 
 export function chooseProtocolText(lang) {
   return isFa(lang)
-    ? 'یک پروتکل را انتخاب کنید:'
-    : 'Choose a protocol:';
+    ? 'یک پروتکل را انتخاب کنید:\n\n🇮🇷 پیشنهاد برای نت ایران (مخابرات و همراه اول): ⭐ VLESS، ⭐ Hysteria2 یا Trojan (یا لینک اشتراک /sub).'
+    : 'Choose a protocol:\n\n🇮🇷 Best for restricted/Iran networks: ⭐ VLESS, ⭐ Hysteria2, or Trojan (or use /sub).';
 }
 
 export function chooseCountryText(lang, total, protocolLabel) {
@@ -418,7 +418,7 @@ export function batchSummaryText(
   lang,
   delivered,
   requested,
-  { rateLimited = false, skippedCount = 0, sendFailedCount = 0, fewerWorkingNote = false, openVpnPageMode = false } = {}
+  { rateLimited = false, skippedCount = 0, sendFailedCount = 0, fewerWorkingNote = false, openVpnPageMode = false, isOpenVpn = false } = {}
 ) {
   const fewerLine =
     fewerWorkingNote && !rateLimited
@@ -464,7 +464,11 @@ export function batchSummaryText(
       ? isFa(lang)
         ? '\n\nفایل‌های OpenVPN در کاتالوگ PublicVPNList ارائه می‌شوند — روی دانلود بزنید.\n💡 پیشنهاد: برای اتصال فوری بدون دانلود دستی، از /sub یا پروتکل‌های VLESS / Hysteria2 در /get استفاده کنید.'
         : "\n\nOpenVPN files are provided in the PublicVPNList catalog — tap Download.\n💡 Tip: For instant import without manual downloads, use /sub or pick VLESS / Hysteria2 in /get."
-      : '';
+      : isOpenVpn && delivered > 0
+        ? isFa(lang)
+          ? '\n\n🇮🇷 نکته نت ایران: OpenVPN روی مخابرات و همراه اول اغلب محدود است؛ برای اتصال پایدارتر از /sub یا ⭐ VLESS / Hysteria2 استفاده کنید.'
+          : '\n\n⚠️ Tip: Standard OpenVPN is often restricted on Iranian ISPs; for better reliability try /sub or VLESS / Hysteria2.'
+        : '';
 
   if (isFa(lang)) {
     return (

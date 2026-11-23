@@ -137,9 +137,28 @@ export async function showProtocolStep({ chatId, userId, lang, sendMsg }) {
     }))
   );
 
+  const IRAN_PROTO_ORDER = [
+    'vless',
+    'hysteria2',
+    'trojan',
+    'vmess',
+    'shadowsocks',
+    'tuic',
+    'wireguard',
+    'ikev2',
+    'openvpn',
+  ];
+  const RECOMMENDED_PROTOS = new Set(['vless', 'hysteria2']);
   const nonZero = totals.filter((item) => item.total > 0);
-  const buttons = (nonZero.length ? nonZero : totals).map((item) => ({
-    text: `${formatProtoLabel(item.proto)} · ${item.total}`,
+  const ordered = [...(nonZero.length ? nonZero : totals)].sort((a, b) => {
+    const ia = IRAN_PROTO_ORDER.indexOf(a.proto);
+    const ib = IRAN_PROTO_ORDER.indexOf(b.proto);
+    const ra = ia === -1 ? 99 : ia;
+    const rb = ib === -1 ? 99 : ib;
+    return ra - rb;
+  });
+  const buttons = ordered.map((item) => ({
+    text: `${RECOMMENDED_PROTOS.has(item.proto) ? '⭐ ' : ''}${formatProtoLabel(item.proto)} · ${item.total}`,
     callback_data: `get_p_${item.proto}`,
   }));
 
@@ -442,6 +461,21 @@ export async function deliverConfigsBatch({
     };
     await sendMsg({ chat_id: chatId, text, reply_markup });
     return { step: 'none_fresh', protocol: proto, country: cc || 'ALL', delivered: 0 };
+  }
+
+  if (proto !== 'openvpn' && candidates.length > 1) {
+    const TLS_PORTS = new Set([443, 8443, 2053, 2083, 2087, 2096]);
+    const GOOD_TRANSPORTS = new Set(['ws', 'websocket', 'grpc', 'xhttp', 'httpupgrade']);
+    const iranRank = (r) => {
+      let s = Number(r?.technical_quality_score || 0);
+      const tr = String(r?.transport || '').toLowerCase();
+      const port = Number(r?.port || 0);
+      if (GOOD_TRANSPORTS.has(tr)) s += 50;
+      if (TLS_PORTS.has(port)) s += 40;
+      if (r?.latency_ms && Number(r.latency_ms) > 0 && Number(r.latency_ms) < 200) s += 15;
+      return s;
+    };
+    candidates.sort((a, b) => iranRank(b) - iranRank(a));
   }
 
   const maxAttempts = requested + 5;
@@ -805,6 +839,7 @@ export async function deliverConfigsBatch({
     sendFailedCount,
     fewerWorkingNote,
     openVpnPageMode: openVpnPageUsed,
+    isOpenVpn: proto === 'openvpn',
   });
   const summaryKb = batchSummaryKeyboard(lang, proto, cc || 'ALL', { allFailed });
   await sendMsg({

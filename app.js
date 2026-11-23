@@ -237,12 +237,12 @@
   // Preferred display order for protocol chips when active
   const PROTOCOL_ORDER = [
     'vless',
-    'shadowsocks',
-    'vmess',
-    'openvpn',
     'hysteria2',
     'trojan',
+    'vmess',
+    'shadowsocks',
     'tuic',
+    'openvpn',
     'wireguard',
     'ikev2',
   ];
