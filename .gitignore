@@ -6,3 +6,5 @@ serverless/dist/
 *.bak
 *.log
 .DS_Store
+
+worker/.wrangler/
