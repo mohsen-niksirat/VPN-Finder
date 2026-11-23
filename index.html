@@ -6,7 +6,7 @@
   <title>VPN Finder</title>
   <meta name="description" content="Browse technically-checked public VPN servers from the PublicVPNList catalog by country and protocol.">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="styles.css?v=20261123b">
+  <link rel="stylesheet" href="styles.css?v=20261123c">
 </head>
 <body>
   <header class="app-header">
@@ -113,6 +113,19 @@
             <span id="protocol-speed-hint" class="filter-hint"></span>
           </div>
           <div id="protocol-chips" class="protocol-chips" role="radiogroup" aria-labelledby="label-protocol-filter"></div>
+        </div>
+
+        <!-- Iran ISP Optimization Chips Row -->
+        <div class="filter-block">
+          <div class="filter-label-row">
+            <span id="label-isp-filter" class="filter-label">Network / ISP</span>
+          </div>
+          <div id="isp-chips" class="protocol-chips" role="radiogroup" aria-labelledby="label-isp-filter">
+            <button type="button" class="proto-chip is-active" data-isp="ALL" role="radio" aria-checked="true" id="isp-chip-all">All ISPs</button>
+            <button type="button" class="proto-chip" data-isp="mci" role="radio" aria-checked="false" id="isp-chip-mci">MCI (همراه اول)</button>
+            <button type="button" class="proto-chip" data-isp="irancell" role="radio" aria-checked="false" id="isp-chip-irancell">Irancell (ایرانسل)</button>
+            <button type="button" class="proto-chip" data-isp="tci" role="radio" aria-checked="false" id="isp-chip-tci">TCI (مخابرات)</button>
+          </div>
         </div>
 
         <!-- Country Picker + Sort Segmented Control -->
@@ -330,7 +343,7 @@
     </div>
   </footer>
 
-  <script src="assets/qrcode.js?v=20261123b" defer></script>
-  <script src="app.js?v=20261123b" defer></script>
+  <script src="assets/qrcode.js?v=20261123c" defer></script>
+  <script src="app.js?v=20261123c" defer></script>
 </body>
 </html>

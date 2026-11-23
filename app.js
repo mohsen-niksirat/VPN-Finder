@@ -96,6 +96,16 @@
       quickCopyLabel: '📋 Copy URI',
       selectedCountLabel: '{n} selected',
       toastCopiedCount: 'Copied {n} configs to clipboard',
+      ispFilterLabel: 'Network / ISP',
+      ispAllLabel: 'All ISPs',
+      ispMciLabel: 'MCI (همراه اول)',
+      ispIrancellLabel: 'Irancell (ایرانسل)',
+      ispTciLabel: 'TCI (مخابرات)',
+      pingLabel: '⚡ Ping',
+      pingingLabel: 'Testing…',
+      pingTimeoutLabel: 'Timeout',
+      voteSavedToast: 'Feedback saved',
+      voteHiddenToast: 'Marked broken & hidden',
       toastConfigGone: 'This configuration is no longer available. Pick another server.',
       toastRateLimited: 'Too many connection requests. Please wait a minute.',
       errSourceUnavailable: 'Upstream source temporarily unavailable. Please retry.',
@@ -200,6 +210,16 @@
       quickCopyLabel: '📋 کپی لینک',
       selectedCountLabel: '{n} انتخاب شده',
       toastCopiedCount: '{n} کانفیگ با موفقیت کپی شد',
+      ispFilterLabel: 'بهینه‌سازی برای اپراتور',
+      ispAllLabel: 'همه اپراتورها',
+      ispMciLabel: 'همراه اول',
+      ispIrancellLabel: 'ایرانسل',
+      ispTciLabel: 'مخابرات',
+      pingLabel: '⚡ تست پینگ',
+      pingingLabel: 'در حال تست…',
+      pingTimeoutLabel: 'تایم‌اوت',
+      voteSavedToast: 'بازخورد شما ثبت شد',
+      voteHiddenToast: 'گزارش خرابی ثبت و سرور پنهان شد',
       toastConfigGone: 'این کانفیگ دیگر در دسترس نیست. سرور دیگری انتخاب کنید.',
       toastRateLimited: 'تعداد درخواست‌ها زیاد است. لطفاً یک دقیقه صبر کنید.',
       errSourceUnavailable: 'منبع بالادستی موقتاً در دسترس نیست. لطفاً دوباره تلاش کنید.',
@@ -309,6 +329,7 @@
     activeProtocols: [], // [{ id, label, records, medianSpeed }]
     countriesByProtocol: {}, // { [proto]: [{ code, name, count }] }
     selectedProtocol: 'vless',
+    selectedIsp: 'ALL',
     selectedCountry: '', // '' = All countries
     selectedSort: 'score',
     page: 1,
@@ -318,6 +339,8 @@
     expandedCardIds: new Set(),
     unavailableCardIds: new Set(),
     selectedServerIds: new Set(),
+    pingResults: {},
+    votedCards: {},
     isBatchCopying: false,
     activeConnectionPayload: null,
     activeConnectionServerId: null,
@@ -1164,6 +1187,112 @@
     }
   }
 
+  function scoreForIsp(srv, isp) {
+    let s = Number(srv?.technical_quality_score || 0);
+    const tr = String(srv?.transport || '').toLowerCase();
+    const port = Number(srv?.port || 0);
+    const lat = Number(srv?.latency_ms || 0);
+    const tlsPorts = new Set([443, 8443, 2053, 2083, 2087, 2096]);
+    if (isp === 'mci') {
+      if (tr === 'grpc' || tr === 'quic' || tr === 'ws' || tr === 'xhttp') s += 45;
+      if (tlsPorts.has(port)) s += 35;
+      if (lat > 0 && lat < 200) s += 15;
+    } else if (isp === 'irancell') {
+      if (tr === 'ws' || tr === 'websocket' || tr === 'xhttp' || tr === 'httpupgrade') s += 55;
+      if (tlsPorts.has(port)) s += 35;
+    } else if (isp === 'tci') {
+      if (tr === 'ws' || tr === 'grpc' || tr === 'tcp') s += 30;
+      if (tlsPorts.has(port)) s += 40;
+      if (lat > 0 && lat < 180) s += 25;
+    }
+    return s;
+  }
+
+  function renderIspChips() {
+    const t = I18N[state.lang];
+    const lbl = document.getElementById('label-isp-filter');
+    if (lbl) lbl.textContent = t.ispFilterLabel;
+    const map = {
+      'isp-chip-all': t.ispAllLabel,
+      'isp-chip-mci': t.ispMciLabel,
+      'isp-chip-irancell': t.ispIrancellLabel,
+      'isp-chip-tci': t.ispTciLabel,
+    };
+    for (const [id, text] of Object.entries(map)) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = text;
+        const val = el.getAttribute('data-isp');
+        const active = val === state.selectedIsp;
+        el.classList.toggle('is-active', active);
+        el.setAttribute('aria-checked', active ? 'true' : 'false');
+      }
+    }
+  }
+
+  async function pingServerLive(srv) {
+    const t = I18N[state.lang];
+    const cardId = String(srv?.id || '');
+    const host = String(srv?.exit_ip || '').trim();
+    const port = Number(srv?.port || 443) || 443;
+    if (!cardId || !host) return;
+
+    state.pingResults[cardId] = { loading: true, label: t.pingingLabel, cls: '' };
+    renderServerCards();
+
+    const start = performance.now();
+    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 3000) : null;
+    try {
+      await fetch(`https://${host}:${port}/`, {
+        mode: 'no-cors',
+        cache: 'no-store',
+        ...(ctrl ? { signal: ctrl.signal } : {}),
+      });
+      const ms = Math.round(performance.now() - start);
+      state.pingResults[cardId] = {
+        loading: false,
+        label: `🟢 ${formatNumber(ms)} ms`,
+        cls: ms < 220 ? 'ping-ok' : 'ping-slow',
+      };
+    } catch (err) {
+      const ms = Math.round(performance.now() - start);
+      if (err && err.name === 'AbortError') {
+        state.pingResults[cardId] = { loading: false, label: `🔴 ${t.pingTimeoutLabel}`, cls: 'ping-bad' };
+      } else if (ms < 2500) {
+        // Quick TLS/TCP response (even rejection) proves host:port is reachable from user's ISP
+        state.pingResults[cardId] = {
+          loading: false,
+          label: `${ms < 250 ? '🟢' : '🟡'} ${formatNumber(ms)} ms`,
+          cls: ms < 250 ? 'ping-ok' : 'ping-slow',
+        };
+      } else {
+        state.pingResults[cardId] = { loading: false, label: `🔴 ${t.pingTimeoutLabel}`, cls: 'ping-bad' };
+      }
+    } finally {
+      if (timer) clearTimeout(timer);
+      renderServerCards();
+    }
+  }
+
+  async function handleCardVote(cardId, vote) {
+    const t = I18N[state.lang];
+    state.votedCards[cardId] = vote;
+    renderServerCards();
+    try {
+      const res = await callProxyEndpoint('pvlFeedback', { id: cardId, vote });
+      if (res?.hidden) {
+        state.unavailableCardIds.add(cardId);
+        showToast(t.voteHiddenToast);
+        renderServerCards();
+      } else {
+        showToast(t.voteSavedToast);
+      }
+    } catch {
+      showToast(t.voteSavedToast);
+    }
+  }
+
   function renderServerCards() {
     const t = I18N[state.lang];
     const listEl = document.getElementById('servers-list');
@@ -1194,7 +1323,11 @@
 
     listEl.innerHTML = '';
 
-    for (const srv of state.servers) {
+    const displayServers = state.selectedIsp && state.selectedIsp !== 'ALL'
+      ? [...state.servers].sort((a, b) => scoreForIsp(b, state.selectedIsp) - scoreForIsp(a, state.selectedIsp))
+      : state.servers;
+
+    for (const srv of displayServers) {
       const cardId = String(srv.id || '');
       const isExpanded = state.expandedCardIds.has(cardId);
 
@@ -1381,7 +1514,46 @@
         });
 
         quickBar.appendChild(selectLabel);
-        quickBar.appendChild(quickCopyBtn);
+
+        const rightGroup = document.createElement('div');
+        rightGroup.className = 'card-quick-right';
+
+        const pingBtn = document.createElement('button');
+        pingBtn.type = 'button';
+        const pInfo = state.pingResults[cardId];
+        pingBtn.className = `card-ping-btn${pInfo?.cls ? ` ${pInfo.cls}` : ''}`;
+        pingBtn.textContent = pInfo?.label || t.pingLabel;
+        pingBtn.disabled = isUnavailable || pInfo?.loading;
+        pingBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          pingServerLive(srv);
+        });
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = `card-fb-btn${state.votedCards[cardId] === 'up' ? ' is-voted' : ''}`;
+        upBtn.textContent = '👍';
+        upBtn.title = 'Working';
+        upBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleCardVote(cardId, 'up');
+        });
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = `card-fb-btn${state.votedCards[cardId] === 'down' ? ' is-voted' : ''}`;
+        downBtn.textContent = '👎';
+        downBtn.title = 'Broken';
+        downBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleCardVote(cardId, 'down');
+        });
+
+        rightGroup.appendChild(pingBtn);
+        rightGroup.appendChild(upBtn);
+        rightGroup.appendChild(downBtn);
+        rightGroup.appendChild(quickCopyBtn);
+        quickBar.appendChild(rightGroup);
         card.appendChild(quickBar);
       }
 
@@ -1545,6 +1717,7 @@
     document.getElementById('footer-disclaimer').textContent = t.disclaimer;
 
     renderHeaderAndCounters();
+    renderIspChips();
     updateMultiSelectBar();
     renderProtocolChips();
     renderCountryTrigger();
@@ -1648,6 +1821,7 @@
       state.isLoadingMore = false;
       state.listError = false;
       renderHeaderAndCounters();
+    renderIspChips();
     updateMultiSelectBar();
       renderServerCards();
     } catch {
@@ -1859,6 +2033,7 @@
 
       state.selectedSort = protocolSupportsScore(state.selectedProtocol) ? 'score' : 'last_checked';
       renderHeaderAndCounters();
+    renderIspChips();
     updateMultiSelectBar();
       renderProtocolChips();
       renderCountryTrigger();
@@ -1926,6 +2101,16 @@
     document.getElementById('lang-toggle').addEventListener('click', () => {
       state.lang = state.lang === 'fa' ? 'en' : 'fa';
       applyLanguageSettings();
+    });
+
+    document.querySelectorAll('#isp-chips .proto-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const ispVal = btn.getAttribute('data-isp') || 'ALL';
+        if (state.selectedIsp === ispVal) return;
+        state.selectedIsp = ispVal;
+        renderIspChips();
+        renderServerCards();
+      });
     });
 
     document.getElementById('select-all-btn').addEventListener('click', () => {

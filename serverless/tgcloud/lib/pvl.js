@@ -1,6 +1,6 @@
 import { db, fetch, EndpointError } from 'sdk';
-import { eq, sql } from 'sdk/db';
-import { botConfig, connectionRateLimits, counters, pvlCache, users } from '../schema.js';
+import { and, eq, sql } from 'sdk/db';
+import { botConfig, connectionRateLimits, counters, pvlCache, serverFeedback, users } from '../schema.js';
 import { lookupIpCountry } from './geo.js';
 
 export const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
@@ -59,6 +59,7 @@ export const ALLOWED_PROTOCOLS = new Set([
 
 // Per-isolate backoff tracking when upstream returns HTTP 429
 const backoffUntilByKey = new Map();
+let globalBackoffUntil = 0;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -203,7 +204,7 @@ export async function fetchPvlCached({ cacheKey, pathAndQuery, ttlSec = PVL_CACH
     }
   }
 
-  const backoffUntil = backoffUntilByKey.get(cacheKey) || 0;
+  const backoffUntil = Math.max(globalBackoffUntil, backoffUntilByKey.get(cacheKey) || 0);
   if (now < backoffUntil && cached) {
     const parsed = safeParseBody(cached.body);
     if (parsed) {
@@ -279,8 +280,9 @@ export async function fetchPvlCached({ cacheKey, pathAndQuery, ttlSec = PVL_CACH
   // 429 Rate Limit -> apply Retry-After backoff and serve stale cache if available
   if (res.status === 429) {
     const retryHeader = Number(res.headers?.get?.('retry-after') || 0);
-    const waitSec = Number.isFinite(retryHeader) && retryHeader > 0 ? Math.min(retryHeader, 60) : 5;
+    const waitSec = Number.isFinite(retryHeader) && retryHeader > 0 ? Math.min(retryHeader, 60) : 10;
     backoffUntilByKey.set(cacheKey, now + waitSec);
+    globalBackoffUntil = Math.max(globalBackoffUntil, now + Math.min(waitSec, 20));
 
     if (cached) {
       const parsed = safeParseBody(cached.body);
@@ -301,8 +303,6 @@ export async function fetchPvlCached({ cacheKey, pathAndQuery, ttlSec = PVL_CACH
       }
     }
 
-    // Short non-blocking backoff if no cache exists yet
-    await sleep(Math.min(waitSec, 3) * 1000);
     throw new EndpointError('Upstream rate limit reached, please retry shortly', {
       code: 'RATE_LIMITED',
       retry_after: waitSec,
@@ -1647,5 +1647,94 @@ export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15, diagOut 
 
   rows.sort((a, b) => b.score - a.score);
   return rows.slice(0, limit);
+}
+
+export async function recordServerVote(serverId, userId, vote) {
+  const sid = String(serverId || '').trim();
+  const uid = Number(userId) || 0;
+  const v = vote === 'down' ? 'down' : 'up';
+  if (!sid || !uid) return { ok: false };
+
+  const now = Math.floor(Date.now() / 1000);
+  const existing = await db
+    .select()
+    .from(serverFeedback)
+    .where(and(eq(serverFeedback.serverId, sid), eq(serverFeedback.userId, uid)))
+    .get()
+    .catch(() => null);
+
+  if (existing) {
+    await db
+      .update(serverFeedback)
+      .set({ vote: v, createdAt: now })
+      .where(eq(serverFeedback.id, existing.id))
+      .run();
+  } else {
+    await db
+      .insert(serverFeedback)
+      .values({ serverId: sid, userId: uid, vote: v, createdAt: now })
+      .run();
+  }
+
+  const allVotes = await db
+    .select({ vote: serverFeedback.vote })
+    .from(serverFeedback)
+    .where(eq(serverFeedback.serverId, sid))
+    .all()
+    .catch(() => []);
+  let up = 0;
+  let down = 0;
+  for (const r of allVotes) {
+    if (r.vote === 'down') down += 1;
+    else up += 1;
+  }
+  return { ok: true, serverId: sid, up, down, hidden: down >= 3 && down > up * 2 };
+}
+
+export async function getBlockedServerIds() {
+  const rows = await db
+    .select({ serverId: serverFeedback.serverId, vote: serverFeedback.vote })
+    .from(serverFeedback)
+    .all()
+    .catch(() => []);
+  const counts = new Map();
+  for (const r of rows) {
+    const cur = counts.get(r.serverId) || { up: 0, down: 0 };
+    if (r.vote === 'down') cur.down += 1;
+    else cur.up += 1;
+    counts.set(r.serverId, cur);
+  }
+  const blocked = new Set();
+  for (const [sid, c] of counts.entries()) {
+    if (c.down >= 3 && c.down > c.up * 2) blocked.add(sid);
+  }
+  return blocked;
+}
+
+export async function getFeedbackSummary() {
+  const rows = await db
+    .select({ serverId: serverFeedback.serverId, vote: serverFeedback.vote })
+    .from(serverFeedback)
+    .all()
+    .catch(() => []);
+  const counts = new Map();
+  let totalUp = 0;
+  let totalDown = 0;
+  for (const r of rows) {
+    const cur = counts.get(r.serverId) || { up: 0, down: 0 };
+    if (r.vote === 'down') {
+      cur.down += 1;
+      totalDown += 1;
+    } else {
+      cur.up += 1;
+      totalUp += 1;
+    }
+    counts.set(r.serverId, cur);
+  }
+  let hiddenCount = 0;
+  for (const c of counts.values()) {
+    if (c.down >= 3 && c.down > c.up * 2) hiddenCount += 1;
+  }
+  return { totalVotes: rows.length, totalUp, totalDown, hiddenCount };
 }
 

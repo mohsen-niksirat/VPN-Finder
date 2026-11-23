@@ -6,6 +6,7 @@ import {
   extractSnapshotTimestamp,
   getCounters,
   getEffectiveUserLang,
+  getFeedbackSummary,
   getOwnerId,
   getPvlApiKey,
   PVL_CACHE_TTL_SEC,
@@ -88,19 +89,55 @@ async function formatOwnerStats(lang = 'en') {
 
     const counters = await getCounters();
     const totalSubTokens = await db.$count(subTokens).catch(() => 0);
+    const fb = await getFeedbackSummary().catch(() => ({ totalVotes: 0, totalUp: 0, totalDown: 0, hiddenCount: 0 }));
+
+    // 7-day daily delivery chart & recent proxy health
+    const recentDeliveries = await db
+      .select({
+        createdAt: deliveryDebug.createdAt,
+        requested: deliveryDebug.requested,
+        delivered: deliveryDebug.delivered,
+      })
+      .from(deliveryDebug)
+      .orderBy(desc(deliveryDebug.id))
+      .limit(100)
+      .all()
+      .catch(() => []);
+
+    const dayBuckets = new Array(7).fill(0);
+    let recentReq = 0;
+    let recentDeliv = 0;
+    const todayDayIdx = Math.floor(now / 86400);
+    for (const d of recentDeliveries) {
+      recentReq += Number(d.requested || 0);
+      recentDeliv += Number(d.delivered || 0);
+      const dIdx = Math.floor(Number(d.createdAt || 0) / 86400);
+      const diff = todayDayIdx - dIdx;
+      if (diff >= 0 && diff < 7) {
+        dayBuckets[6 - diff] += Number(d.delivered || 0);
+      }
+    }
+    const bars = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+    const maxDay = Math.max(1, ...dayBuckets);
+    const sparkline = dayBuckets
+      .map((v) => (v === 0 ? '·' : bars[Math.min(bars.length - 1, Math.floor((v / maxDay) * (bars.length - 1)))]))
+      .join(' ');
+    const successPct = recentReq > 0 ? Math.round((recentDeliv / recentReq) * 100) : 100;
 
     if (fa) {
       return [
         '📊 <b>آمار مدیریتی VPN Finder</b>',
         '',
-        `👥 <b>کاربران:</b> ${totalUsers} نفر (۲۴ ساعت اخیر: ${active24h} · ۷ روز اخیر: ${active7d})`,
+        `👥 <b>کاربران:</b> ${totalUsers} نفر (۲۴ ساعت: ${active24h} · ۷ روز: ${active7d})`,
         `📥 <b>کانفیگ‌های ارسالی در چت:</b> ${counters.configs_sent_chat}`,
         `⚡ <b>اتصال‌های مینی‌اپ:</b> ${counters.connections_served}`,
-        `🧭 <b>فرایندهای /get شروع‌شده:</b> ${counters.get_flows_started}`,
-        `🔗 <b>لینک‌های اشتراک ساخته‌شده:</b> ${totalSubTokens}`,
+        `🧭 <b>فرایندهای /get:</b> ${counters.get_flows_started}`,
+        `🔗 <b>لینک‌های اشتراک فعال/کل:</b> ${totalSubTokens}`,
         '',
-        '📶 <b>مصرف اینترنت کاربران:</b> قابل اندازه‌گیری نیست (کاربران مستقیماً به سرورهای شخص ثالث وصل می‌شوند و ترافیک از ربات عبور نمی‌کند).',
+        `📈 <b>نمودار ۷ روز اخیر (تحویل):</b> <code>${sparkline}</code> (${dayBuckets.join(', ')})`,
+        `🩺 <b>سلامت پروکسی‌ها:</b> نرخ تحویل ${successPct}% · 👍 ${fb.totalUp} / 👎 ${fb.totalDown} (مخفی‌شده: ${fb.hiddenCount})`,
         '',
+        '📶 <b>مصرف اینترنت کاربران:</b> قابل اندازه‌گیری نیست (ترافیک مستقیم به سرورهای شخص ثالث می‌رود).',
         `⚙️ <b>وضعیت سیستم:</b> کلید PVL ${apiKey ? 'فعال ✅' : 'تنظیم‌نشده ❌'} · کش: ${freshCache}/${cacheRows.length} تازه`,
       ].join('\n');
     }
@@ -114,8 +151,10 @@ async function formatOwnerStats(lang = 'en') {
       `🧭 <b>/get flows started:</b> ${counters.get_flows_started}`,
       `🔗 <b>Sub tokens issued:</b> ${totalSubTokens}`,
       '',
-      '📶 <b>VPN Bandwidth:</b> Not measurable (users connect directly to third-party servers; bot does not proxy VPN traffic).',
+      `📈 <b>7-Day Deliveries:</b> <code>${sparkline}</code> (${dayBuckets.join(', ')})`,
+      `🩺 <b>Proxy Health:</b> ${successPct}% delivery rate · 👍 ${fb.totalUp} / 👎 ${fb.totalDown} (auto-hidden: ${fb.hiddenCount})`,
       '',
+      '📶 <b>VPN Bandwidth:</b> Not measurable (users connect directly to third-party servers).',
       `⚙️ <b>System:</b> PVL Key ${apiKey ? 'Configured ✅' : 'Missing ❌'} · Cache: ${freshCache}/${cacheRows.length} fresh`,
     ].join('\n');
   } catch (err) {

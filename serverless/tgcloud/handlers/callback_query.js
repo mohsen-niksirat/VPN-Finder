@@ -9,21 +9,24 @@ import {
   showProtocolStep,
   startGetFlow,
 } from '../lib/getFlow.js';
-import { getEffectiveUserLang, getOwnerId, setUserLang } from '../lib/pvl.js';
+import { getEffectiveUserLang, getOwnerId, recordServerVote, setUserLang } from '../lib/pvl.js';
 import {
   appsMenuKeyboard,
   appsMenuText,
   buildReplyPanelKeyboard,
   flowExpiredText,
+  isFa,
   langUpdatedText,
   panelShownText,
   settingsKeyboard,
   settingsText,
 } from '../lib/texts.js';
 import {
+  buildSubUrl,
   getActiveSubToken,
   getSubLinkBase,
   issueSubToken,
+  listActiveSubTokens,
   regenerateSubToken,
   revokeSubToken,
   sendSubResponse,
@@ -31,6 +34,7 @@ import {
   subLinkText,
   subRevokedText,
   subSetupPendingText,
+  updateSubFilters,
 } from '../lib/sub.js';
 
 export default async function (cq) {
@@ -50,7 +54,7 @@ export default async function (cq) {
   const data = String(cq.data || '');
   const dryRun = Boolean(cq._dry_run);
 
-  if (!dryRun && cq.id) {
+  if (!dryRun && cq.id && !data.startsWith('fb:')) {
     await api.answerCallbackQuery({ callback_query_id: cq.id }).catch(() => {});
   }
 
@@ -140,23 +144,46 @@ export default async function (cq) {
     return { action: isApps ? 'apps_menu' : 'settings_open', userId };
   }
 
+  if (data.startsWith('fb:up:') || data.startsWith('fb:down:')) {
+    const isDown = data.startsWith('fb:down:');
+    const sid = data.slice(isDown ? 'fb:down:'.length : 'fb:up:'.length);
+    const res = await recordServerVote(sid, userId, isDown ? 'down' : 'up');
+    const fa = isFa(lang);
+    const toast = res.hidden
+      ? (fa ? '👎 ثبت شد — این سرور از لیست عمومی پنهان شد.' : '👎 Recorded — server auto-hidden due to reports.')
+      : isDown
+        ? (fa ? `👎 گزارش خرابی ثبت شد (${res.down})` : `👎 Reported broken (${res.down})`)
+        : (fa ? `👍 امتیاز سالم ثبت شد (${res.up})` : `👍 Marked working (${res.up})`);
+    if (!dryRun && cq.id) {
+      await api.answerCallbackQuery({ callback_query_id: cq.id, text: toast }).catch(() => {});
+    }
+    return { action: 'server_feedback', userId, serverId: sid, ...res };
+  }
+
   if (data === 'sub:open') {
     await sendSubResponse({ chatId, userId, lang, sendMsg });
     return { action: 'sub_open', userId };
   }
 
-  if (data.startsWith('sub:cc:')) {
-    const cc = data.slice('sub:cc:'.length).toUpperCase() || 'ALL';
+  const renderEditedSub = async (active, { regenerated = false } = {}) => {
     const base = await getSubLinkBase();
     if (!base) {
       await sendMsg({ chat_id: chatId, text: subSetupPendingText(lang) });
-      return { action: 'sub_cc_pending', userId };
+      return;
     }
-    let row = await getActiveSubToken(userId);
-    const token = row?.token || (await issueSubToken(userId));
-    const url = cc === 'ALL' ? `${base}/sub/${token}` : `${base}/sub/${token}?cc=${cc}`;
-    const text = subLinkText(url, lang, { cc });
-    const reply_markup = subKeyboard(lang, cc);
+    const profiles = await listActiveSubTokens(userId);
+    const idx = Math.max(1, profiles.findIndex((p) => Number(p.id) === Number(active.id)) + 1);
+    const cc = active.cc || 'ALL';
+    const isp = active.isp || 'ALL';
+    const url = buildSubUrl(base, active.token, { cc, isp });
+    const text = subLinkText(url, lang, {
+      regenerated,
+      cc,
+      isp,
+      profileNum: idx,
+      totalProfiles: profiles.length,
+    });
+    const reply_markup = subKeyboard(lang, { cc, isp, profiles, activeId: active.id });
     const msgId = cq.message?.message_id;
     if (!dryRun && msgId) {
       await api
@@ -172,39 +199,69 @@ export default async function (cq) {
     } else {
       await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
     }
-    return { action: 'sub_cc', userId, cc };
+  };
+
+  if (data.startsWith('sub:cc:') || data.startsWith('sub:isp:')) {
+    const parts = data.split(':');
+    const kind = parts[1]; // 'cc' | 'isp'
+    const val = parts[2] || 'ALL';
+    const pid = Number(parts[3] || 0) || null;
+    const updated = await updateSubFilters(
+      userId,
+      pid,
+      kind === 'cc' ? { cc: val.toUpperCase() } : { isp: val }
+    );
+    if (updated) {
+      await renderEditedSub(updated);
+    } else {
+      await sendSubResponse({ chatId, userId, lang, sendMsg });
+    }
+    return { action: `sub_${kind}`, userId, val };
   }
 
-  if (data === 'sub:regen') {
-    const base = await getSubLinkBase();
-    if (!base) {
-      await sendMsg({ chat_id: chatId, text: subSetupPendingText(lang) });
-      return { action: 'sub_regen_pending', userId };
-    }
-    const token = await regenerateSubToken(userId);
-    const url = `${base}/sub/${token}`;
-    const text = subLinkText(url, lang, { regenerated: true });
-    const reply_markup = subKeyboard(lang);
-    const msgId = cq.message?.message_id;
-    if (!dryRun && msgId) {
-      await api
-        .editMessageText({
-          chat_id: chatId,
-          message_id: msgId,
-          text,
-          parse_mode: 'HTML',
-          disable_web_page_preview: true,
-          reply_markup,
-        })
-        .catch(() => sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup }));
+  if (data.startsWith('sub:sel:')) {
+    const pid = Number(data.slice('sub:sel:'.length) || 0) || null;
+    const active = await getActiveSubToken(userId, pid);
+    if (active) {
+      await renderEditedSub(active);
     } else {
-      await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
+      await sendSubResponse({ chatId, userId, lang, sendMsg });
+    }
+    return { action: 'sub_sel', userId, pid };
+  }
+
+  if (data === 'sub:new') {
+    const existing = await listActiveSubTokens(userId);
+    if (existing.length < 3) {
+      await issueSubToken(userId, { cc: 'ALL', isp: 'ALL' });
+    }
+    const updated = await listActiveSubTokens(userId);
+    const newest = updated[updated.length - 1];
+    if (newest) {
+      await renderEditedSub(newest);
+    }
+    return { action: 'sub_new', userId, count: updated.length };
+  }
+
+  if (data === 'sub:regen' || data.startsWith('sub:regen:')) {
+    const pid = data.startsWith('sub:regen:') ? Number(data.slice('sub:regen:'.length) || 0) || null : null;
+    const newTok = await regenerateSubToken(userId, pid);
+    const profiles = await listActiveSubTokens(userId);
+    const active = profiles.find((p) => p.token === newTok) || profiles[0];
+    if (active) {
+      await renderEditedSub(active, { regenerated: true });
     }
     return { action: 'sub_regen', userId };
   }
 
-  if (data === 'sub:revoke') {
-    await revokeSubToken(userId);
+  if (data === 'sub:revoke' || data.startsWith('sub:revoke:')) {
+    const pid = data.startsWith('sub:revoke:') ? Number(data.slice('sub:revoke:'.length) || 0) || null : null;
+    await revokeSubToken(userId, pid);
+    const remaining = await listActiveSubTokens(userId);
+    if (remaining.length > 0) {
+      await renderEditedSub(remaining[0]);
+      return { action: 'sub_revoke_profile', userId };
+    }
     const text = subRevokedText(lang);
     const msgId = cq.message?.message_id;
     if (!dryRun && msgId) {

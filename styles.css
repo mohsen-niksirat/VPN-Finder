@@ -1309,3 +1309,43 @@ input:focus-visible,
   align-items: center;
   gap: var(--space-2);
 }
+
+.card-quick-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-ping-btn,
+.card-fb-btn {
+  padding: 5px 8px;
+  font-size: 0.76rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.card-ping-btn.ping-ok {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  border-color: var(--ok-border);
+}
+
+.card-ping-btn.ping-slow {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-color: var(--warn-border);
+}
+
+.card-ping-btn.ping-bad {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border-color: var(--error-border);
+}
+
+.card-fb-btn.is-voted {
+  border-color: var(--accent);
+  color: var(--accent);
+}

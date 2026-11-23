@@ -51,7 +51,7 @@ export function escapeHtml(str) {
 
 export function buildAppUrl(lang, startParam = '') {
   const l = isFa(lang) ? 'fa' : 'en';
-  const params = [`lang=${l}`, 'v=20261123b'];
+  const params = [`lang=${l}`, 'v=20261123c'];
   if (startParam) params.push(`start=${encodeURIComponent(startParam)}`);
   return `${APP_URL}?${params.join('&')}`;
 }
@@ -485,7 +485,7 @@ export function batchSummaryText(
 }
 
 export function batchSummaryKeyboard(lang, protocol, country, { allFailed = false } = {}) {
-  const parts = [`lang=${isFa(lang) ? 'fa' : 'en'}`, 'v=20261123b'];
+  const parts = [`lang=${isFa(lang) ? 'fa' : 'en'}`, 'v=20261123c'];
   if (protocol) parts.push(`protocol=${encodeURIComponent(protocol)}`);
   if (country && country !== 'ALL') parts.push(`country=${encodeURIComponent(country)}`);
   const qs = parts.join('&');

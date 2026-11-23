@@ -1,6 +1,6 @@
 const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 const SUB_PATH_RE = /^\/sub\/([a-f0-9]{48})$/;
-const SUB_PROTOCOLS = ['hysteria2', 'vless', 'trojan', 'vmess', 'shadowsocks'];
+const SUB_PROTOCOLS = ['hysteria2', 'vless', 'trojan', 'tuic', 'vmess', 'shadowsocks'];
 const MAX_PVL_PER_PROTOCOL = 6;
 const MAX_TOTAL = 50;
 const RATE_FLOOR_MS = 60_000;
@@ -11,6 +11,7 @@ const TROJAN_PREFIX = 'trojan' + '://';
 const SS_PREFIX = 'ss' + '://';
 const HY2_PREFIX = 'hysteria2' + '://';
 const HY2_SHORT_PREFIX = 'hy2' + '://';
+const TUIC_PREFIX = 'tuic' + '://';
 
 const COMMUNITY_FEEDS = [
   {
@@ -104,6 +105,7 @@ function detectProtocol(uri) {
   if (uri.startsWith(TROJAN_PREFIX)) return 'TROJAN';
   if (uri.startsWith(SS_PREFIX)) return 'SS';
   if (uri.startsWith(HY2_PREFIX) || uri.startsWith(HY2_SHORT_PREFIX)) return 'HY2';
+  if (uri.startsWith(TUIC_PREFIX)) return 'TUIC';
   return '';
 }
 
@@ -286,9 +288,11 @@ export default {
 
     const rawCc = (url.searchParams.get('cc') || url.searchParams.get('country') || '').trim().toUpperCase();
     const filterCc = /^[A-Z]{2}$/.test(rawCc) ? rawCc : '';
+    const rawIsp = (url.searchParams.get('isp') || '').trim().toLowerCase();
+    const filterIsp = ['mci', 'irancell', 'tci'].includes(rawIsp) ? rawIsp : '';
 
     const token = match[1];
-    const rateKey = `${token}:${filterCc || 'ALL'}`;
+    const rateKey = `${token}:${filterCc || 'ALL'}:${filterIsp || 'ALL'}`;
     const now = Date.now();
     const lastRun = lastAssemblyByToken.get(rateKey) || 0;
     if (now - lastRun < RATE_FLOOR_MS) {
@@ -310,18 +314,27 @@ export default {
     const TLS_PORTS_RE = /:(?:443|8443|2053|2083|2087|2096)(?:[/?#]|$)/;
     const iranUriScore = (uri) => {
       const lower = uri.toLowerCase();
-      if (lower.startsWith(HY2_PREFIX) || lower.startsWith(HY2_SHORT_PREFIX)) return 120;
+      if (lower.startsWith(HY2_PREFIX) || lower.startsWith(HY2_SHORT_PREFIX)) {
+        return filterIsp === 'mci' ? 145 : filterIsp === 'irancell' ? 125 : 120;
+      }
+      if (lower.startsWith(TUIC_PREFIX)) {
+        return filterIsp === 'mci' ? 130 : 105;
+      }
       if (lower.startsWith(VLESS_PREFIX)) {
         let s = 40;
-        if (lower.includes('security=reality')) s += 80;
+        if (lower.includes('security=reality')) s += filterIsp === 'mci' ? 95 : 80;
         else if (lower.includes('security=tls')) s += 45;
-        if (/(?:type=ws|type=grpc|type=xhttp|type=httpupgrade)/.test(lower)) s += 30;
+        if (/(?:type=ws|type=xhttp|type=splithttp|type=httpupgrade)/.test(lower)) {
+          s += filterIsp === 'irancell' ? 50 : 30;
+        } else if (lower.includes('type=grpc')) {
+          s += filterIsp === 'mci' || filterIsp === 'tci' ? 45 : 30;
+        }
         if (TLS_PORTS_RE.test(lower)) s += 20;
-        if (lower.includes('security=none')) s -= 40;
+        if (lower.includes('security=none')) s -= 45;
         return s;
       }
       if (lower.startsWith(TROJAN_PREFIX)) {
-        let s = 60;
+        let s = filterIsp === 'tci' ? 80 : 60;
         if (/(?:type=ws|type=grpc)/.test(lower)) s += 25;
         if (TLS_PORTS_RE.test(lower)) s += 15;
         return s;
@@ -331,7 +344,7 @@ export default {
           const json = JSON.parse(fromBase64Utf8(uri.slice(VMESS_PREFIX.length)));
           let s = 30;
           if (json?.tls === 'tls') s += 35;
-          if (json?.net === 'ws' || json?.net === 'grpc') s += 25;
+          if (json?.net === 'ws' || json?.net === 'grpc') s += filterIsp === 'irancell' ? 40 : 25;
           if ([443, 8443, 2053, 2083, 2087, 2096].includes(Number(json?.port))) s += 15;
           return s;
         } catch {
@@ -360,10 +373,16 @@ export default {
       return plainText('No configs available', 503);
     }
 
-    const title = filterCc ? `VPN Finder (${filterCc}) @MyLeitner` : 'VPN Finder @MyLeitner';
+    const titleParts = [];
+    if (filterCc) titleParts.push(filterCc);
+    if (filterIsp) titleParts.push(filterIsp.toUpperCase());
+    const title = titleParts.length
+      ? `VPN Finder (${titleParts.join(' · ')}) @MyLeitner`
+      : 'VPN Finder @MyLeitner';
     return plainText(toBase64Utf8(finalUris.join('\n')), 200, {
       'Profile-Title': `base64:${toBase64Utf8(title)}`,
       'Profile-Update-Interval': '6',
+      'Subscription-Userinfo': 'upload=0; download=0; total=0; expire=0',
     });
   },
 };

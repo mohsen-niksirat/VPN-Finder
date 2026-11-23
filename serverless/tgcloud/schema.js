@@ -64,7 +64,18 @@ export const subTokens = table('sub_tokens', {
   id:         integer('id').primaryKey({ autoIncrement: true }),
   userId:     integer('user_id').notNull(),
   token:      text('token').notNull().unique(),
+  label:      text('label'),
+  cc:         text('cc'),
+  isp:        text('isp'),
   createdAt:  integer('created_at').notNull(),
   lastUsedAt: integer('last_used_at'),
   revokedAt:  integer('revoked_at'),
+});
+
+export const serverFeedback = table('server_feedback', {
+  id:        integer('id').primaryKey({ autoIncrement: true }),
+  serverId:  text('server_id').notNull(),
+  userId:    integer('user_id').notNull(),
+  vote:      text('vote').notNull(), // 'up' | 'down'
+  createdAt: integer('created_at').notNull(),
 });

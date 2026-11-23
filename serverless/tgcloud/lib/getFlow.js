@@ -12,6 +12,7 @@ import {
   fetchPvlCached,
   fetchPvlServers,
   fetchVpnGateOpenVpn,
+  getBlockedServerIds,
   getDerivedCountries,
   getRemainingConnectionBudget,
   incrementCounter,
@@ -450,6 +451,16 @@ export async function deliverConfigsBatch({
     });
   }
 
+  const blockedIds = await getBlockedServerIds().catch(() => new Set());
+  if (blockedIds.size > 0) {
+    vgRows = vgRows.filter((v) => v && !blockedIds.has(v.id));
+    for (let i = candidates.length - 1; i >= 0; i -= 1) {
+      if (candidates[i]?.id && blockedIds.has(candidates[i].id)) {
+        candidates.splice(i, 1);
+      }
+    }
+  }
+
   if (candidates.length === 0 && vgRows.length === 0) {
     await saveUserFlow(userId, { ...flow, delivering: false });
     const countryLabel = cc ? `${countryCodeToFlag(cc)} ${resolveCountryName(cc)}` : '';
@@ -751,11 +762,19 @@ export async function deliverConfigsBatch({
     const schemePrefix = schemeIdx > 0 ? `${uri.slice(0, schemeIdx + 3)}...` : 'unknown';
     const msgHtml = formatConfigMessage(nextIdx, requested, srv, uri, lang);
 
+    const fbMarkup = {
+      inline_keyboard: [[
+        { text: isFa(lang) ? '👍 سالم' : '👍 Working', callback_data: `fb:up:${srv.id}` },
+        { text: isFa(lang) ? '👎 خراب' : '👎 Broken', callback_data: `fb:down:${srv.id}` },
+      ]],
+    };
+
     try {
       await sendMsg({
         chat_id: chatId,
         text: msgHtml,
         parse_mode: 'HTML',
+        reply_markup: fbMarkup,
       });
     } catch (err) {
       sendFailedCount += 1;
