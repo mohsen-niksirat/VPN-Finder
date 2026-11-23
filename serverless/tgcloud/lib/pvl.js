@@ -1809,3 +1809,41 @@ export async function fetchTelegramProxies(offset = 0, limit = 6) {
   };
 }
 
+export async function fetchWorkerPoolSummary() {
+  const subBase = await getConfigValue('sub_link_base').catch(() => null);
+  if (!subBase) return {};
+  try {
+    const res = await fetch(`${subBase.replace(/\/+$/, '')}/pool?summary=1`, { method: 'GET' });
+    if (!res || !res.ok) return {};
+    const json = await res.json();
+    return json?.counts && typeof json.counts === 'object' ? json.counts : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function fetchWorkerPool(proto, cc = '', limit = 25) {
+  const subBase = await getConfigValue('sub_link_base').catch(() => null);
+  if (!subBase) return [];
+  try {
+    const url =
+      `${subBase.replace(/\/+$/, '')}/pool?proto=${encodeURIComponent(proto)}` +
+      `&cc=${encodeURIComponent(cc || 'ALL')}&limit=${limit}`;
+    const res = await fetch(url, { method: 'GET' });
+    if (!res || !res.ok) return [];
+    const json = await res.json();
+    const list = Array.isArray(json?.servers) ? json.servers : [];
+    const nowIso = new Date().toISOString();
+    return list.map((s) => ({
+      id: s.id,
+      country_code: s.country_code || cc || '',
+      protocol: proto,
+      last_checked_at: nowIso,
+      transport: null,
+      _direct_uri: s.uri,
+    }));
+  } catch {
+    return [];
+  }
+}
+

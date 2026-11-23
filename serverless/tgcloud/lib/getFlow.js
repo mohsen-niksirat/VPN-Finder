@@ -12,6 +12,8 @@ import {
   fetchPvlCached,
   fetchPvlServers,
   fetchVpnGateOpenVpn,
+  fetchWorkerPool,
+  fetchWorkerPoolSummary,
   getBlockedServerIds,
   getDerivedCountries,
   getRemainingConnectionBudget,
@@ -120,21 +122,34 @@ async function getFilteredTotalForProtocol(protocol) {
 }
 
 export async function showProtocolStep({ chatId, userId, lang, sendMsg }) {
-  const protoRes = await fetchPvlCached({
-    cacheKey: 'protocols',
-    pathAndQuery: '/protocols',
-    ttlSec: PVL_CACHE_TTL_SEC,
-  });
+  const [protoRes, poolCounts] = await Promise.all([
+    fetchPvlCached({
+      cacheKey: 'protocols',
+      pathAndQuery: '/protocols',
+      ttlSec: PVL_CACHE_TTL_SEC,
+    }),
+    fetchWorkerPoolSummary().catch(() => ({})),
+  ]);
 
-  const activeProtos = (Array.isArray(protoRes?.data) ? protoRes.data : [])
-    .filter((p) => Number(p?.record_count || 0) > 0)
-    .map((p) => String(p.protocol || '').toLowerCase())
-    .filter((p) => ALLOWED_PROTOCOLS.has(p));
+  const activeSet = new Set(
+    (Array.isArray(protoRes?.data) ? protoRes.data : [])
+      .filter((p) => Number(p?.record_count || 0) > 0)
+      .map((p) => String(p.protocol || '').toLowerCase())
+      .filter((p) => ALLOWED_PROTOCOLS.has(p))
+  );
+  for (const [k, v] of Object.entries(poolCounts || {})) {
+    if (Number(v || 0) > 0 && ALLOWED_PROTOCOLS.has(k)) {
+      activeSet.add(k);
+    }
+  }
+  const activeProtos = Array.from(activeSet);
 
   const totals = await Promise.all(
     activeProtos.map(async (proto) => ({
       proto,
-      total: await getFilteredTotalForProtocol(proto).catch(() => 0),
+      total:
+        (await getFilteredTotalForProtocol(proto).catch(() => 0)) +
+        Number(poolCounts?.[proto] || 0),
     }))
   );
 
@@ -449,6 +464,13 @@ export async function deliverConfigsBatch({
       vgDiag.reason = e?.message || 'err';
       return [];
     });
+  } else if (candidates.length < requested + 5) {
+    const poolRows = await fetchWorkerPool(proto, cc, requested + 8).catch(() => []);
+    for (const pr of poolRows) {
+      if (pr && pr.id && !alreadyDelivered.has(pr.id)) {
+        candidates.push(pr);
+      }
+    }
   }
 
   const blockedIds = await getBlockedServerIds().catch(() => new Set());
@@ -723,29 +745,45 @@ export async function deliverConfigsBatch({
     }
 
     attempts += 1;
-    const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
-    if (conn?.error === 'rate_limited') {
-      rateLimited = true;
-      debugEntries.push({
-        id: srv.id,
-        stage_reached: 'payload_fetch',
-        reason_code: 'rate_limited',
-        http_status: null,
-      });
-      break;
-    }
-    if (conn?.error) {
-      skippedIds.push({ id: srv.id, reason: conn.error });
-      debugEntries.push({
-        id: srv.id,
-        stage_reached: 'payload_fetch',
-        reason_code: `fetch_${conn.error}`,
-        http_status: null,
-      });
-      continue;
+    let uri = srv._direct_uri ? String(srv._direct_uri) : null;
+    if (!uri) {
+      const conn = await fetchConnection(srv.id, userId, { deferBudgetConsume: true });
+      if (conn?.error === 'rate_limited') {
+        rateLimited = true;
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'payload_fetch',
+          reason_code: 'rate_limited',
+          http_status: null,
+        });
+        break;
+      }
+      if (conn?.error) {
+        skippedIds.push({ id: srv.id, reason: conn.error });
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'payload_fetch',
+          reason_code: `fetch_${conn.error}`,
+          http_status: null,
+        });
+        continue;
+      }
+      uri = conn.config_uri ? String(conn.config_uri) : null;
+    } else {
+      const rateCheck = await checkConnectionRateLimit(userId);
+      if (!rateCheck.allowed) {
+        rateLimited = true;
+        debugEntries.push({
+          id: srv.id,
+          stage_reached: 'payload_fetch',
+          reason_code: 'rate_limited',
+          http_status: null,
+        });
+        break;
+      }
     }
 
-    if (!conn.config_uri) {
+    if (!uri) {
       skippedIds.push({ id: srv.id, reason: 'no_uri' });
       debugEntries.push({
         id: srv.id,
@@ -757,7 +795,6 @@ export async function deliverConfigsBatch({
     }
 
     const nextIdx = delivered + 1;
-    const uri = String(conn.config_uri);
     const schemeIdx = uri.indexOf('://');
     const schemePrefix = schemeIdx > 0 ? `${uri.slice(0, schemeIdx + 3)}...` : 'unknown';
     const msgHtml = formatConfigMessage(nextIdx, requested, srv, uri, lang);

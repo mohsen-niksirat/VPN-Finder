@@ -246,6 +246,50 @@ async function fetchCommunityFeed(feed, filterCc) {
   }
 }
 
+const TLS_PORTS_RE = /:(?:443|8443|2053|2083|2087|2096)(?:[/?#]|$)/;
+function scoreIranUri(uri, filterIsp = '') {
+  const lower = uri.toLowerCase();
+  if (lower.startsWith(HY2_PREFIX) || lower.startsWith(HY2_SHORT_PREFIX)) {
+    return filterIsp === 'mci' ? 145 : filterIsp === 'irancell' ? 125 : 120;
+  }
+  if (lower.startsWith(TUIC_PREFIX)) {
+    return filterIsp === 'mci' ? 130 : 105;
+  }
+  if (lower.startsWith(VLESS_PREFIX)) {
+    let s = 40;
+    if (lower.includes('security=reality')) s += filterIsp === 'mci' ? 95 : 80;
+    else if (lower.includes('security=tls')) s += 45;
+    if (/(?:type=ws|type=xhttp|type=splithttp|type=httpupgrade)/.test(lower)) {
+      s += filterIsp === 'irancell' ? 50 : 30;
+    } else if (lower.includes('type=grpc')) {
+      s += filterIsp === 'mci' || filterIsp === 'tci' ? 45 : 30;
+    }
+    if (TLS_PORTS_RE.test(lower)) s += 20;
+    if (lower.includes('security=none')) s -= 45;
+    return s;
+  }
+  if (lower.startsWith(TROJAN_PREFIX)) {
+    let s = filterIsp === 'tci' ? 80 : 60;
+    if (/(?:type=ws|type=grpc)/.test(lower)) s += 25;
+    if (TLS_PORTS_RE.test(lower)) s += 15;
+    return s;
+  }
+  if (lower.startsWith(VMESS_PREFIX)) {
+    try {
+      const json = JSON.parse(fromBase64Utf8(uri.slice(VMESS_PREFIX.length)));
+      let s = 30;
+      if (json?.tls === 'tls') s += 35;
+      if (json?.net === 'ws' || json?.net === 'grpc') s += filterIsp === 'irancell' ? 40 : 25;
+      if ([443, 8443, 2053, 2083, 2087, 2096].includes(Number(json?.port))) s += 15;
+      return s;
+    } catch {
+      return 10;
+    }
+  }
+  if (lower.startsWith(SS_PREFIX)) return 20;
+  return 0;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method !== 'GET') {
@@ -292,6 +336,52 @@ export default {
       }
     }
 
+    if (url.pathname === '/pool') {
+      const summaryMode = url.searchParams.get('summary') === '1';
+      const rawProto = (url.searchParams.get('proto') || '').trim().toLowerCase();
+      const rawCc = (url.searchParams.get('cc') || '').trim().toUpperCase();
+      const filterCc = /^[A-Z]{2}$/.test(rawCc) ? rawCc : '';
+      const limit = Math.min(40, Math.max(1, Number(url.searchParams.get('limit') || 25)));
+      const batches = await Promise.all(COMMUNITY_FEEDS.map((f) => fetchCommunityFeed(f, filterCc)));
+      const all = [];
+      for (const b of batches) all.push(...b);
+
+      if (summaryMode) {
+        const counts = { vless: 0, hysteria2: 0, trojan: 0, vmess: 0, shadowsocks: 0, tuic: 0 };
+        const seenSum = new Set();
+        for (const item of all) {
+          const dk = extractEndpointKey(item.uri);
+          if (!dk || seenSum.has(dk)) continue;
+          seenSum.add(dk);
+          const p = item.proto.toLowerCase();
+          const norm = p === 'hy2' ? 'hysteria2' : p === 'ss' ? 'shadowsocks' : p;
+          if (norm in counts) counts[norm] += 1;
+        }
+        return Response.json({ counts }, { headers: { 'Cache-Control': 'no-store' } });
+      }
+
+      const normProto = rawProto === 'hysteria2' ? 'HY2' : rawProto === 'shadowsocks' ? 'SS' : rawProto.toUpperCase();
+      const filtered = normProto ? all.filter((x) => x.proto === normProto) : all;
+      filtered.sort((a, b) => scoreIranUri(b.uri) - scoreIranUri(a.uri));
+      const seenPool = new Set();
+      const servers = [];
+      for (const item of filtered) {
+        if (servers.length >= limit) break;
+        const dk = extractEndpointKey(item.uri);
+        if (!dk || seenPool.has(dk)) continue;
+        const branded = brandConfigUri(item.uri, item.cc, item.proto);
+        if (!branded) continue;
+        seenPool.add(dk);
+        servers.push({
+          id: `pool_${dk.replace(/[^a-z0-9]/gi, '_')}`.slice(0, 48),
+          country_code: item.cc || '',
+          protocol: rawProto || item.proto.toLowerCase(),
+          uri: branded,
+        });
+      }
+      return Response.json({ total: servers.length, servers }, { headers: { 'Cache-Control': 'no-store' } });
+    }
+
     const match = SUB_PATH_RE.exec(url.pathname);
     if (!match) {
       return plainText('Not found', 404);
@@ -322,51 +412,7 @@ export default {
       combined.push(...batch);
     }
 
-    const TLS_PORTS_RE = /:(?:443|8443|2053|2083|2087|2096)(?:[/?#]|$)/;
-    const iranUriScore = (uri) => {
-      const lower = uri.toLowerCase();
-      if (lower.startsWith(HY2_PREFIX) || lower.startsWith(HY2_SHORT_PREFIX)) {
-        return filterIsp === 'mci' ? 145 : filterIsp === 'irancell' ? 125 : 120;
-      }
-      if (lower.startsWith(TUIC_PREFIX)) {
-        return filterIsp === 'mci' ? 130 : 105;
-      }
-      if (lower.startsWith(VLESS_PREFIX)) {
-        let s = 40;
-        if (lower.includes('security=reality')) s += filterIsp === 'mci' ? 95 : 80;
-        else if (lower.includes('security=tls')) s += 45;
-        if (/(?:type=ws|type=xhttp|type=splithttp|type=httpupgrade)/.test(lower)) {
-          s += filterIsp === 'irancell' ? 50 : 30;
-        } else if (lower.includes('type=grpc')) {
-          s += filterIsp === 'mci' || filterIsp === 'tci' ? 45 : 30;
-        }
-        if (TLS_PORTS_RE.test(lower)) s += 20;
-        if (lower.includes('security=none')) s -= 45;
-        return s;
-      }
-      if (lower.startsWith(TROJAN_PREFIX)) {
-        let s = filterIsp === 'tci' ? 80 : 60;
-        if (/(?:type=ws|type=grpc)/.test(lower)) s += 25;
-        if (TLS_PORTS_RE.test(lower)) s += 15;
-        return s;
-      }
-      if (lower.startsWith(VMESS_PREFIX)) {
-        try {
-          const json = JSON.parse(fromBase64Utf8(uri.slice(VMESS_PREFIX.length)));
-          let s = 30;
-          if (json?.tls === 'tls') s += 35;
-          if (json?.net === 'ws' || json?.net === 'grpc') s += filterIsp === 'irancell' ? 40 : 25;
-          if ([443, 8443, 2053, 2083, 2087, 2096].includes(Number(json?.port))) s += 15;
-          return s;
-        } catch {
-          return 10;
-        }
-      }
-      if (lower.startsWith(SS_PREFIX)) return 20;
-      return 0;
-    };
-
-    combined.sort((a, b) => iranUriScore(b.uri) - iranUriScore(a.uri));
+    combined.sort((a, b) => scoreIranUri(b.uri, filterIsp) - scoreIranUri(a.uri, filterIsp));
 
     const seen = new Set();
     const finalUris = [];
