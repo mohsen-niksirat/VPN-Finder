@@ -422,7 +422,12 @@ export async function deliverConfigsBatch({
     }
   }
 
-  if (candidates.length === 0) {
+  let vgRows = [];
+  if (proto === 'openvpn') {
+    vgRows = await fetchVpnGateOpenVpn(cc, requested + 3).catch(() => []);
+  }
+
+  if (candidates.length === 0 && vgRows.length === 0) {
     await saveUserFlow(userId, { ...flow, delivering: false });
     const countryLabel = cc ? `${countryCodeToFlag(cc)} ${resolveCountryName(cc)}` : '';
     const text = noneFreshText(lang, formatProtoLabel(proto), countryLabel);
@@ -447,7 +452,6 @@ export async function deliverConfigsBatch({
   const deliveredMeta = [];
 
   if (proto === 'openvpn') {
-    const vgRows = await fetchVpnGateOpenVpn(cc, requested + 3).catch(() => []);
     if (vgRows.length === 0) {
       debugEntries.push({
         id: 'vpngate',
