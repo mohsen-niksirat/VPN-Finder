@@ -423,8 +423,12 @@ export async function deliverConfigsBatch({
   }
 
   let vgRows = [];
+  const vgDiag = { reason: '' };
   if (proto === 'openvpn') {
-    vgRows = await fetchVpnGateOpenVpn(cc, requested + 3).catch(() => []);
+    vgRows = await fetchVpnGateOpenVpn(cc, requested + 3, vgDiag).catch((e) => {
+      vgDiag.reason = e?.message || 'err';
+      return [];
+    });
   }
 
   if (candidates.length === 0 && vgRows.length === 0) {
@@ -456,7 +460,7 @@ export async function deliverConfigsBatch({
       debugEntries.push({
         id: 'vpngate',
         stage_reached: 'pool_fetch',
-        reason_code: `vpngate_0_for_${cc || 'ALL'}`,
+        reason_code: `vpngate_0_for_${cc || 'ALL'}${vgDiag.reason ? `:${vgDiag.reason}` : ''}`,
         http_status: null,
       });
     }

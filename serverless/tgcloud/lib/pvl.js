@@ -1548,18 +1548,16 @@ export async function getProtocolSpeedSummary(activeProtocols = []) {
   return summary;
 }
 
-export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
+export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15, diagOut = null) {
   const ccFilter = String(countryCode || '').trim().toUpperCase();
   const subBase = await getConfigValue('sub_link_base').catch(() => null);
   const nowIso = new Date().toISOString();
+  const notes = [];
 
   if (subBase) {
     try {
       const workerUrl = `${subBase.replace(/\/+$/, '')}/ovpn?cc=${encodeURIComponent(ccFilter || 'ALL')}&limit=${limit}`;
-      const wRes = await Promise.race([
-        fetch(workerUrl, { method: 'GET' }),
-        new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
-      ]);
+      const wRes = await fetch(workerUrl, { method: 'GET' });
       if (wRes && wRes.ok) {
         const wJson = await wRes.json();
         const servers = Array.isArray(wJson?.servers) ? wJson.servers : [];
@@ -1584,22 +1582,30 @@ export async function fetchVpnGateOpenVpn(countryCode = '', limit = 15) {
           });
         }
         if (mapped.length > 0) return mapped;
+        notes.push(`worker_0(raw=${servers.length})`);
+      } else {
+        notes.push(`worker_http_${wRes?.status || 'null'}`);
       }
-    } catch {
-      // fall through to direct fetch
+    } catch (err) {
+      notes.push(`worker_err(${err?.message || 'err'})`);
     }
+  } else {
+    notes.push('no_sub_base');
   }
 
   let res = null;
   try {
-    res = await Promise.race([
-      fetch('https://www.vpngate.net/api/iphone/', { method: 'GET' }),
-      new Promise((resolve) => setTimeout(() => resolve(null), 7500)),
-    ]);
-  } catch {
+    res = await fetch('https://www.vpngate.net/api/iphone/', { method: 'GET' });
+  } catch (err) {
+    notes.push(`direct_err(${err?.message || 'err'})`);
+    if (diagOut) diagOut.reason = notes.join('|');
     return [];
   }
-  if (!res || !res.ok) return [];
+  if (!res || !res.ok) {
+    notes.push(`direct_http_${res?.status || 'null'}`);
+    if (diagOut) diagOut.reason = notes.join('|');
+    return [];
+  }
   let text = '';
   try {
     text = await res.text();
