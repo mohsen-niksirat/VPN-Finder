@@ -15,6 +15,13 @@ const TUIC_PREFIX = 'tuic' + '://';
 
 const COMMUNITY_FEEDS = [
   {
+    name: 'FilterbreakerSub',
+    url: 'https://sub.seyedamirrezamohammadzadeh.workers.dev',
+    base64: true,
+    limit: 25,
+    headers: { 'User-Agent': 'v2rayNG/1.8.23' },
+  },
+  {
     name: 'F0rc3Run',
     url: 'https://raw.githubusercontent.com/F0rc3Run/F0rc3Run/refs/heads/main/Best-Results/proxies.txt',
     base64: false,
@@ -119,7 +126,7 @@ function extractEndpointKey(uri) {
     }
     return null;
   }
-  const match = /^([a-z0-9]+):\/\/(?:[^@]+@)?([^/?#:]+):(\d+)/i.exec(uri);
+  const match = /^([a-z0-9]+):\/\/(?:[^@]+@)?(\[[^\]]+\]|[^/?#:]+):(\d+)/i.exec(uri);
   if (!match) return null;
   return `${match[1].toLowerCase()}:${match[2].toLowerCase()}:${match[3]}`;
 }
@@ -193,7 +200,11 @@ async function fetchPvlConfigs(apiKey, filterCc) {
 
 async function fetchCommunityFeed(feed, filterCc) {
   try {
-    const res = await fetch(feed.url, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(feed.url, {
+      headers: feed.headers || {},
+      cf: { cacheTtl: 180, cacheEverything: true },
+      signal: AbortSignal.timeout(8000),
+    });
     if (!res.ok) return [];
     let body = await res.text();
     if (feed.base64) {
