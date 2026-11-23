@@ -22,6 +22,7 @@ export const COMMANDS_EN = [
   { command: 'start', description: 'Open VPN Finder' },
   { command: 'get', description: 'Get working VPN configs right in chat' },
   { command: 'sub', description: 'Get your personal subscription link' },
+  { command: 'proxy', description: 'Get free Telegram MTProto proxies' },
   { command: 'app', description: 'Launch the Mini App' },
   { command: 'settings', description: 'Language and bot settings' },
   { command: 'menu', description: 'Refresh the in-chat quick panel' },
@@ -32,6 +33,7 @@ export const COMMANDS_FA = [
   { command: 'start', description: 'باز کردن VPN Finder' },
   { command: 'get', description: 'دریافت مستقیم کانفیگ در چت' },
   { command: 'sub', description: 'دریافت لینک اشتراک شخصی' },
+  { command: 'proxy', description: 'دریافت پروکسی رایگان تلگرام' },
   { command: 'app', description: 'اجرای مینی‌اپ' },
   { command: 'settings', description: 'تنظیمات زبان ربات' },
   { command: 'menu', description: 'به‌روزرسانی پنل سریع چت' },
@@ -79,6 +81,8 @@ export const PANEL_BTN = {
   subFa: '🔗 اشتراک',
   appEn: '🌐 Mini App',
   appFa: '🌐 مینی‌اپ',
+  proxyEn: '🛡 TG Proxy',
+  proxyFa: '🛡 پروکسی تلگرام',
   settingsEn: '⚙️ Settings',
   settingsFa: '⚙️ تنظیمات',
   helpEn: '❓ Help',
@@ -89,7 +93,10 @@ export const PANEL_BTN = {
 
 export function buildReplyPanelKeyboard(lang, { isOwner = false } = {}) {
   const fa = isFa(lang);
-  const row3 = [{ text: fa ? PANEL_BTN.helpFa : PANEL_BTN.helpEn }];
+  const row3 = [
+    { text: fa ? PANEL_BTN.proxyFa : PANEL_BTN.proxyEn },
+    { text: fa ? PANEL_BTN.helpFa : PANEL_BTN.helpEn },
+  ];
   if (isOwner) {
     row3.push({ text: fa ? PANEL_BTN.statsFa : PANEL_BTN.statsEn });
   }
@@ -152,7 +159,11 @@ export function appsMenuText(lang) {
       'بر اساس سیستم‌عامل خود یکی از برنامه‌های زیر را از منبع رسمی دانلود و نصب کنید، سپس لینک اشتراک (/sub) یا کانفیگ را داخل آن وارد نمایید:\n\n' +
       '• <b>اندروید:</b> Hiddify، v2rayNG، Karing، NekoBox\n' +
       '• <b>آیفون / مک (iOS/macOS):</b> Streisand، Karing، Hiddify\n' +
-      '• <b>ویندوز / لینوکس:</b> v2rayN، Hiddify، Karing'
+      '• <b>ویندوز / لینوکس:</b> v2rayN، Hiddify، Karing\n\n' +
+      '🛡 <b>اشتراک بدون سرور (مخصوص PattN / PattNG):</b>\n' +
+      '• Serverless: <code>https://raw.githubusercontent.com/patterniha/Serverless-for-Iran/refs/heads/main/Subscription/Serverless-for-Iran.json#Patterniha-S</code>\n' +
+      '• MITM: <code>https://raw.githubusercontent.com/patterniha/MITM-DomainFronting/refs/heads/main/Subscription/MITM-DomainFronting.json#Patterniha-M</code>\n' +
+      '<i>(توجه: مخصوص کلاینت PattN/PattNG؛ تلگرام و سایت‌های تحریمی را باز نمی‌کند.)</i>'
     );
   }
   return (
@@ -160,8 +171,50 @@ export function appsMenuText(lang) {
     'Download a client for your platform from its official release page, then import your /sub link or config:\n\n' +
     '• <b>Android:</b> Hiddify, v2rayNG, Karing, NekoBox\n' +
     '• <b>iOS / macOS:</b> Streisand, Karing, Hiddify\n' +
-    '• <b>Windows / Linux:</b> v2rayN, Hiddify, Karing'
+    '• <b>Windows / Linux:</b> v2rayN, Hiddify, Karing\n\n' +
+    '🛡 <b>Serverless (PattN / PattNG only):</b>\n' +
+    '• Serverless: <code>https://raw.githubusercontent.com/patterniha/Serverless-for-Iran/refs/heads/main/Subscription/Serverless-for-Iran.json#Patterniha-S</code>\n' +
+    '• MITM: <code>https://raw.githubusercontent.com/patterniha/MITM-DomainFronting/refs/heads/main/Subscription/MITM-DomainFronting.json#Patterniha-M</code>'
   );
+}
+
+export function tgProxyText(lang, count, offset, total) {
+  if (isFa(lang)) {
+    return (
+      `🛡 <b>پروکسی‌های رایگان و تست‌شده تلگرام</b> (${offset + 1} تا ${offset + count} از ${total})\n\n` +
+      'برای اتصال فوری، روی یکی از دکمه‌های زیر بزنید (پروکسی‌های FakeTLS برای نت ایران در اولویت هستند).\n\n' +
+      'منبع: <a href="https://github.com/0xRadikal/Free-Telegram-Proxy">Free-Telegram-Proxy</a>'
+    );
+  }
+  return (
+    `🛡 <b>Free Live-Tested Telegram MTProto Proxies</b> (${offset + 1}-${offset + count} of ${total})\n\n` +
+    'Tap any button below to connect in 1 tap (FakeTLS proxies prioritized for restricted networks).\n\n' +
+    'Source: <a href="https://github.com/0xRadikal/Free-Telegram-Proxy">Free-Telegram-Proxy</a>'
+  );
+}
+
+export function tgProxyKeyboard(lang, proxies, offset, total) {
+  const fa = isFa(lang);
+  const rows = [];
+  for (let i = 0; i < proxies.length; i += 2) {
+    const pair = proxies.slice(i, i + 2).map((p, idx) => {
+      const n = offset + i + idx + 1;
+      const badge = p.isFakeTls ? '⚡' : '🔌';
+      return {
+        text: fa ? `${badge} پروکسی #${n}` : `${badge} Proxy #${n}`,
+        url: p.url,
+      };
+    });
+    rows.push(pair);
+  }
+  const nextOffset = offset + proxies.length >= total ? 0 : offset + proxies.length;
+  rows.push([
+    {
+      text: fa ? '🔄 پروکسی‌های بعدی' : '🔄 Next proxies',
+      callback_data: `proxy:next:${nextOffset}`,
+    },
+  ]);
+  return { inline_keyboard: rows };
 }
 
 export function appsMenuKeyboard(lang) {

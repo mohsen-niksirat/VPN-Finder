@@ -9,7 +9,7 @@ import {
   showProtocolStep,
   startGetFlow,
 } from '../lib/getFlow.js';
-import { getEffectiveUserLang, getOwnerId, recordServerVote, setUserLang } from '../lib/pvl.js';
+import { fetchTelegramProxies, getEffectiveUserLang, getOwnerId, recordServerVote, setUserLang } from '../lib/pvl.js';
 import {
   appsMenuKeyboard,
   appsMenuText,
@@ -20,6 +20,8 @@ import {
   panelShownText,
   settingsKeyboard,
   settingsText,
+  tgProxyKeyboard,
+  tgProxyText,
 } from '../lib/texts.js';
 import {
   buildSubUrl,
@@ -142,6 +144,31 @@ export default async function (cq) {
       await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
     }
     return { action: isApps ? 'apps_menu' : 'settings_open', userId };
+  }
+
+  if (data.startsWith('proxy:next:')) {
+    const reqOffset = Number(data.slice('proxy:next:'.length) || 0) || 0;
+    const { proxies, offset, total } = await fetchTelegramProxies(reqOffset, 6);
+    if (proxies.length > 0) {
+      const text = tgProxyText(lang, proxies.length, offset, total);
+      const reply_markup = tgProxyKeyboard(lang, proxies, offset, total);
+      const msgId = cq.message?.message_id;
+      if (!dryRun && msgId) {
+        await api
+          .editMessageText({
+            chat_id: chatId,
+            message_id: msgId,
+            text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            reply_markup,
+          })
+          .catch(() => sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup }));
+      } else {
+        await sendMsg({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup });
+      }
+    }
+    return { action: 'proxy_next', userId, offset };
   }
 
   if (data.startsWith('fb:up:') || data.startsWith('fb:down:')) {

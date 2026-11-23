@@ -4,6 +4,7 @@ import { deliveryDebug, users, pvlCache, subTokens } from '../schema.js';
 import {
   ALLOWED_PROTOCOLS,
   extractSnapshotTimestamp,
+  fetchTelegramProxies,
   getCounters,
   getEffectiveUserLang,
   getFeedbackSummary,
@@ -20,10 +21,13 @@ import {
   buildReplyPanelKeyboard,
   fallbackText,
   helpText,
+  isFa,
   PANEL_BTN,
   panelShownText,
   settingsKeyboard,
   settingsText,
+  tgProxyKeyboard,
+  tgProxyText,
   welcomeText,
 } from '../lib/texts.js';
 
@@ -319,6 +323,25 @@ export default async function (message) {
       });
       return { action: 'panel_settings', userId: fromId, lang };
     }
+    if (t === PANEL_BTN.proxyEn || t === PANEL_BTN.proxyFa) {
+      await upsertUser(message.from, '');
+      const { proxies, offset, total } = await fetchTelegramProxies(0, 6);
+      if (proxies.length === 0) {
+        await sendMsg({
+          chat_id: message.chat.id,
+          text: isFa(lang) ? '⚠️ در حال حاضر پروکسی فعالی یافت نشد. کمی بعد امتحان کنید.' : '⚠️ No active proxies available right now. Please try again shortly.',
+        });
+        return { action: 'panel_proxy_empty', userId: fromId, lang };
+      }
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: tgProxyText(lang, proxies.length, offset, total),
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        reply_markup: tgProxyKeyboard(lang, proxies, offset, total),
+      });
+      return { action: 'panel_proxy', userId: fromId, lang };
+    }
     if (t === PANEL_BTN.helpEn || t === PANEL_BTN.helpFa) {
       await upsertUser(message.from, '');
       await sendMsg({
@@ -346,6 +369,27 @@ export default async function (message) {
       sendMsg,
     });
     return { action: 'get', userId: fromId, lang, ...flowRes };
+  }
+
+  if (parsed && parsed.cmd === 'proxy') {
+    if (!isPrivate) return { action: 'proxy_ignored_group' };
+    await upsertUser(message.from, '');
+    const { proxies, offset, total } = await fetchTelegramProxies(0, 6);
+    if (proxies.length === 0) {
+      await sendMsg({
+        chat_id: message.chat.id,
+        text: isFa(lang) ? '⚠️ در حال حاضر پروکسی فعالی یافت نشد. کمی بعد امتحان کنید.' : '⚠️ No active proxies available right now. Please try again shortly.',
+      });
+      return { action: 'proxy_empty', userId: fromId, lang };
+    }
+    await sendMsg({
+      chat_id: message.chat.id,
+      text: tgProxyText(lang, proxies.length, offset, total),
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      reply_markup: tgProxyKeyboard(lang, proxies, offset, total),
+    });
+    return { action: 'proxy', userId: fromId, lang };
   }
 
   if (parsed && parsed.cmd === 'sub') {

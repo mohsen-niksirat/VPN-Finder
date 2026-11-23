@@ -1738,3 +1738,74 @@ export async function getFeedbackSummary() {
   return { totalVotes: rows.length, totalUp, totalDown, hiddenCount };
 }
 
+export async function fetchTelegramProxies(offset = 0, limit = 6) {
+  const cacheKey = 'tg_proxies_top50';
+  const now = Math.floor(Date.now() / 1000);
+  let list = [];
+
+  const cached = await db
+    .select()
+    .from(pvlCache)
+    .where(eq(pvlCache.key, cacheKey))
+    .get()
+    .catch(() => null);
+
+  if (cached && now - Number(cached.fetchedAt || 0) < 5 * 60) {
+    try {
+      const parsed = JSON.parse(cached.body);
+      if (Array.isArray(parsed)) list = parsed;
+    } catch {}
+  }
+
+  if (list.length === 0) {
+    try {
+      const res = await fetch(
+        'https://raw.githubusercontent.com/0xRadikal/Free-Telegram-Proxy/main/top50.txt',
+        { method: 'GET' }
+      );
+      if (res && res.ok) {
+        const text = await res.text();
+        const items = [];
+        for (const raw of text.split(/\r?\n/)) {
+          const line = raw.trim();
+          if (!line.startsWith('tg://proxy?')) continue;
+          const query = line.slice('tg://proxy?'.length);
+          const url = `https://t.me/proxy?${query}`;
+          const secMatch = /(?:^|&)secret=([^&]+)/i.exec(query);
+          const secret = secMatch ? secMatch[1].toLowerCase() : '';
+          const isFakeTls = secret.startsWith('ee') || secret.startsWith('dd');
+          items.push({ url, isFakeTls });
+        }
+        items.sort((a, b) => Number(b.isFakeTls) - Number(a.isFakeTls));
+        list = items;
+        if (list.length > 0) {
+          await db
+            .insert(pvlCache)
+            .values({ key: cacheKey, body: JSON.stringify(list), etag: null, fetchedAt: now })
+            .onConflictDoUpdate({
+              target: pvlCache.key,
+              set: { body: JSON.stringify(list), fetchedAt: now },
+            })
+            .run()
+            .catch(() => {});
+        }
+      }
+    } catch {
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached.body);
+          if (Array.isArray(parsed)) list = parsed;
+        } catch {}
+      }
+    }
+  }
+
+  const total = list.length;
+  const safeOffset = total > 0 ? Math.max(0, Number(offset) || 0) % total : 0;
+  return {
+    proxies: list.slice(safeOffset, safeOffset + limit),
+    offset: safeOffset,
+    total,
+  };
+}
+
