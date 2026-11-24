@@ -1,7 +1,7 @@
 const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 const SUB_PATH_RE = /^\/sub\/([a-f0-9]{48})$/;
 const SUB_PROTOCOLS = ['hysteria2', 'vless', 'trojan', 'tuic', 'vmess', 'shadowsocks'];
-const MAX_PVL_PER_PROTOCOL = 6;
+const MAX_PVL_PER_PROTOCOL = 4;
 const MAX_TOTAL = 50;
 const RATE_FLOOR_MS = 60_000;
 
@@ -20,6 +20,30 @@ const COMMUNITY_FEEDS = [
     base64: true,
     limit: 25,
     headers: { 'User-Agent': 'v2rayNG/1.8.23' },
+  },
+  {
+    name: 'XrayCollector-VLESS',
+    url: 'https://raw.githubusercontent.com/justVisiting992/xray-Config-Collector/main/vless_iran.txt',
+    base64: false,
+    limit: 30,
+  },
+  {
+    name: 'XrayCollector-HY2',
+    url: 'https://raw.githubusercontent.com/justVisiting992/xray-Config-Collector/main/hy2_iran.txt',
+    base64: false,
+    limit: 25,
+  },
+  {
+    name: 'XrayCollector-Trojan',
+    url: 'https://raw.githubusercontent.com/justVisiting992/xray-Config-Collector/main/trojan_iran.txt',
+    base64: false,
+    limit: 20,
+  },
+  {
+    name: 'XrayCollector-VMess',
+    url: 'https://raw.githubusercontent.com/justVisiting992/xray-Config-Collector/main/vmess_iran.txt',
+    base64: false,
+    limit: 15,
   },
   {
     name: 'F0rc3Run',
@@ -84,6 +108,8 @@ function countryCodeToFlag(code) {
   );
 }
 
+const NON_COUNTRY_CODES = new Set(['XX', 'WS', 'SS', 'IP', 'UP', 'OK', 'TX', 'RX', 'CF']);
+
 function extractCountryFromText(text) {
   if (!text) return '';
   let decoded = String(text);
@@ -101,8 +127,9 @@ function extractCountryFromText(text) {
       return String.fromCharCode(65 + (c1 - 0x1f1e6), 65 + (c2 - 0x1f1e6));
     }
   }
-  const codeMatch = /\b([A-Z]{2})\b/.exec(decoded);
-  if (codeMatch && codeMatch[1] !== 'XX') return codeMatch[1];
+  for (const m of decoded.matchAll(/\b([A-Z]{2})\b/g)) {
+    if (!NON_COUNTRY_CODES.has(m[1])) return m[1];
+  }
   return '';
 }
 
@@ -128,7 +155,8 @@ function extractEndpointKey(uri) {
   }
   const match = /^([a-z0-9]+):\/\/(?:[^@]+@)?(\[[^\]]+\]|[^/?#:]+):(\d+)/i.exec(uri);
   if (!match) return null;
-  return `${match[1].toLowerCase()}:${match[2].toLowerCase()}:${match[3]}`;
+  const scheme = match[1].toLowerCase() === 'hy2' ? 'hysteria2' : match[1].toLowerCase();
+  return `${scheme}:${match[2].toLowerCase()}:${match[3]}`;
 }
 
 function brandConfigUri(uri, countryCode, protocolLabel) {
