@@ -1822,6 +1822,25 @@ export async function fetchWorkerPoolSummary() {
   }
 }
 
+export async function fetchWorkerPoolCountries(proto) {
+  const subBase = await getConfigValue('sub_link_base').catch(() => null);
+  if (!subBase) return { total: 0, countries: {} };
+  try {
+    const res = await fetch(
+      `${subBase.replace(/\/+$/, '')}/pool?countries=1&proto=${encodeURIComponent(proto)}`,
+      { method: 'GET' }
+    );
+    if (!res || !res.ok) return { total: 0, countries: {} };
+    const json = await res.json();
+    return {
+      total: Number(json?.total || 0),
+      countries: json?.countries && typeof json.countries === 'object' ? json.countries : {},
+    };
+  } catch {
+    return { total: 0, countries: {} };
+  }
+}
+
 export async function fetchWorkerPool(proto, cc = '', limit = 25) {
   const subBase = await getConfigValue('sub_link_base').catch(() => null);
   if (!subBase) return [];

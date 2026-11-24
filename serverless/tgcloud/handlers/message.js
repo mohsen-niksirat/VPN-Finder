@@ -13,7 +13,7 @@ import {
   PVL_CACHE_TTL_SEC,
 } from '../lib/pvl.js';
 import { runDebugProbe, runDebugProbe2, runDebugProbe3 } from '../lib/probe.js';
-import { startGetFlow } from '../lib/getFlow.js';
+import { deliverConfigsBatch, getUserRow, parseActiveFlow, startGetFlow } from '../lib/getFlow.js';
 import { sendSubResponse } from '../lib/sub.js';
 import {
   appPromptText,
@@ -543,6 +543,46 @@ export default async function (message) {
   }
 
   if (isPrivate) {
+    const rawText = String(message.text || '').trim();
+    const asciiDigits = rawText
+      .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+      .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+    if (/^\d{1,3}$/.test(asciiDigits)) {
+      const userRow = await getUserRow(fromId);
+      const flow = parseActiveFlow(userRow);
+      if (flow && flow.step === 'amount' && flow.protocol) {
+        const n = Number(asciiDigits);
+        if (n < 1 || n > 25) {
+          await sendMsg({
+            chat_id: message.chat.id,
+            text: isFa(lang)
+              ? 'لطفاً عددی بین ۱ تا ۲۵ وارد کنید.'
+              : 'Please enter a number between 1 and 25.',
+          });
+          return { action: 'custom_amount_invalid', n };
+        }
+        const sendDoc = async ({ chat_id, documentBytes, filename, caption }) => {
+          if (dryRun) return { dry_run: true, filename, caption };
+          return await api.sendDocument({
+            chat_id,
+            document: new Blob([documentBytes], { type: 'application/x-openvpn-profile' }),
+            filename,
+            caption,
+          });
+        };
+        const res = await deliverConfigsBatch({
+          chatId: message.chat.id,
+          userId: fromId,
+          lang,
+          count: n,
+          sendMsg,
+          sendDoc,
+          expectedStep: 'amount',
+        });
+        return { action: 'custom_amount_delivered', n, res };
+      }
+    }
+
     const text = fallbackText(lang);
     const reply_markup = buildAppKeyboard(lang, '');
     await sendMsg({

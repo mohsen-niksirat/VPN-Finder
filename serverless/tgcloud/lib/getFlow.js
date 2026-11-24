@@ -13,6 +13,7 @@ import {
   fetchPvlServers,
   fetchVpnGateOpenVpn,
   fetchWorkerPool,
+  fetchWorkerPoolCountries,
   fetchWorkerPoolSummary,
   getBlockedServerIds,
   getDerivedCountries,
@@ -31,6 +32,7 @@ import {
   countryCodeToFlag,
   flowCancelledText,
   flowExpiredText,
+  formatBatchConfigMessage,
   formatConfigMessage,
   formatOvpnCaption,
   formatOvpnServerPageMessage,
@@ -191,17 +193,56 @@ export async function showProtocolStep({ chatId, userId, lang, sendMsg }) {
   return { step: 'protocol', text, reply_markup, protocols: totals };
 }
 
+async function getMergedCountriesForProtocol(proto) {
+  const [derived, poolInfo] = await Promise.all([
+    getDerivedCountries(proto).catch(() => ({ data: [], meta: { total_records: 0 } })),
+    proto === 'openvpn'
+      ? Promise.resolve({ total: 0, countries: {} })
+      : fetchWorkerPoolCountries(proto).catch(() => ({ total: 0, countries: {} })),
+  ]);
+
+  const byCc = new Map();
+  for (const c of Array.isArray(derived?.data) ? derived.data : []) {
+    const cc = String(c?.country_code || '').toUpperCase();
+    if (!cc || cc === 'XX') continue;
+    const cnt = Number(c?.count ?? c?.record_count ?? 0);
+    if (cnt <= 0) continue;
+    byCc.set(cc, {
+      country_code: cc,
+      country_name: c?.country_name || resolveCountryName(cc),
+      count: cnt,
+    });
+  }
+
+  for (const [rawCc, rawCnt] of Object.entries(poolInfo?.countries || {})) {
+    const cc = String(rawCc || '').toUpperCase();
+    const cnt = Number(rawCnt || 0);
+    if (!cc || cc === 'XX' || cnt <= 0) continue;
+    const prev = byCc.get(cc);
+    if (prev) {
+      prev.count += cnt;
+    } else {
+      byCc.set(cc, {
+        country_code: cc,
+        country_name: resolveCountryName(cc),
+        count: cnt,
+      });
+    }
+  }
+
+  const countries = Array.from(byCc.values()).sort((a, b) => b.count - a.count);
+  const pvlTotal = Number(derived?.meta?.total_records ?? 0);
+  const totalFresh = pvlTotal + Number(poolInfo?.total || 0);
+  return { countries, totalFresh };
+}
+
 export async function showCountryStep({ chatId, userId, lang, protocol, page = 0, sendMsg }) {
   const proto = String(protocol || '').toLowerCase();
   if (!ALLOWED_PROTOCOLS.has(proto)) {
     return await showProtocolStep({ chatId, userId, lang, sendMsg });
   }
 
-  const derived = await getDerivedCountries(proto);
-  const countries = Array.isArray(derived?.data) ? derived.data : [];
-  const totalFresh = Number(
-    derived?.meta?.total_records ?? (await getFilteredTotalForProtocol(proto))
-  );
+  const { countries, totalFresh } = await getMergedCountriesForProtocol(proto);
 
   if (totalFresh < 1) {
     const text = noneFreshText(lang, formatProtoLabel(proto));
@@ -277,14 +318,14 @@ export async function showAmountStep({ chatId, userId, lang, protocol, country, 
   let available = 0;
   let countryLabel = isFa(lang) ? 'همه کشورها' : 'All countries';
 
+  const merged = await getMergedCountriesForProtocol(proto);
   if (cc === 'ALL') {
-    available = await getFilteredTotalForProtocol(proto);
+    available = merged.totalFresh;
   } else {
-    const derived = await getDerivedCountries(proto);
-    const match = (derived?.data || []).find(
+    const match = merged.countries.find(
       (c) => String(c.country_code || '').toUpperCase() === cc
     );
-    available = Number(match?.count ?? match?.record_count ?? 0);
+    available = Number(match?.count ?? 0);
     countryLabel = `${countryCodeToFlag(cc)} ${match?.country_name || resolveCountryName(cc)}`;
   }
 
@@ -312,10 +353,11 @@ export async function showAmountStep({ chatId, userId, lang, protocol, country, 
     return { step: 'rate_limited', protocol: proto, country: cc, remaining: 0, text, reply_markup };
   }
 
-  const maxAllowed = Math.min(available, remaining);
-  const presetCounts = [1, 3, 5, 10].filter((n) => n <= maxAllowed);
-  if (!presetCounts.length && maxAllowed >= 1) {
+  const maxAllowed = Math.min(available, remaining, 25);
+  const presetCounts = [1, 3, 5, 10, 20].filter((n) => n <= maxAllowed);
+  if (maxAllowed >= 1 && !presetCounts.includes(maxAllowed) && presetCounts.length < 5) {
     presetCounts.push(maxAllowed);
+    presetCounts.sort((a, b) => a - b);
   }
 
   const buttons = presetCounts.map((n) => ({
@@ -389,7 +431,7 @@ export async function deliverConfigsBatch({
   const proto = flow.protocol;
   const cc = flow.country && flow.country !== 'ALL' ? flow.country : '';
   const alreadyDelivered = new Set(Array.isArray(flow.deliveredIds) ? flow.deliveredIds : []);
-  const requested = Math.max(1, Math.min(10, Number(count) || 1));
+  const requested = Math.max(1, Math.min(25, Number(count) || 1));
 
   const sort = proto === 'openvpn' ? 'score' : 'last_checked';
   const candidates = [];
@@ -521,6 +563,7 @@ export async function deliverConfigsBatch({
   const skippedIds = [];
   const debugEntries = [];
   const deliveredMeta = [];
+  const collectedUris = [];
 
   if (proto === 'openvpn') {
     if (vgRows.length === 0) {
@@ -797,33 +840,8 @@ export async function deliverConfigsBatch({
     const nextIdx = delivered + 1;
     const schemeIdx = uri.indexOf('://');
     const schemePrefix = schemeIdx > 0 ? `${uri.slice(0, schemeIdx + 3)}...` : 'unknown';
-    const msgHtml = formatConfigMessage(nextIdx, requested, srv, uri, lang);
 
-    const fbMarkup = {
-      inline_keyboard: [[
-        { text: isFa(lang) ? '👍 سالم' : '👍 Working', callback_data: `fb:up:${srv.id}` },
-        { text: isFa(lang) ? '👎 خراب' : '👎 Broken', callback_data: `fb:down:${srv.id}` },
-      ]],
-    };
-
-    try {
-      await sendMsg({
-        chat_id: chatId,
-        text: msgHtml,
-        parse_mode: 'HTML',
-        reply_markup: fbMarkup,
-      });
-    } catch (err) {
-      sendFailedCount += 1;
-      debugEntries.push({
-        id: srv.id,
-        stage_reached: 'send',
-        reason_code: `send_${err?.name || 'Error'}`,
-        http_status: 200,
-      });
-      continue;
-    }
-
+    collectedUris.push(uri);
     delivered = nextIdx;
     alreadyDelivered.add(srv.id);
     await consumeConnectionRateLimit(userId);
@@ -842,6 +860,52 @@ export async function deliverConfigsBatch({
       scheme: schemePrefix,
       length: uri.length,
     });
+  }
+
+  if (collectedUris.length > 0) {
+    const countryLabel = cc
+      ? `${countryCodeToFlag(cc)} ${resolveCountryName(cc)}`
+      : isFa(lang) ? 'همه کشورها' : 'All countries';
+    const chunks = [];
+    let cur = [];
+    let curLen = 0;
+    for (const u of collectedUris) {
+      if (cur.length > 0 && curLen + u.length + 1 > 3400) {
+        chunks.push(cur);
+        cur = [u];
+        curLen = u.length;
+      } else {
+        cur.push(u);
+        curLen += u.length + 1;
+      }
+    }
+    if (cur.length > 0) chunks.push(cur);
+
+    for (let ci = 0; ci < chunks.length; ci += 1) {
+      const msgHtml = formatBatchConfigMessage(
+        chunks[ci],
+        proto,
+        countryLabel,
+        lang,
+        ci + 1,
+        chunks.length
+      );
+      try {
+        await sendMsg({
+          chat_id: chatId,
+          text: msgHtml,
+          parse_mode: 'HTML',
+        });
+      } catch (err) {
+        sendFailedCount += chunks[ci].length;
+        debugEntries.push({
+          id: `batch_${ci + 1}`,
+          stage_reached: 'send',
+          reason_code: `send_${err?.name || 'Error'}`,
+          http_status: 200,
+        });
+      }
+    }
   }
 
   try {
@@ -891,7 +955,7 @@ export async function deliverConfigsBatch({
   const fewerWorkingNote = delivered < requested && !rateLimited && huskCount > 0 && skippedIds.length === 0;
   const summary = batchSummaryText(lang, delivered, requested, {
     rateLimited,
-    skippedCount: skippedIds.length,
+    skippedCount: delivered < requested ? skippedIds.length : 0,
     sendFailedCount,
     fewerWorkingNote,
     openVpnPageMode: openVpnPageUsed,

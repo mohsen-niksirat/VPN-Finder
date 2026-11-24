@@ -384,10 +384,11 @@ export default {
 
     if (url.pathname === '/pool') {
       const summaryMode = url.searchParams.get('summary') === '1';
+      const countriesMode = url.searchParams.get('countries') === '1';
       const rawProto = (url.searchParams.get('proto') || '').trim().toLowerCase();
       const rawCc = (url.searchParams.get('cc') || '').trim().toUpperCase();
       const filterCc = /^[A-Z]{2}$/.test(rawCc) ? rawCc : '';
-      const limit = Math.min(40, Math.max(1, Number(url.searchParams.get('limit') || 25)));
+      const limit = Math.min(80, Math.max(1, Number(url.searchParams.get('limit') || 25)));
       const batches = await Promise.all(COMMUNITY_FEEDS.map((f) => fetchCommunityFeed(f, filterCc)));
       const all = [];
       for (const b of batches) all.push(...b);
@@ -408,6 +409,23 @@ export default {
 
       const normProto = rawProto === 'hysteria2' ? 'HY2' : rawProto === 'shadowsocks' ? 'SS' : rawProto.toUpperCase();
       const filtered = normProto ? all.filter((x) => x.proto === normProto) : all;
+
+      if (countriesMode) {
+        const countries = {};
+        const seenCc = new Set();
+        let total = 0;
+        for (const item of filtered) {
+          const dk = extractEndpointKey(item.uri);
+          if (!dk || seenCc.has(dk)) continue;
+          seenCc.add(dk);
+          total += 1;
+          const ccKey = item.cc && /^[A-Z]{2}$/.test(item.cc) ? item.cc : '';
+          if (ccKey) {
+            countries[ccKey] = (countries[ccKey] || 0) + 1;
+          }
+        }
+        return Response.json({ total, countries }, { headers: { 'Cache-Control': 'no-store' } });
+      }
       filtered.sort((a, b) => scoreIranUri(b.uri) - scoreIranUri(a.uri));
       const seenPool = new Set();
       const servers = [];

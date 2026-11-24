@@ -391,15 +391,18 @@ export function chooseCountryText(lang, total, protocolLabel) {
 
 export function chooseAmountText(lang, countAvailable, protocolLabel, countryLabel, remainingBudget) {
   const capLine =
-    remainingBudget < countAvailable && remainingBudget < 10
+    remainingBudget < countAvailable && remainingBudget < 20
       ? isFa(lang)
         ? `\n\nسقف باقی‌مانده شما در چند دقیقه آینده: حداکثر ${remainingBudget} کانفیگ.`
         : `\n\nYou can receive up to ${remainingBudget} more in the next few minutes.`
       : '';
+  const customHint = isFa(lang)
+    ? '\n💡 می‌توانید از دکمه‌ها انتخاب کنید یا عدد دلخواه خود را تایپ و ارسال کنید.'
+    : '\n💡 Pick a button below or type any custom number.';
   if (isFa(lang)) {
-    return `${countAvailable} کانفیگ تازه ${protocolLabel} برای ${countryLabel} موجود است. چند تا می‌خواهید؟${capLine}`;
+    return `${countAvailable} کانفیگ تازه ${protocolLabel} برای ${countryLabel} موجود است. چند تا می‌خواهید؟${customHint}${capLine}`;
   }
-  return `${countAvailable} fresh ${protocolLabel} configs for ${countryLabel}. How many do you want?${capLine}`;
+  return `${countAvailable} fresh ${protocolLabel} configs for ${countryLabel}. How many do you want?${customHint}${capLine}`;
 }
 
 export function noneFreshText(lang, protocolLabel, countryLabel = '') {
@@ -436,6 +439,15 @@ export function formatConfigMessage(idx, total, srv, configUri, lang) {
     ? `${idx}/${total} · ${protoLabel} · ${transport} · ${speed} · بررسی ${rel}`
     : `${idx}/${total} · ${protoLabel} · ${transport} · ${speed} · checked ${rel}`;
   return `${escapeHtml(header)}\n<code>${escapeHtml(configUri)}</code>`;
+}
+
+export function formatBatchConfigMessage(uris, proto, countryLabel, lang, partIdx = 1, totalParts = 1) {
+  const protoLabel = formatProtoLabel(proto);
+  const partSuffix = totalParts > 1 ? ` (${partIdx}/${totalParts})` : '';
+  const header = isFa(lang)
+    ? `⚡ <b>${uris.length} کانفیگ ${escapeHtml(protoLabel)}</b> · ${escapeHtml(countryLabel)}${partSuffix}\n📋 برای کپی همه، روی کادر زیر ضربه بزنید:`
+    : `⚡ <b>${uris.length} ${escapeHtml(protoLabel)} configs</b> · ${escapeHtml(countryLabel)}${partSuffix}\n📋 Tap the box below to copy all at once:`;
+  return `${header}\n<pre>${escapeHtml(uris.join('\n'))}</pre>`;
 }
 
 export function formatOvpnCaption(idx, total, srv, lang) {
