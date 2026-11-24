@@ -2,7 +2,7 @@ const PVL_BASE_URL = 'https://publicvpnlist.com/api/v1';
 const SUB_PATH_RE = /^\/sub\/([a-f0-9]{48})$/;
 const SUB_PROTOCOLS = ['hysteria2', 'vless', 'trojan', 'tuic', 'vmess', 'shadowsocks'];
 const MAX_PVL_PER_PROTOCOL = 4;
-const MAX_TOTAL = 50;
+const MAX_TOTAL = 200;
 const RATE_FLOOR_MS = 60_000;
 
 const VMESS_PREFIX = 'vmess' + '://';
@@ -62,6 +62,24 @@ const COMMUNITY_FEEDS = [
     url: 'https://raw.githubusercontent.com/Au1rxx/free-vpn-subscriptions/main/output/v2ray-base64.txt',
     base64: true,
     limit: 30,
+  },
+  {
+    name: 'UCIran-X',
+    url: 'https://raw.githubusercontent.com/UCSubLink/UCIRANIR/refs/heads/main/output/X.txt',
+    base64: false,
+    limit: 35,
+  },
+  {
+    name: 'UCIran-IR',
+    url: 'https://raw.githubusercontent.com/UCIRANX/Vpn/refs/heads/main/Uciranir.txt',
+    base64: false,
+    limit: 45,
+  },
+  {
+    name: 'UCIran',
+    url: 'https://raw.githubusercontent.com/UCIRANX/Vpn/refs/heads/main/Uciran.txt',
+    base64: false,
+    limit: 20,
   },
 ];
 
