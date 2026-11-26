@@ -1,37 +1,37 @@
 {
   "snapshot_version": 2,
-  "generated_at": "2026-11-26T11:41:22Z",
+  "generated_at": "2026-11-26T20:36:21Z",
   "protocol": "openvpn",
   "stats": {
     "data": {
-      "record_count": 2239,
-      "fresh_count": 467,
-      "stale_count": 1772,
-      "countries_count": 41,
+      "record_count": 2226,
+      "fresh_count": 240,
+      "stale_count": 1986,
+      "countries_count": 40,
       "protocols": [
         "openvpn"
       ],
       "protocol_record_counts": {
-        "openvpn": 2239,
-        "vless": 555,
-        "trojan": 25,
-        "vmess": 207,
+        "openvpn": 2226,
+        "vless": 543,
+        "trojan": 27,
+        "vmess": 223,
         "shadowsocks": 601,
-        "hysteria2": 28,
+        "hysteria2": 26,
         "tuic": 0,
         "wireguard": 0,
         "ikev2": 0
       },
-      "distinct_country_count": 44
+      "distinct_country_count": 43
     },
-    "distinct_country_count": 44,
+    "distinct_country_count": 43,
     "meta": {
       "schema_version": "1.1",
-      "dataset_version": "20261126T114122Z-f0dd51a81b5b",
-      "snapshot_id": "274220a68c5d1087",
-      "generated_at": "2026-11-26T11:41:22Z",
-      "expires_at": "2026-11-26T11:56:22Z",
-      "protocol_dataset_version": "20261126T114430Z-9d913fbfed09"
+      "dataset_version": "20261126T203621Z-2aae34377aae",
+      "snapshot_id": "cb52d4296c9c1d8f",
+      "generated_at": "2026-11-26T20:36:21Z",
+      "expires_at": "2026-11-26T20:51:21Z",
+      "protocol_dataset_version": "20261126T204423Z-ac6744c638f9"
     },
     "links": {
       "self": "https://publicvpnlist.com/api/v1/stats",
@@ -42,8 +42,8 @@
       "hit": false,
       "revalidated": false,
       "stale": false,
-      "fetched_at": 1795693479,
-      "etag": "\"eb8ddee1d9fc0485372cb6c10b748b7ed3d0474f13e8962985a27e9547d5ef0d\""
+      "fetched_at": 1795725883,
+      "etag": "\"59647c3ef9107fc28d2b501b36ec22e66042e37b683c9c0ca4f8bc6d2c7e651d\""
     }
   },
   "protocols": {
@@ -54,9 +54,9 @@
           "tcp",
           "udp"
         ],
-        "record_count": 2239,
+        "record_count": 2226,
         "documentation_url": "https://publicvpnlist.com/api/protocols/openvpn/",
-        "median_speed_mbps": 3.56,
+        "median_speed_mbps": 4.39,
         "measured_count": 200
       },
       {
@@ -66,10 +66,10 @@
           "tcp",
           "websocket"
         ],
-        "record_count": 555,
+        "record_count": 543,
         "documentation_url": "https://publicvpnlist.com/api/protocols/vless/",
-        "median_speed_mbps": 3.74,
-        "measured_count": 182
+        "median_speed_mbps": 3.82,
+        "measured_count": 180
       },
       {
         "protocol": "trojan",
@@ -77,10 +77,10 @@
           "tcp",
           "websocket"
         ],
-        "record_count": 25,
+        "record_count": 27,
         "documentation_url": "https://publicvpnlist.com/api/protocols/trojan/",
-        "median_speed_mbps": 7.08,
-        "measured_count": 23
+        "median_speed_mbps": 6.79,
+        "measured_count": 25
       },
       {
         "protocol": "vmess",
@@ -88,10 +88,10 @@
           "tcp",
           "websocket"
         ],
-        "record_count": 207,
+        "record_count": 223,
         "documentation_url": "https://publicvpnlist.com/api/protocols/vmess/",
-        "median_speed_mbps": 3.38,
-        "measured_count": 160
+        "median_speed_mbps": 3.39,
+        "measured_count": 161
       },
       {
         "protocol": "shadowsocks",
@@ -100,18 +100,18 @@
         ],
         "record_count": 601,
         "documentation_url": "https://publicvpnlist.com/api/protocols/shadowsocks/",
-        "median_speed_mbps": 4.76,
-        "measured_count": 187
+        "median_speed_mbps": 4.59,
+        "measured_count": 180
       },
       {
         "protocol": "hysteria2",
         "transports": [
           "udp"
         ],
-        "record_count": 28,
+        "record_count": 26,
         "documentation_url": "https://publicvpnlist.com/api/protocols/hysteria2/",
-        "median_speed_mbps": 6.01,
-        "measured_count": 27
+        "median_speed_mbps": 6.52,
+        "measured_count": 25
       },
       {
         "protocol": "tuic",
@@ -140,11 +140,11 @@
     ],
     "meta": {
       "schema_version": "1.1",
-      "dataset_version": "20261126T114122Z-f0dd51a81b5b",
-      "snapshot_id": "274220a68c5d1087",
-      "generated_at": "2026-11-26T11:41:22Z",
-      "expires_at": "2026-11-26T11:56:22Z",
-      "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
+      "dataset_version": "20261126T203621Z-2aae34377aae",
+      "snapshot_id": "cb52d4296c9c1d8f",
+      "generated_at": "2026-11-26T20:36:21Z",
+      "expires_at": "2026-11-26T20:51:21Z",
+      "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
       "total": 9
     },
     "links": {
@@ -156,8 +156,8 @@
       "hit": false,
       "revalidated": false,
       "stale": false,
-      "fetched_at": 1795693479,
-      "etag": "W/\"0380df1dbc6ba94dcea1bd4dd6fe97a6057649d4575312320f81c26059493849\""
+      "fetched_at": 1795725883,
+      "etag": "W/\"74831158b7a179c71cc6d3bb2b028950b7ecc58fc4c18514e6d6c8ec1f65c98d\""
     }
   },
   "countries": {
@@ -190,7 +190,7 @@
       {
         "country_code": "BY",
         "country_name": "Belarus",
-        "record_count": 3
+        "record_count": 4
       },
       {
         "country_code": "CA",
@@ -220,7 +220,7 @@
       {
         "country_code": "FR",
         "country_name": "France",
-        "record_count": 9
+        "record_count": 8
       },
       {
         "country_code": "GB",
@@ -245,7 +245,7 @@
       {
         "country_code": "HR",
         "country_name": "Croatia (LOCAL Name: Hrvatska)",
-        "record_count": 5
+        "record_count": 3
       },
       {
         "country_code": "HU",
@@ -275,12 +275,12 @@
       {
         "country_code": "JP",
         "country_name": "Japan",
-        "record_count": 1061
+        "record_count": 1055
       },
       {
         "country_code": "KR",
         "country_name": "South Korea",
-        "record_count": 893
+        "record_count": 896
       },
       {
         "country_code": "LT",
@@ -325,7 +325,7 @@
       {
         "country_code": "RU",
         "country_name": "Russia",
-        "record_count": 119
+        "record_count": 116
       },
       {
         "country_code": "SE",
@@ -345,12 +345,12 @@
       {
         "country_code": "UA",
         "country_name": "Ukraine",
-        "record_count": 9
+        "record_count": 8
       },
       {
         "country_code": "US",
         "country_name": "USA",
-        "record_count": 77
+        "record_count": 74
       },
       {
         "country_code": "VN",
@@ -361,21 +361,16 @@
         "country_code": "YE",
         "country_name": "Yemen",
         "record_count": 1
-      },
-      {
-        "country_code": "ZA",
-        "country_name": "South Africa",
-        "record_count": 1
       }
     ],
     "meta": {
       "schema_version": "1.1",
-      "dataset_version": "20261126T114122Z-f0dd51a81b5b",
-      "snapshot_id": "274220a68c5d1087",
-      "generated_at": "2026-11-26T11:41:22Z",
-      "expires_at": "2026-11-26T11:56:22Z",
-      "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
-      "total": 41
+      "dataset_version": "20261126T203621Z-2aae34377aae",
+      "snapshot_id": "cb52d4296c9c1d8f",
+      "generated_at": "2026-11-26T20:36:21Z",
+      "expires_at": "2026-11-26T20:51:21Z",
+      "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
+      "total": 40
     },
     "links": {
       "self": "https://publicvpnlist.com/api/v1/countries",
@@ -386,8 +381,8 @@
       "hit": false,
       "revalidated": false,
       "stale": false,
-      "fetched_at": 1795693479,
-      "etag": "W/\"1510ab0610fb6870ef1b933073316029f6dc1229dc3531dda9f4cd7799dff847\""
+      "fetched_at": 1795725883,
+      "etag": "W/\"94e08976908ac296ccdffff54b49abb66724707f56e7832205fc1ef91854c4d9\""
     }
   },
   "countries_by_protocol": {
@@ -421,7 +416,7 @@
         {
           "country_code": "BY",
           "country_name": "Belarus",
-          "record_count": 3
+          "record_count": 4
         },
         {
           "country_code": "CA",
@@ -451,7 +446,7 @@
         {
           "country_code": "FR",
           "country_name": "France",
-          "record_count": 9
+          "record_count": 8
         },
         {
           "country_code": "GB",
@@ -476,7 +471,7 @@
         {
           "country_code": "HR",
           "country_name": "Croatia (LOCAL Name: Hrvatska)",
-          "record_count": 5
+          "record_count": 3
         },
         {
           "country_code": "HU",
@@ -506,12 +501,12 @@
         {
           "country_code": "JP",
           "country_name": "Japan",
-          "record_count": 1061
+          "record_count": 1055
         },
         {
           "country_code": "KR",
           "country_name": "South Korea",
-          "record_count": 893
+          "record_count": 896
         },
         {
           "country_code": "LT",
@@ -556,7 +551,7 @@
         {
           "country_code": "RU",
           "country_name": "Russia",
-          "record_count": 119
+          "record_count": 116
         },
         {
           "country_code": "SE",
@@ -576,12 +571,12 @@
         {
           "country_code": "UA",
           "country_name": "Ukraine",
-          "record_count": 9
+          "record_count": 8
         },
         {
           "country_code": "US",
           "country_name": "USA",
-          "record_count": 77
+          "record_count": 74
         },
         {
           "country_code": "VN",
@@ -592,21 +587,16 @@
           "country_code": "YE",
           "country_name": "Yemen",
           "record_count": 1
-        },
-        {
-          "country_code": "ZA",
-          "country_name": "South Africa",
-          "record_count": 1
         }
       ],
       "meta": {
         "schema_version": "1.1",
-        "dataset_version": "20261126T114122Z-f0dd51a81b5b",
-        "snapshot_id": "274220a68c5d1087",
-        "generated_at": "2026-11-26T11:41:22Z",
-        "expires_at": "2026-11-26T11:56:22Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
-        "total": 41
+        "dataset_version": "20261126T203621Z-2aae34377aae",
+        "snapshot_id": "cb52d4296c9c1d8f",
+        "generated_at": "2026-11-26T20:36:21Z",
+        "expires_at": "2026-11-26T20:51:21Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
+        "total": 40
       },
       "links": {
         "self": "https://publicvpnlist.com/api/v1/countries",
@@ -617,134 +607,27 @@
         "hit": true,
         "revalidated": false,
         "stale": false,
-        "fetched_at": 1795693479,
-        "etag": "W/\"1510ab0610fb6870ef1b933073316029f6dc1229dc3531dda9f4cd7799dff847\""
+        "fetched_at": 1795725883,
+        "etag": "W/\"94e08976908ac296ccdffff54b49abb66724707f56e7832205fc1ef91854c4d9\""
       }
     },
-    "vless": {
+    "vmess": {
       "data": [
-        {
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "count": 3,
-          "record_count": 3
-        },
         {
           "country_code": "US",
           "country_name": "United States",
-          "count": 1,
-          "record_count": 1
-        },
-        {
-          "country_code": "CZ",
-          "country_name": "Czechia",
-          "count": 1,
-          "record_count": 1
-        },
-        {
-          "country_code": "RU",
-          "country_name": "Russia",
-          "count": 1,
-          "record_count": 1
-        },
-        {
-          "country_code": "KR",
-          "country_name": "South Korea",
-          "count": 1,
-          "record_count": 1
-        }
-      ],
-      "meta": {
-        "total": 5,
-        "total_records": 7,
-        "unknown_count": 0,
-        "derived": true
-      },
-      "_cache": {
-        "hit": true,
-        "stale": false
-      }
-    },
-    "trojan": {
-      "data": [],
-      "meta": {
-        "total": 0,
-        "total_records": 0,
-        "unknown_count": 0,
-        "derived": true
-      },
-      "_cache": {
-        "hit": true,
-        "stale": false
-      }
-    },
-    "shadowsocks": {
-      "data": [
-        {
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "count": 3,
-          "record_count": 3
-        },
-        {
-          "country_code": "US",
-          "country_name": "United States",
-          "count": 3,
-          "record_count": 3
+          "count": 6,
+          "record_count": 6
         },
         {
           "country_code": "CH",
           "country_name": "Switzerland",
-          "count": 2,
-          "record_count": 2
-        },
-        {
-          "country_code": "GB",
-          "country_name": "United Kingdom",
-          "count": 2,
-          "record_count": 2
-        },
-        {
-          "country_code": "SG",
-          "country_name": "Singapore",
           "count": 2,
           "record_count": 2
         },
         {
           "country_code": "DE",
           "country_name": "Germany",
-          "count": 1,
-          "record_count": 1
-        }
-      ],
-      "meta": {
-        "total": 6,
-        "total_records": 13,
-        "unknown_count": 0,
-        "derived": true
-      },
-      "_cache": {
-        "hit": true,
-        "stale": false
-      }
-    },
-    "vmess": {
-      "data": [
-        {
-          "country_code": "CH",
-          "country_name": "Switzerland",
-          "count": 3,
-          "record_count": 3
-        },
-        {
-          "country_code": "US",
-          "country_name": "United States",
-          "count": 2,
-          "record_count": 2
-        },
-        {
-          "country_code": "HK",
-          "country_name": "Hong Kong",
           "count": 1,
           "record_count": 1
         },
@@ -757,6 +640,114 @@
       ],
       "meta": {
         "total": 4,
+        "total_records": 10,
+        "unknown_count": 0,
+        "derived": true
+      },
+      "_cache": {
+        "hit": true,
+        "stale": false
+      }
+    },
+    "shadowsocks": {
+      "data": [
+        {
+          "country_code": "US",
+          "country_name": "United States",
+          "count": 8,
+          "record_count": 8
+        },
+        {
+          "country_code": "JP",
+          "country_name": "Japan",
+          "count": 3,
+          "record_count": 3
+        },
+        {
+          "country_code": "GB",
+          "country_name": "United Kingdom",
+          "count": 2,
+          "record_count": 2
+        },
+        {
+          "country_code": "NL",
+          "country_name": "Netherlands",
+          "count": 1,
+          "record_count": 1
+        },
+        {
+          "country_code": "FI",
+          "country_name": "Finland",
+          "count": 1,
+          "record_count": 1
+        },
+        {
+          "country_code": "DE",
+          "country_name": "Germany",
+          "count": 1,
+          "record_count": 1
+        },
+        {
+          "country_code": "CA",
+          "country_name": "Canada",
+          "count": 1,
+          "record_count": 1
+        },
+        {
+          "country_code": "SG",
+          "country_name": "Singapore",
+          "count": 1,
+          "record_count": 1
+        }
+      ],
+      "meta": {
+        "total": 8,
+        "total_records": 18,
+        "unknown_count": 0,
+        "derived": true
+      },
+      "_cache": {
+        "hit": true,
+        "stale": false
+      }
+    },
+    "trojan": {
+      "data": [
+        {
+          "country_code": "US",
+          "country_name": "United States",
+          "count": 2,
+          "record_count": 2
+        }
+      ],
+      "meta": {
+        "total": 1,
+        "total_records": 2,
+        "unknown_count": 0,
+        "derived": true
+      },
+      "_cache": {
+        "hit": true,
+        "stale": false
+      }
+    },
+    "vless": {
+      "data": [
+        {
+          "country_code": "NL",
+          "country_name": "Netherlands",
+          "count": 6,
+          "record_count": 6
+        },
+        {
+          "country_code": "US",
+          "country_name": "United States",
+          "count": 1,
+          "record_count": 1
+        }
+      ],
+      "meta": {
+        "total": 2,
         "total_records": 7,
         "unknown_count": 0,
         "derived": true
@@ -788,363 +779,496 @@
     }
   },
   "servers_preview": {
-    "vmess": {
+    "vless": {
       "data": [
         {
-          "id": "pvlp_0c0d9ef30b682ac45c8f30bc",
-          "country_code": "US",
-          "country_name": "United States",
+          "id": "pvlp_661745dd138ecda57bdd0dc6",
+          "country_code": "NL",
+          "country_name": "Netherlands",
           "city": null,
-          "protocol": "vmess",
+          "protocol": "vless",
           "transport": "tcp",
-          "port": 1270,
-          "exit_ip": "38.22.17.197",
-          "speed_mbps": 3.148,
-          "latency_ms": 228,
+          "port": 23576,
+          "exit_ip": "51.158.206.29",
+          "speed_mbps": 7.453,
+          "latency_ms": 136,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-25T13:51:29Z",
+          "last_checked_at": "2026-11-26T20:41:14Z",
           "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "v2go hourly full-tunnel tested configs",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_0c0d9ef30b682ac45c8f30bc/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=20e3b4408905189908bca3e1befa7beb03a6882e978c47ebd9f3088819430aec",
+          "freshness_status": "fresh",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_661745dd138ecda57bdd0dc6/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=26f8c3d5a82d45e798f745580574b761d25cc171529e0af21064db7f62d7546d",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D20e3b4408905189908bca3e1befa7beb03a6882e978c47ebd9f3088819430aec",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=20e3b4408905189908bca3e1befa7beb03a6882e978c47ebd9f3088819430aec&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D26f8c3d5a82d45e798f745580574b761d25cc171529e0af21064db7f62d7546d",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=26f8c3d5a82d45e798f745580574b761d25cc171529e0af21064db7f62d7546d&format=json"
         },
         {
-          "id": "pvlp_6fd2d6e575bf25dce58bcc2d",
-          "country_code": "CH",
-          "country_name": "Switzerland",
+          "id": "pvlp_6baf32af2f380937c9444414",
+          "country_code": "NL",
+          "country_name": "Netherlands",
           "city": null,
-          "protocol": "vmess",
+          "protocol": "vless",
           "transport": "tcp",
-          "port": 1270,
-          "exit_ip": "186.190.215.4",
-          "speed_mbps": 3.727,
-          "latency_ms": 126,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-25T12:10:55Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "Barry VMess",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_6fd2d6e575bf25dce58bcc2d/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=11cefbe5c3bc30d4b63f57c0f3c9a472eee462fcffef7fe1d1bf9cc3fab382a1",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D11cefbe5c3bc30d4b63f57c0f3c9a472eee462fcffef7fe1d1bf9cc3fab382a1",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=11cefbe5c3bc30d4b63f57c0f3c9a472eee462fcffef7fe1d1bf9cc3fab382a1&format=json"
-        },
-        {
-          "id": "pvlp_ce22a9fc25a4e1e761bb332d",
-          "country_code": "FR",
-          "country_name": "France",
-          "city": null,
-          "protocol": "vmess",
-          "transport": "tcp",
-          "port": 1270,
-          "exit_ip": "172.99.189.239",
-          "speed_mbps": 6.453,
-          "latency_ms": 132,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-24T16:16:02Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "Iran Intranet Access verified configs",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_ce22a9fc25a4e1e761bb332d/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=204217601c54d1518132feb44c2c14f5bd394b57b09d167cf21fcbdd0178f031",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D204217601c54d1518132feb44c2c14f5bd394b57b09d167cf21fcbdd0178f031",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=204217601c54d1518132feb44c2c14f5bd394b57b09d167cf21fcbdd0178f031&format=json"
-        },
-        {
-          "id": "pvlp_7e74e6ac41f59729a38cea24",
-          "country_code": "US",
-          "country_name": "United States",
-          "city": null,
-          "protocol": "vmess",
-          "transport": "tcp",
-          "port": 1270,
-          "exit_ip": "167.88.63.37",
-          "speed_mbps": 2.767,
-          "latency_ms": 221,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-24T14:45:41Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "v2go hourly full-tunnel tested configs",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_7e74e6ac41f59729a38cea24/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=1c722f3a8c1b101f8223ff4e1e43376ec3e7e968b3601e064533eee922c29c7d",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D1c722f3a8c1b101f8223ff4e1e43376ec3e7e968b3601e064533eee922c29c7d",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=1c722f3a8c1b101f8223ff4e1e43376ec3e7e968b3601e064533eee922c29c7d&format=json"
-        },
-        {
-          "id": "pvlp_afcfd64b4a108fe1bb31cb51",
-          "country_code": "CH",
-          "country_name": "Switzerland",
-          "city": null,
-          "protocol": "vmess",
-          "transport": "tcp",
-          "port": 1270,
-          "exit_ip": "186.190.215.4",
-          "speed_mbps": 5.994,
-          "latency_ms": 124,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-24T12:45:38Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_afcfd64b4a108fe1bb31cb51/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0acabd7be79a2fe9145d46cdc8b9136a0c98fbf395b7d2236ef59f05fe93ec0f",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D0acabd7be79a2fe9145d46cdc8b9136a0c98fbf395b7d2236ef59f05fe93ec0f",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0acabd7be79a2fe9145d46cdc8b9136a0c98fbf395b7d2236ef59f05fe93ec0f&format=json"
-        },
-        {
-          "id": "pvlp_aca5c775765d8ae3ae0a384d",
-          "country_code": "HK",
-          "country_name": "Hong Kong",
-          "city": null,
-          "protocol": "vmess",
-          "transport": "websocket",
           "port": 443,
-          "exit_ip": "47.86.90.31",
-          "speed_mbps": null,
-          "latency_ms": 372,
+          "exit_ip": "193.233.127.62",
+          "speed_mbps": 2.007,
+          "latency_ms": 687,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-24T12:37:09Z",
+          "last_checked_at": "2026-11-26T20:25:57Z",
           "first_seen_at": null,
-          "freshness_status": "recent",
+          "freshness_status": "fresh",
           "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_aca5c775765d8ae3ae0a384d/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=ae24f603ab80ce5cb87d43c9377d27727b8bff234949543027421bc6fb78a700",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_6baf32af2f380937c9444414/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=0272231defc2ec1ff34403d107dd29f1a29d11a0d35a7b67c3f2738a3a50b5d8",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253Dae24f603ab80ce5cb87d43c9377d27727b8bff234949543027421bc6fb78a700",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=ae24f603ab80ce5cb87d43c9377d27727b8bff234949543027421bc6fb78a700&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D0272231defc2ec1ff34403d107dd29f1a29d11a0d35a7b67c3f2738a3a50b5d8",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=0272231defc2ec1ff34403d107dd29f1a29d11a0d35a7b67c3f2738a3a50b5d8&format=json"
         },
         {
-          "id": "pvlp_ecb3fa620376938ca3713fdf",
-          "country_code": "CH",
-          "country_name": "Switzerland",
+          "id": "pvlp_77eee531added01bb0ea9eba",
+          "country_code": "NL",
+          "country_name": "Netherlands",
           "city": null,
-          "protocol": "vmess",
+          "protocol": "vless",
           "transport": "tcp",
-          "port": 1270,
-          "exit_ip": "186.190.215.4",
-          "speed_mbps": 7.659,
-          "latency_ms": 122,
+          "port": 23576,
+          "exit_ip": "51.158.206.20",
+          "speed_mbps": 7.532,
+          "latency_ms": 127,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-23T19:58:24Z",
+          "last_checked_at": "2026-11-26T17:49:07Z",
           "first_seen_at": null,
           "freshness_status": "recent",
-          "source_name": "Proxy node collector by ishalumi (Base64)",
-          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_ecb3fa620376938ca3713fdf/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0121b5795c0a13ad17d67aece2bae7866e7a9462ad1cc89d8c57cbf29f1263f5",
+          "source_name": "Freedom V2Ray tested configs",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_77eee531added01bb0ea9eba/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=2f0d45ddc237011d711033493df15f9f769fe1942b434050cb47f963fdfdeff7",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D0121b5795c0a13ad17d67aece2bae7866e7a9462ad1cc89d8c57cbf29f1263f5",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0121b5795c0a13ad17d67aece2bae7866e7a9462ad1cc89d8c57cbf29f1263f5&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D2f0d45ddc237011d711033493df15f9f769fe1942b434050cb47f963fdfdeff7",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=2f0d45ddc237011d711033493df15f9f769fe1942b434050cb47f963fdfdeff7&format=json"
+        },
+        {
+          "id": "pvlp_30c9bad00c8b6c8b85b1f96d",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vless",
+          "transport": "tcp",
+          "port": 443,
+          "exit_ip": "167.17.69.171",
+          "speed_mbps": 3.712,
+          "latency_ms": 243,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T17:42:37Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Firmfox Proxify mixed configs",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_30c9bad00c8b6c8b85b1f96d/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=04395117e6bf5a2a609367961185b2de34efaea7899e1c6a5ef6ffac21ee34cd",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D04395117e6bf5a2a609367961185b2de34efaea7899e1c6a5ef6ffac21ee34cd",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=04395117e6bf5a2a609367961185b2de34efaea7899e1c6a5ef6ffac21ee34cd&format=json"
+        },
+        {
+          "id": "pvlp_80333248c3f425010a555097",
+          "country_code": "NL",
+          "country_name": "Netherlands",
+          "city": null,
+          "protocol": "vless",
+          "transport": "tcp",
+          "port": 23576,
+          "exit_ip": "51.158.206.20",
+          "speed_mbps": 6.253,
+          "latency_ms": 127,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T17:07:24Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Firmfox Proxify mixed configs",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_80333248c3f425010a555097/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=032c99e21f2a00a5b2d9d36d964ec2c053a2dd041dfaca574154b6fda71eeb2a",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D032c99e21f2a00a5b2d9d36d964ec2c053a2dd041dfaca574154b6fda71eeb2a",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=032c99e21f2a00a5b2d9d36d964ec2c053a2dd041dfaca574154b6fda71eeb2a&format=json"
+        },
+        {
+          "id": "pvlp_bfa6fb2dd92f002c0e09004d",
+          "country_code": "NL",
+          "country_name": "Netherlands",
+          "city": null,
+          "protocol": "vless",
+          "transport": "tcp",
+          "port": 23576,
+          "exit_ip": "51.158.206.103",
+          "speed_mbps": 7.273,
+          "latency_ms": 138,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T16:12:04Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Firmfox Proxify mixed configs",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_bfa6fb2dd92f002c0e09004d/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=02baf5e6289d760a869807233784e6661ebc8c953fe5ca1155969a1f5c3a7cd2",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D02baf5e6289d760a869807233784e6661ebc8c953fe5ca1155969a1f5c3a7cd2",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=02baf5e6289d760a869807233784e6661ebc8c953fe5ca1155969a1f5c3a7cd2&format=json"
+        },
+        {
+          "id": "pvlp_a0d13bd37ba3be707f6d7af2",
+          "country_code": "NL",
+          "country_name": "Netherlands",
+          "city": null,
+          "protocol": "vless",
+          "transport": "tcp",
+          "port": 23576,
+          "exit_ip": "51.158.206.19",
+          "speed_mbps": 5.839,
+          "latency_ms": 152,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T13:01:54Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Firmfox Proxify mixed configs",
+          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_a0d13bd37ba3be707f6d7af2/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=007cfcd9248f1079d04a3913a75effbada32b8ba39fca1f9eeeba9caddd5480f",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D007cfcd9248f1079d04a3913a75effbada32b8ba39fca1f9eeeba9caddd5480f",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=007cfcd9248f1079d04a3913a75effbada32b8ba39fca1f9eeeba9caddd5480f&format=json"
         }
       ],
       "meta": {
         "schema_version": "1.0.0",
-        "dataset_version": "20261126T114430Z-9d913fbfed09",
-        "snapshot_id": "protocol-20261126T114430Z-9d913fbfed09",
-        "generated_at": "2026-11-26T11:44:30Z",
-        "expires_at": "2026-11-26T11:59:30Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
+        "dataset_version": "20261126T204423Z-ac6744c638f9",
+        "snapshot_id": "protocol-20261126T204423Z-ac6744c638f9",
+        "generated_at": "2026-11-26T20:44:23Z",
+        "expires_at": "2026-11-26T20:59:23Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
         "total": 7,
         "page": 1,
         "per_page": 20,
         "pages": 1
       },
       "links": {
-        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=vmess&sort=last_checked&status=online",
+        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=vless&sort=last_checked&status=online",
         "next": null,
         "prev": null,
         "documentation": "https://publicvpnlist.com/api/"
       },
       "_cache": {
-        "key": "servers_v2?protocol=vmess&status=online&fresh_within=259200&sort=last_checked&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
+        "key": "servers_v2?protocol=vless&status=online&fresh_within=259200&sort=last_checked&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
         "hit": false,
         "revalidated": false,
         "stale": false,
-        "fetched_at": 1795693480,
-        "etag": "W/\"787dced2a3fc5569ebab84358b78e9b661d84267706ec7deec71d5f1261800e9\""
-      }
-    },
-    "trojan": {
-      "data": [],
-      "meta": {
-        "schema_version": "1.0.0",
-        "dataset_version": "20261126T114430Z-9d913fbfed09",
-        "snapshot_id": "protocol-20261126T114430Z-9d913fbfed09",
-        "generated_at": "2026-11-26T11:44:30Z",
-        "expires_at": "2026-11-26T11:59:30Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
-        "total": 0,
-        "page": 1,
-        "per_page": 20,
-        "pages": 0
-      },
-      "links": {
-        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=trojan&sort=last_checked&status=online",
-        "next": null,
-        "prev": null,
-        "documentation": "https://publicvpnlist.com/api/"
-      },
-      "_cache": {
-        "key": "servers_v2?protocol=trojan&status=online&fresh_within=259200&sort=last_checked&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
-        "hit": false,
-        "revalidated": false,
-        "stale": false,
-        "fetched_at": 1795693480,
-        "etag": "\"88e592b3103ebde90b9a941755117b48475821425d743c09e699b044d9a8f199\""
+        "fetched_at": 1795725884,
+        "etag": "W/\"cdc9835f8e12c12e822bc7b6ff7d72c8adfe6e66be2be5821b4c0ec1774eca85\""
       }
     },
     "shadowsocks": {
       "data": [
         {
-          "id": "pvlp_1ea46ebb9cec9ecc39fdcade",
+          "id": "pvlp_3a4937e3c5374af303250722",
+          "country_code": "JP",
+          "country_name": "Japan",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 6666,
+          "exit_ip": "8.216.17.86",
+          "speed_mbps": null,
+          "latency_ms": 372,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T20:42:03Z",
+          "first_seen_at": null,
+          "freshness_status": "fresh",
+          "source_name": "rjsxrd secure tunnel-tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_3a4937e3c5374af303250722/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=04920c27cbe39eb334be60a8c07d392cb3efb9f425fe0704d5208be4a51a0822",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D04920c27cbe39eb334be60a8c07d392cb3efb9f425fe0704d5208be4a51a0822",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=04920c27cbe39eb334be60a8c07d392cb3efb9f425fe0704d5208be4a51a0822&format=json"
+        },
+        {
+          "id": "pvlp_3971cdd4bc4fc7d51272768b",
+          "country_code": "JP",
+          "country_name": "Japan",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 5555,
+          "exit_ip": "8.216.5.230",
+          "speed_mbps": null,
+          "latency_ms": 340,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T20:14:59Z",
+          "first_seen_at": null,
+          "freshness_status": "fresh",
+          "source_name": "v2go hourly full-tunnel tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_3971cdd4bc4fc7d51272768b/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0986101c26729f062817ad979ff12f6650284e8bd21155e97bb5fcd22cef2b94",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D0986101c26729f062817ad979ff12f6650284e8bd21155e97bb5fcd22cef2b94",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0986101c26729f062817ad979ff12f6650284e8bd21155e97bb5fcd22cef2b94&format=json"
+        },
+        {
+          "id": "pvlp_b5988391b0960d2fb286c168",
           "country_code": "US",
           "country_name": "United States",
           "city": null,
           "protocol": "shadowsocks",
           "transport": "tcp",
-          "port": 13420,
-          "exit_ip": "66.23.205.26",
-          "speed_mbps": 3.883,
-          "latency_ms": 226,
+          "port": 443,
+          "exit_ip": "108.181.133.97",
+          "speed_mbps": 4.062,
+          "latency_ms": 218,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-26T06:15:08Z",
+          "last_checked_at": "2026-11-26T20:00:16Z",
           "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_1ea46ebb9cec9ecc39fdcade/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=05c86e9d0856bea1e3e8821a15bdac66f937e47a794a4445eff1c1d4f3c4fe2b",
+          "freshness_status": "fresh",
+          "source_name": "Barry Shadowsocks",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_b5988391b0960d2fb286c168/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0872b6a9232cc315bdb09bf2665c9714e28347a7867e951238aedb7af1d46a23",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D05c86e9d0856bea1e3e8821a15bdac66f937e47a794a4445eff1c1d4f3c4fe2b",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=05c86e9d0856bea1e3e8821a15bdac66f937e47a794a4445eff1c1d4f3c4fe2b&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D0872b6a9232cc315bdb09bf2665c9714e28347a7867e951238aedb7af1d46a23",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0872b6a9232cc315bdb09bf2665c9714e28347a7867e951238aedb7af1d46a23&format=json"
         },
         {
-          "id": "pvlp_7839bf4e810c1edb2d7b825c",
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "city": null,
-          "protocol": "shadowsocks",
-          "transport": "tcp",
-          "port": 8388,
-          "exit_ip": "140.82.56.38",
-          "speed_mbps": 6.636,
-          "latency_ms": 129,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-26T05:12:52Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "Freedom V2Ray tested configs",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_7839bf4e810c1edb2d7b825c/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=d4cbe7b522455fded8e68143e0875c1b03a1dda7745a4042a4ac4d1668f47369",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253Dd4cbe7b522455fded8e68143e0875c1b03a1dda7745a4042a4ac4d1668f47369",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=d4cbe7b522455fded8e68143e0875c1b03a1dda7745a4042a4ac4d1668f47369&format=json"
-        },
-        {
-          "id": "pvlp_f2183ef20fa5f29cd86a744e",
+          "id": "pvlp_37cc42e76d1d95df8ae4b97b",
           "country_code": "US",
           "country_name": "United States",
           "city": null,
           "protocol": "shadowsocks",
           "transport": "tcp",
-          "port": 19999,
-          "exit_ip": "169.197.142.68",
-          "speed_mbps": 3.684,
-          "latency_ms": 260,
+          "port": 443,
+          "exit_ip": "15.204.247.244",
+          "speed_mbps": null,
+          "latency_ms": 339,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-25T23:15:57Z",
+          "last_checked_at": "2026-11-26T19:47:00Z",
           "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "ConfigForge V2Ray by ShatakVPN",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_f2183ef20fa5f29cd86a744e/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=02be178ca8cfeb70489f3c11a5fdb06b5f964aeab2bcc8296b7a26c3ac1a5af5",
+          "freshness_status": "fresh",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_37cc42e76d1d95df8ae4b97b/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0715f958ec63962cfdcbaee4647af6a1dfb627d4e6bb5af142070512caba316b",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D02be178ca8cfeb70489f3c11a5fdb06b5f964aeab2bcc8296b7a26c3ac1a5af5",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=02be178ca8cfeb70489f3c11a5fdb06b5f964aeab2bcc8296b7a26c3ac1a5af5&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D0715f958ec63962cfdcbaee4647af6a1dfb627d4e6bb5af142070512caba316b",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0715f958ec63962cfdcbaee4647af6a1dfb627d4e6bb5af142070512caba316b&format=json"
         },
         {
-          "id": "pvlp_55f55e7f678bb2fee1d1c869",
-          "country_code": "NL",
-          "country_name": "Netherlands",
+          "id": "pvlp_57698bf10f06bd26baf7daca",
+          "country_code": "US",
+          "country_name": "United States",
           "city": null,
           "protocol": "shadowsocks",
           "transport": "tcp",
-          "port": 8080,
-          "exit_ip": "193.29.139.184",
-          "speed_mbps": 6.867,
-          "latency_ms": 117,
+          "port": 8882,
+          "exit_ip": "15.204.233.41",
+          "speed_mbps": 2.801,
+          "latency_ms": 207,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-25T22:32:46Z",
+          "last_checked_at": "2026-11-26T19:41:32Z",
           "first_seen_at": null,
           "freshness_status": "recent",
           "source_name": "Anonymous tested configs",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_55f55e7f678bb2fee1d1c869/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=48d2a1e9184dfa55e77f1a46c980a0aed5f3c6b42fb4961e7b7ca28e9b6a6bda",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_57698bf10f06bd26baf7daca/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=32a8d556ad0a0c0dcf2b70740d812bbe2cc0ae8794311ffd5d85d9644d9c185f",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D48d2a1e9184dfa55e77f1a46c980a0aed5f3c6b42fb4961e7b7ca28e9b6a6bda",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=48d2a1e9184dfa55e77f1a46c980a0aed5f3c6b42fb4961e7b7ca28e9b6a6bda&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D32a8d556ad0a0c0dcf2b70740d812bbe2cc0ae8794311ffd5d85d9644d9c185f",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=32a8d556ad0a0c0dcf2b70740d812bbe2cc0ae8794311ffd5d85d9644d9c185f&format=json"
+        },
+        {
+          "id": "pvlp_3d89fde5c952fc8def511bf0",
+          "country_code": "JP",
+          "country_name": "Japan",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 5555,
+          "exit_ip": "8.216.15.55",
+          "speed_mbps": 2.693,
+          "latency_ms": 341,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T18:56:27Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "v2go hourly full-tunnel tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_3d89fde5c952fc8def511bf0/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=068672f9e98798fee2a2e7a401f9ee2dd2200c486c6eda4b41a8361120e10f83",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D068672f9e98798fee2a2e7a401f9ee2dd2200c486c6eda4b41a8361120e10f83",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=068672f9e98798fee2a2e7a401f9ee2dd2200c486c6eda4b41a8361120e10f83&format=json"
+        },
+        {
+          "id": "pvlp_0c03fd9f30e856f615d8caf3",
+          "country_code": "FI",
+          "country_name": "Finland",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 40647,
+          "exit_ip": "213.176.92.148",
+          "speed_mbps": 3.218,
+          "latency_ms": 223,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T16:47:00Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Proxy node collector by ishalumi (Base64)",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_0c03fd9f30e856f615d8caf3/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=062133361de301d44f1598e8d4712e474c057482285b2d604cd4bbf14356ba42",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D062133361de301d44f1598e8d4712e474c057482285b2d604cd4bbf14356ba42",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=062133361de301d44f1598e8d4712e474c057482285b2d604cd4bbf14356ba42&format=json"
+        },
+        {
+          "id": "pvlp_650379b18e7f7d6c4abde38b",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 2375,
+          "exit_ip": "15.204.247.124",
+          "speed_mbps": 1.084,
+          "latency_ms": 1373,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T16:13:23Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Freedom V2Ray tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_650379b18e7f7d6c4abde38b/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=ab75a084f44c671977ff3345cc86f7482644864dcd14a2d6c637c5fe182ba3f0",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253Dab75a084f44c671977ff3345cc86f7482644864dcd14a2d6c637c5fe182ba3f0",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=ab75a084f44c671977ff3345cc86f7482644864dcd14a2d6c637c5fe182ba3f0&format=json"
+        },
+        {
+          "id": "pvlp_b5500fddf9611ca40d175d33",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 8882,
+          "exit_ip": "15.204.233.41",
+          "speed_mbps": 1.285,
+          "latency_ms": 199,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T14:45:07Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Freedom V2Ray tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_b5500fddf9611ca40d175d33/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=7fc37ba24dbccce5bf183c18ae98fa6afd5cae85ef61681568494c2801a5526e",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D7fc37ba24dbccce5bf183c18ae98fa6afd5cae85ef61681568494c2801a5526e",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=7fc37ba24dbccce5bf183c18ae98fa6afd5cae85ef61681568494c2801a5526e&format=json"
+        },
+        {
+          "id": "pvlp_7ccbd2dc526fd7daa1e99c4b",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "shadowsocks",
+          "transport": "tcp",
+          "port": 443,
+          "exit_ip": "38.99.82.140",
+          "speed_mbps": 2.88,
+          "latency_ms": 216,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T13:35:39Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Iran Intranet Access verified configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_7ccbd2dc526fd7daa1e99c4b/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=07a64c43df3e19421580cbe40542eedcf2fe45a05ea283625330b627af14cae9",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D07a64c43df3e19421580cbe40542eedcf2fe45a05ea283625330b627af14cae9",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=07a64c43df3e19421580cbe40542eedcf2fe45a05ea283625330b627af14cae9&format=json"
         },
         {
           "id": "pvlp_5615af0203faff7bf86ae410",
@@ -1309,95 +1433,68 @@
           "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=1000ee84fd416bedace5a8fe6f0f16bdc0d91c6745fdfe7c53d6808ab043c710&format=json"
         },
         {
-          "id": "pvlp_db9e693c52f4f3cee56aa8ee",
-          "country_code": "SG",
-          "country_name": "Singapore",
+          "id": "pvlp_1191148f9ada36ee41180133",
+          "country_code": "US",
+          "country_name": "United States",
           "city": null,
           "protocol": "shadowsocks",
           "transport": "tcp",
           "port": 19999,
-          "exit_ip": "149.88.106.74",
-          "speed_mbps": 1.106,
-          "latency_ms": 322,
+          "exit_ip": "23.150.152.38",
+          "speed_mbps": 3.588,
+          "latency_ms": 259,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-24T16:20:05Z",
+          "last_checked_at": "2026-11-24T15:22:51Z",
           "first_seen_at": null,
           "freshness_status": "recent",
-          "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_db9e693c52f4f3cee56aa8ee/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0fffc7df8627416a534345b0931a1756f434df5a5e5798ce8c7f0ac9a4c3971d",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_1191148f9ada36ee41180133/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0edeb764b6b1490f92119ac2aa6db8323653892c895a203f60f7711a9cfe8316",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D0fffc7df8627416a534345b0931a1756f434df5a5e5798ce8c7f0ac9a4c3971d",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0fffc7df8627416a534345b0931a1756f434df5a5e5798ce8c7f0ac9a4c3971d&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D0edeb764b6b1490f92119ac2aa6db8323653892c895a203f60f7711a9cfe8316",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=0edeb764b6b1490f92119ac2aa6db8323653892c895a203f60f7711a9cfe8316&format=json"
         },
         {
-          "id": "pvlp_df19fa18a6913a6ee90460ba",
-          "country_code": "CH",
-          "country_name": "Switzerland",
+          "id": "pvlp_de06ae354df7219b5687c243",
+          "country_code": "CA",
+          "country_name": "Canada",
           "city": null,
           "protocol": "shadowsocks",
           "transport": "tcp",
-          "port": 19999,
-          "exit_ip": "23.166.88.189",
-          "speed_mbps": 7.76,
-          "latency_ms": 122,
+          "port": 445,
+          "exit_ip": "51.222.141.125",
+          "speed_mbps": 3.973,
+          "latency_ms": 238,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-24T09:27:34Z",
+          "last_checked_at": "2026-11-24T12:44:41Z",
           "first_seen_at": null,
           "freshness_status": "recent",
-          "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_df19fa18a6913a6ee90460ba/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=05a8bd64440d355df26b3539557827b1987adc9b29d87d3f3fc2382e8143e5d2",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_de06ae354df7219b5687c243/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=10e651ba0d02a3629b5cfdef4f567b0a4fd4151a67d9708905991bef0b49aa59",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D05a8bd64440d355df26b3539557827b1987adc9b29d87d3f3fc2382e8143e5d2",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=05a8bd64440d355df26b3539557827b1987adc9b29d87d3f3fc2382e8143e5d2&format=json"
-        },
-        {
-          "id": "pvlp_0cb0cac773302b76e951d591",
-          "country_code": "CH",
-          "country_name": "Switzerland",
-          "city": null,
-          "protocol": "shadowsocks",
-          "transport": "tcp",
-          "port": 19999,
-          "exit_ip": "79.127.184.104",
-          "speed_mbps": 4.668,
-          "latency_ms": 134,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-23T15:50:32Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/shadowsocks/server/pvlp_0cb0cac773302b76e951d591/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=052dd68ca567c06f02304c0f3612882b0e4e3b8385a1b73858b79739dc5ef761",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D052dd68ca567c06f02304c0f3612882b0e4e3b8385a1b73858b79739dc5ef761",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=052dd68ca567c06f02304c0f3612882b0e4e3b8385a1b73858b79739dc5ef761&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dshadowsocks%2526id%253D10e651ba0d02a3629b5cfdef4f567b0a4fd4151a67d9708905991bef0b49aa59",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=shadowsocks&id=10e651ba0d02a3629b5cfdef4f567b0a4fd4151a67d9708905991bef0b49aa59&format=json"
         }
       ],
       "meta": {
         "schema_version": "1.0.0",
-        "dataset_version": "20261126T114430Z-9d913fbfed09",
-        "snapshot_id": "protocol-20261126T114430Z-9d913fbfed09",
-        "generated_at": "2026-11-26T11:44:30Z",
-        "expires_at": "2026-11-26T11:59:30Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
-        "total": 13,
+        "dataset_version": "20261126T204423Z-ac6744c638f9",
+        "snapshot_id": "protocol-20261126T204423Z-ac6744c638f9",
+        "generated_at": "2026-11-26T20:44:23Z",
+        "expires_at": "2026-11-26T20:59:23Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
+        "total": 18,
         "page": 1,
         "per_page": 20,
         "pages": 1
@@ -1413,227 +1510,962 @@
         "hit": false,
         "revalidated": false,
         "stale": false,
-        "fetched_at": 1795693480,
-        "etag": "W/\"4083d16d90c5848e9271dd03f31a50adb9424ec410cfad882ce20a45fbbc5061\""
+        "fetched_at": 1795725884,
+        "etag": "W/\"6788b4527a61b54f4f985fc0ff12e33c7023a557d54f1712e64444c0c8eaac9b\""
       }
     },
-    "vless": {
+    "trojan": {
       "data": [
         {
-          "id": "pvlp_4846aa2395d5154a8a881f06",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "vless",
-          "transport": "grpc",
-          "port": 443,
-          "exit_ip": "129.101.105.29",
-          "speed_mbps": 11.918,
-          "latency_ms": 102,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-26T11:21:45Z",
-          "first_seen_at": null,
-          "freshness_status": "fresh",
-          "source_name": "Firmfox Proxify mixed configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_4846aa2395d5154a8a881f06/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=020936ff427f2f50154d2a83ab92d886e850e4eca538b7a6d49212e9b1799d10",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D020936ff427f2f50154d2a83ab92d886e850e4eca538b7a6d49212e9b1799d10",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=020936ff427f2f50154d2a83ab92d886e850e4eca538b7a6d49212e9b1799d10&format=json"
-        },
-        {
-          "id": "pvlp_bc7db69d9c1a708a66addb3d",
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "city": null,
-          "protocol": "vless",
-          "transport": "tcp",
-          "port": 23576,
-          "exit_ip": "51.158.206.19",
-          "speed_mbps": 5.27,
-          "latency_ms": 131,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-26T08:37:08Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "Anonymous tested configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_bc7db69d9c1a708a66addb3d/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=c012eb7555935614d1cf2346cf1e5e951ac7c066525468b03eb57e1be802785d",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253Dc012eb7555935614d1cf2346cf1e5e951ac7c066525468b03eb57e1be802785d",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=c012eb7555935614d1cf2346cf1e5e951ac7c066525468b03eb57e1be802785d&format=json"
-        },
-        {
-          "id": "pvlp_1f1b002218a9f1dca7b59abc",
-          "country_code": "CZ",
-          "country_name": "Czechia",
-          "city": null,
-          "protocol": "vless",
-          "transport": "tcp",
-          "port": 443,
-          "exit_ip": "153.52.69.249",
-          "speed_mbps": 1.343,
-          "latency_ms": 1527,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-26T08:28:35Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "v2go hourly full-tunnel tested configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_1f1b002218a9f1dca7b59abc/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=01aa0d5a4ec214de1782e17956119ec5af4c88a755c1bb99704806123150b0c5",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D01aa0d5a4ec214de1782e17956119ec5af4c88a755c1bb99704806123150b0c5",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=01aa0d5a4ec214de1782e17956119ec5af4c88a755c1bb99704806123150b0c5&format=json"
-        },
-        {
-          "id": "pvlp_726c0aaac41b9bd708448528",
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "city": null,
-          "protocol": "vless",
-          "transport": "tcp",
-          "port": 23576,
-          "exit_ip": "51.158.206.87",
-          "speed_mbps": 7.264,
-          "latency_ms": 122,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-26T08:12:38Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "Firmfox Proxify mixed configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_726c0aaac41b9bd708448528/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=0127a53b12d8ebed2114829fb4a0b8a80a8ba0d460fcdcf5f9fccb3db6937578",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D0127a53b12d8ebed2114829fb4a0b8a80a8ba0d460fcdcf5f9fccb3db6937578",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=0127a53b12d8ebed2114829fb4a0b8a80a8ba0d460fcdcf5f9fccb3db6937578&format=json"
-        },
-        {
-          "id": "pvlp_a112256e7f58d2f627d40007",
-          "country_code": "KR",
-          "country_name": "South Korea",
-          "city": null,
-          "protocol": "vless",
-          "transport": "tcp",
-          "port": 443,
-          "exit_ip": "43.155.175.232",
-          "speed_mbps": null,
-          "latency_ms": 285,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-26T05:12:54Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "Firmfox Proxify mixed configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_a112256e7f58d2f627d40007/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=0009ced9c24a3140d972b58470ea3b1e8c6014a7a888486e1b8c1e29dde444e5",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D0009ced9c24a3140d972b58470ea3b1e8c6014a7a888486e1b8c1e29dde444e5",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=0009ced9c24a3140d972b58470ea3b1e8c6014a7a888486e1b8c1e29dde444e5&format=json"
-        },
-        {
-          "id": "pvlp_23811b69995a1df8396620f1",
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "city": null,
-          "protocol": "vless",
-          "transport": "tcp",
-          "port": 23576,
-          "exit_ip": "51.158.206.97",
-          "speed_mbps": 4.783,
-          "latency_ms": 140,
-          "uptime_percent_7d": null,
-          "technical_quality_score": null,
-          "score_label": null,
-          "last_checked_at": "2026-11-25T14:30:47Z",
-          "first_seen_at": null,
-          "freshness_status": "recent",
-          "source_name": "rjsxrd secure tunnel-tested configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_23811b69995a1df8396620f1/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=01031a70e92b5d3df9eabb6c32f4aeecfa45a915f5803925c162b4714b192517",
-          "risk_flags": [
-            "third_party_endpoint",
-            "operator_not_verified"
-          ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D01031a70e92b5d3df9eabb6c32f4aeecfa45a915f5803925c162b4714b192517",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=01031a70e92b5d3df9eabb6c32f4aeecfa45a915f5803925c162b4714b192517&format=json"
-        },
-        {
-          "id": "pvlp_1eecbbda4de5289d3a17f927",
+          "id": "pvlp_f3401ed5e871be0c64db65c3",
           "country_code": "US",
           "country_name": "United States",
           "city": null,
-          "protocol": "vless",
+          "protocol": "trojan",
           "transport": "tcp",
-          "port": 16016,
-          "exit_ip": "67.220.73.204",
-          "speed_mbps": 3.141,
-          "latency_ms": 258,
+          "port": 443,
+          "exit_ip": "216.152.155.23",
+          "speed_mbps": 2.444,
+          "latency_ms": 214,
           "uptime_percent_7d": null,
           "technical_quality_score": null,
           "score_label": null,
-          "last_checked_at": "2026-11-24T16:45:03Z",
+          "last_checked_at": "2026-11-26T19:34:21Z",
           "first_seen_at": null,
           "freshness_status": "recent",
-          "source_name": "0xRadikal verified downloadable configs",
-          "server_page_url": "https://publicvpnlist.com/vless/server/pvlp_1eecbbda4de5289d3a17f927/",
-          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=4eb012677a1df22c9115372bc14b6fcbc18360c5000f385f492f92c328fbc08c",
+          "source_name": "Proxy-Hunter tested candidates",
+          "server_page_url": "https://publicvpnlist.com/trojan/server/pvlp_f3401ed5e871be0c64db65c3/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=trojan&id=01b624a9b41532abba6903a24b66a82fc31d4b92156ff3eb0eb7d780e0cd5e17",
           "risk_flags": [
             "third_party_endpoint",
             "operator_not_verified"
           ],
-          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvless%2526id%253D4eb012677a1df22c9115372bc14b6fcbc18360c5000f385f492f92c328fbc08c",
-          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vless&id=4eb012677a1df22c9115372bc14b6fcbc18360c5000f385f492f92c328fbc08c&format=json"
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dtrojan%2526id%253D01b624a9b41532abba6903a24b66a82fc31d4b92156ff3eb0eb7d780e0cd5e17",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=trojan&id=01b624a9b41532abba6903a24b66a82fc31d4b92156ff3eb0eb7d780e0cd5e17&format=json"
+        },
+        {
+          "id": "pvlp_fb8515ddbd0909e83c9a90ad",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "trojan",
+          "transport": "tcp",
+          "port": 443,
+          "exit_ip": "66.163.122.165",
+          "speed_mbps": 3.535,
+          "latency_ms": 210,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T16:21:58Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Barry Trojan",
+          "server_page_url": "https://publicvpnlist.com/trojan/server/pvlp_fb8515ddbd0909e83c9a90ad/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=trojan&id=0170be3dc853de7448ec190b9c57377114c73e9c5ff886460fc9b5eb98c4e3bb",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dtrojan%2526id%253D0170be3dc853de7448ec190b9c57377114c73e9c5ff886460fc9b5eb98c4e3bb",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=trojan&id=0170be3dc853de7448ec190b9c57377114c73e9c5ff886460fc9b5eb98c4e3bb&format=json"
         }
       ],
       "meta": {
         "schema_version": "1.0.0",
-        "dataset_version": "20261126T114430Z-9d913fbfed09",
-        "snapshot_id": "protocol-20261126T114430Z-9d913fbfed09",
-        "generated_at": "2026-11-26T11:44:30Z",
-        "expires_at": "2026-11-26T11:59:30Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
-        "total": 7,
+        "dataset_version": "20261126T204423Z-ac6744c638f9",
+        "snapshot_id": "protocol-20261126T204423Z-ac6744c638f9",
+        "generated_at": "2026-11-26T20:44:23Z",
+        "expires_at": "2026-11-26T20:59:23Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
+        "total": 2,
         "page": 1,
         "per_page": 20,
         "pages": 1
       },
       "links": {
-        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=vless&sort=last_checked&status=online",
+        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=trojan&sort=last_checked&status=online",
         "next": null,
         "prev": null,
         "documentation": "https://publicvpnlist.com/api/"
       },
       "_cache": {
-        "key": "servers_v2?protocol=vless&status=online&fresh_within=259200&sort=last_checked&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
+        "key": "servers_v2?protocol=trojan&status=online&fresh_within=259200&sort=last_checked&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
         "hit": false,
         "revalidated": false,
         "stale": false,
-        "fetched_at": 1795693480,
-        "etag": "W/\"d0da1bb3bf32b445470f142bd753504aac66ffecdc05bea78a7ec2765ffcd729\""
+        "fetched_at": 1795725884,
+        "etag": "W/\"787370e667ef37a0bcd02a751329bb86692d3b2d921d56a67b1c982aa0fe8f3b\""
+      }
+    },
+    "vmess": {
+      "data": [
+        {
+          "id": "pvlp_9be921a277318ec37c15b9be",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "172.111.36.244",
+          "speed_mbps": 3.653,
+          "latency_ms": 250,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-26T16:55:48Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_9be921a277318ec37c15b9be/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0b74cb47152123ab15fed8590285e1aef7e1c3bc9c93e43750ae6615732947c6",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D0b74cb47152123ab15fed8590285e1aef7e1c3bc9c93e43750ae6615732947c6",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0b74cb47152123ab15fed8590285e1aef7e1c3bc9c93e43750ae6615732947c6&format=json"
+        },
+        {
+          "id": "pvlp_0c0d9ef30b682ac45c8f30bc",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "38.22.17.197",
+          "speed_mbps": 3.148,
+          "latency_ms": 228,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-25T13:51:29Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "v2go hourly full-tunnel tested configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_0c0d9ef30b682ac45c8f30bc/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=20e3b4408905189908bca3e1befa7beb03a6882e978c47ebd9f3088819430aec",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D20e3b4408905189908bca3e1befa7beb03a6882e978c47ebd9f3088819430aec",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=20e3b4408905189908bca3e1befa7beb03a6882e978c47ebd9f3088819430aec&format=json"
+        },
+        {
+          "id": "pvlp_c1d9b69043217ec10a4aeba9",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "66.163.125.51",
+          "speed_mbps": 3.228,
+          "latency_ms": 221,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-25T12:27:06Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_c1d9b69043217ec10a4aeba9/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=146456818a0ad2b6c05af7708243577e7c52f51ddd92598310ff0ec23b3b1e01",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D146456818a0ad2b6c05af7708243577e7c52f51ddd92598310ff0ec23b3b1e01",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=146456818a0ad2b6c05af7708243577e7c52f51ddd92598310ff0ec23b3b1e01&format=json"
+        },
+        {
+          "id": "pvlp_6fd2d6e575bf25dce58bcc2d",
+          "country_code": "CH",
+          "country_name": "Switzerland",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "186.190.215.4",
+          "speed_mbps": 3.727,
+          "latency_ms": 126,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-25T12:10:55Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Barry VMess",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_6fd2d6e575bf25dce58bcc2d/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=11cefbe5c3bc30d4b63f57c0f3c9a472eee462fcffef7fe1d1bf9cc3fab382a1",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D11cefbe5c3bc30d4b63f57c0f3c9a472eee462fcffef7fe1d1bf9cc3fab382a1",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=11cefbe5c3bc30d4b63f57c0f3c9a472eee462fcffef7fe1d1bf9cc3fab382a1&format=json"
+        },
+        {
+          "id": "pvlp_b56f3ffbcf396c1c07a2dc38",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "142.202.48.87",
+          "speed_mbps": 3.905,
+          "latency_ms": 207,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-25T12:02:40Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_b56f3ffbcf396c1c07a2dc38/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0f595783bc40418de9daef8cb900815943aa5a28b115e33f7be971bd18346f79",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D0f595783bc40418de9daef8cb900815943aa5a28b115e33f7be971bd18346f79",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0f595783bc40418de9daef8cb900815943aa5a28b115e33f7be971bd18346f79&format=json"
+        },
+        {
+          "id": "pvlp_ce22a9fc25a4e1e761bb332d",
+          "country_code": "FR",
+          "country_name": "France",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "172.99.189.239",
+          "speed_mbps": 6.453,
+          "latency_ms": 132,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-24T16:16:02Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Iran Intranet Access verified configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_ce22a9fc25a4e1e761bb332d/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=204217601c54d1518132feb44c2c14f5bd394b57b09d167cf21fcbdd0178f031",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D204217601c54d1518132feb44c2c14f5bd394b57b09d167cf21fcbdd0178f031",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=204217601c54d1518132feb44c2c14f5bd394b57b09d167cf21fcbdd0178f031&format=json"
+        },
+        {
+          "id": "pvlp_7e74e6ac41f59729a38cea24",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "167.88.63.37",
+          "speed_mbps": 2.767,
+          "latency_ms": 221,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-24T14:45:41Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "v2go hourly full-tunnel tested configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_7e74e6ac41f59729a38cea24/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=1c722f3a8c1b101f8223ff4e1e43376ec3e7e968b3601e064533eee922c29c7d",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D1c722f3a8c1b101f8223ff4e1e43376ec3e7e968b3601e064533eee922c29c7d",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=1c722f3a8c1b101f8223ff4e1e43376ec3e7e968b3601e064533eee922c29c7d&format=json"
+        },
+        {
+          "id": "pvlp_bacdb5e9d3bc5314a37ee620",
+          "country_code": "US",
+          "country_name": "United States",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "167.88.63.37",
+          "speed_mbps": 2.965,
+          "latency_ms": 236,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-24T14:11:40Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Matin VMess",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_bacdb5e9d3bc5314a37ee620/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0dbaaa587697bf6da023cc27fa844f0970f238df2aded6b3a73c28d6d33daa6e",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D0dbaaa587697bf6da023cc27fa844f0970f238df2aded6b3a73c28d6d33daa6e",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0dbaaa587697bf6da023cc27fa844f0970f238df2aded6b3a73c28d6d33daa6e&format=json"
+        },
+        {
+          "id": "pvlp_afcfd64b4a108fe1bb31cb51",
+          "country_code": "CH",
+          "country_name": "Switzerland",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "186.190.215.4",
+          "speed_mbps": 5.994,
+          "latency_ms": 124,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-24T12:45:38Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "0xRadikal verified downloadable configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_afcfd64b4a108fe1bb31cb51/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0acabd7be79a2fe9145d46cdc8b9136a0c98fbf395b7d2236ef59f05fe93ec0f",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D0acabd7be79a2fe9145d46cdc8b9136a0c98fbf395b7d2236ef59f05fe93ec0f",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=0acabd7be79a2fe9145d46cdc8b9136a0c98fbf395b7d2236ef59f05fe93ec0f&format=json"
+        },
+        {
+          "id": "pvlp_4a22cd537aa4487022961a27",
+          "country_code": "DE",
+          "country_name": "Germany",
+          "city": null,
+          "protocol": "vmess",
+          "transport": "tcp",
+          "port": 1270,
+          "exit_ip": "185.177.229.95",
+          "speed_mbps": 7.466,
+          "latency_ms": 129,
+          "uptime_percent_7d": null,
+          "technical_quality_score": null,
+          "score_label": null,
+          "last_checked_at": "2026-11-24T12:41:57Z",
+          "first_seen_at": null,
+          "freshness_status": "recent",
+          "source_name": "Anonymous tested configs",
+          "server_page_url": "https://publicvpnlist.com/vmess/server/pvlp_4a22cd537aa4487022961a27/",
+          "config_download_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=07609d8392a6883b70a278a6383e43fbb42a31c75cf48bff0ad7be561e63ccb3",
+          "risk_flags": [
+            "third_party_endpoint",
+            "operator_not_verified"
+          ],
+          "v2rayng_url": "v2rayng://install-sub?url=https%253A%252F%252Fpublicvpnlist.com%252Fprotocols%252Fdownload.php%253Fprotocol%253Dvmess%2526id%253D07609d8392a6883b70a278a6383e43fbb42a31c75cf48bff0ad7be561e63ccb3",
+          "connection_info_url": "https://publicvpnlist.com/protocols/download.php?protocol=vmess&id=07609d8392a6883b70a278a6383e43fbb42a31c75cf48bff0ad7be561e63ccb3&format=json"
+        }
+      ],
+      "meta": {
+        "schema_version": "1.0.0",
+        "dataset_version": "20261126T204423Z-ac6744c638f9",
+        "snapshot_id": "protocol-20261126T204423Z-ac6744c638f9",
+        "generated_at": "2026-11-26T20:44:23Z",
+        "expires_at": "2026-11-26T20:59:23Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
+        "total": 10,
+        "page": 1,
+        "per_page": 20,
+        "pages": 1
+      },
+      "links": {
+        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=vmess&sort=last_checked&status=online",
+        "next": null,
+        "prev": null,
+        "documentation": "https://publicvpnlist.com/api/"
+      },
+      "_cache": {
+        "key": "servers_v2?protocol=vmess&status=online&fresh_within=259200&sort=last_checked&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
+        "hit": false,
+        "revalidated": false,
+        "stale": false,
+        "fetched_at": 1795725884,
+        "etag": "W/\"667cbf5a84a08ed507234b5c3984b73d143fceb29b9e21d6ca727b56343f43f8\""
+      }
+    },
+    "openvpn": {
+      "data": [
+        {
+          "id": "pvl_555c136a1550a6cb50880bbb",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1589,
+          "speed_mbps": 12.07,
+          "latency_ms": 58,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 70,
+          "score_label": "Good",
+          "last_checked_at": "2026-11-26T03:14:14Z",
+          "first_seen_at": "2026-08-18T06:37:26Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_555c136a1550a6cb50880bbb",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_262555ca469c9254b434f86b",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1766,
+          "speed_mbps": 6.9,
+          "latency_ms": 72,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 64,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T03:44:03Z",
+          "first_seen_at": "2026-08-21T21:35:44Z",
+          "freshness_status": "recent",
+          "source_name": "IPSpeed",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_262555ca469c9254b434f86b",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_6628e5ed1406d56aaf2429d2",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1298,
+          "speed_mbps": 9.46,
+          "latency_ms": 61,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 64,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T13:42:43Z",
+          "first_seen_at": "2026-06-27T15:49:41Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_6628e5ed1406d56aaf2429d2",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_dafd83ca20ba87a786281632",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1687,
+          "speed_mbps": 6.19,
+          "latency_ms": 97,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 63,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T13:55:19Z",
+          "first_seen_at": "2026-07-26T17:51:52Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_dafd83ca20ba87a786281632",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_6b38c3e8c00a1bf0d09820fd",
+          "country_code": "BY",
+          "country_name": "Belarus",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1559,
+          "speed_mbps": 2.6,
+          "latency_ms": 78,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 62,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T18:37:39Z",
+          "first_seen_at": "2026-06-20T19:25:32Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_6b38c3e8c00a1bf0d09820fd",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_6d508456229e4cd3e3292b07",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1938,
+          "speed_mbps": 5.45,
+          "latency_ms": 99,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 61,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T15:30:27Z",
+          "first_seen_at": "2026-08-24T23:06:05Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_6d508456229e4cd3e3292b07",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_38b9a432483b7787a73f6011",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1907,
+          "speed_mbps": 0.04,
+          "latency_ms": 77,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 60,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T11:13:10Z",
+          "first_seen_at": "2026-07-14T12:35:32Z",
+          "freshness_status": "recent",
+          "source_name": "VPNGate",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_38b9a432483b7787a73f6011",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_49ca9b3bfb4e1af87f915fed",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1375,
+          "speed_mbps": 8.32,
+          "latency_ms": 83,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 59,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T20:06:09Z",
+          "first_seen_at": "2026-07-21T23:20:09Z",
+          "freshness_status": "fresh",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_49ca9b3bfb4e1af87f915fed",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_0337c53d85898aef53eb7260",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 5555,
+          "speed_mbps": 4.65,
+          "latency_ms": 123,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 58,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T19:20:11Z",
+          "first_seen_at": "2026-06-27T02:50:29Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_0337c53d85898aef53eb7260",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_cb970d05c8c2fdab16b9e5df",
+          "country_code": "LT",
+          "country_name": "Lithuania",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1974,
+          "speed_mbps": 6.18,
+          "latency_ms": 114,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 58,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-25T23:40:54Z",
+          "first_seen_at": "2026-06-10T12:23:43Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_cb970d05c8c2fdab16b9e5df",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_d72d7e67d0818bd3ec267c35",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1292,
+          "speed_mbps": 4.95,
+          "latency_ms": 59,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 58,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T15:32:12Z",
+          "first_seen_at": "2026-07-29T23:22:48Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_d72d7e67d0818bd3ec267c35",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_fc03b369ad17ea17bc4516fc",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1429,
+          "speed_mbps": 7.39,
+          "latency_ms": 106,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 58,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T01:21:10Z",
+          "first_seen_at": "2026-08-24T23:06:05Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_fc03b369ad17ea17bc4516fc",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_07fd2f974ee34b8d9d5917a4",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1453,
+          "speed_mbps": 7.95,
+          "latency_ms": 86,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 57,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T17:05:43Z",
+          "first_seen_at": "2026-08-20T19:38:37Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_07fd2f974ee34b8d9d5917a4",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_19808c9c1a7f78200b7d812b",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1963,
+          "speed_mbps": 1.63,
+          "latency_ms": 73,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 57,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T08:17:25Z",
+          "first_seen_at": "2026-08-17T11:37:44Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_19808c9c1a7f78200b7d812b",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_57ef813c973920831ea8f365",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1540,
+          "speed_mbps": 0.03,
+          "latency_ms": 103,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 57,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T19:05:13Z",
+          "first_seen_at": "2026-08-27T07:06:09Z",
+          "freshness_status": "recent",
+          "source_name": "VPNGate",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_57ef813c973920831ea8f365",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_5f86c7fa99c2754282731378",
+          "country_code": "NL",
+          "country_name": "Netherlands",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1809,
+          "speed_mbps": 5.37,
+          "latency_ms": 125,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 57,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-25T23:49:02Z",
+          "first_seen_at": "2026-08-12T03:35:15Z",
+          "freshness_status": "recent",
+          "source_name": "IPSpeed",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_5f86c7fa99c2754282731378",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_629397d197a88c5e5ac20e56",
+          "country_code": "HU",
+          "country_name": "Hungary",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "udp",
+          "port": 1997,
+          "speed_mbps": 4.78,
+          "latency_ms": 130,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 57,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T04:20:50Z",
+          "first_seen_at": "2026-07-03T17:04:23Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_629397d197a88c5e5ac20e56",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_b3a84b24f479fbef256e86e5",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1771,
+          "speed_mbps": 7.48,
+          "latency_ms": 67,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 57,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T18:26:16Z",
+          "first_seen_at": "2026-07-30T23:53:03Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_b3a84b24f479fbef256e86e5",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_778b7a614f3529db5f65a4c9",
+          "country_code": "HU",
+          "country_name": "Hungary",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1640,
+          "speed_mbps": 6.11,
+          "latency_ms": 138,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 56,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T08:05:03Z",
+          "first_seen_at": "2026-08-14T08:06:20Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_778b7a614f3529db5f65a4c9",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        },
+        {
+          "id": "pvl_e53459e74c5baa59e8f7e2d6",
+          "country_code": "RU",
+          "country_name": "Russia",
+          "city": null,
+          "protocol": "openvpn",
+          "transport": "tcp",
+          "port": 1405,
+          "speed_mbps": 7.33,
+          "latency_ms": 88,
+          "uptime_percent_7d": null,
+          "technical_quality_score": 56,
+          "score_label": "Limited",
+          "last_checked_at": "2026-11-26T19:03:54Z",
+          "first_seen_at": "2026-07-24T09:51:01Z",
+          "freshness_status": "recent",
+          "source_name": "AutoOVPN",
+          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_e53459e74c5baa59e8f7e2d6",
+          "config_download_url": null,
+          "risk_flags": [
+            "third_party_server",
+            "privacy_not_assessed",
+            "state_may_change"
+          ],
+          "v2rayng_url": null,
+          "connection_info_url": null
+        }
+      ],
+      "meta": {
+        "schema_version": "1.1",
+        "dataset_version": "20261126T203621Z-2aae34377aae",
+        "snapshot_id": "cb52d4296c9c1d8f",
+        "generated_at": "2026-11-26T20:36:21Z",
+        "expires_at": "2026-11-26T20:51:21Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
+        "total": 2226,
+        "page": 1,
+        "per_page": 20,
+        "pages": 112
+      },
+      "links": {
+        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=openvpn&sort=score&status=online",
+        "next": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=2&per_page=20&protocol=openvpn&sort=score&status=online",
+        "prev": null,
+        "documentation": "https://publicvpnlist.com/api/"
+      },
+      "_cache": {
+        "key": "servers_v2?protocol=openvpn&status=online&fresh_within=259200&sort=score&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
+        "hit": false,
+        "revalidated": false,
+        "stale": false,
+        "fetched_at": 1795725884,
+        "etag": "W/\"9aeceb7ecbc2617466e8a4bbbfc0308533d6fbdbd9391e528cfc26fd922355d0\""
       }
     },
     "hysteria2": {
@@ -1668,11 +2500,11 @@
       ],
       "meta": {
         "schema_version": "1.0.0",
-        "dataset_version": "20261126T114430Z-9d913fbfed09",
-        "snapshot_id": "protocol-20261126T114430Z-9d913fbfed09",
-        "generated_at": "2026-11-26T11:44:30Z",
-        "expires_at": "2026-11-26T11:59:30Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
+        "dataset_version": "20261126T204423Z-ac6744c638f9",
+        "snapshot_id": "protocol-20261126T204423Z-ac6744c638f9",
+        "generated_at": "2026-11-26T20:44:23Z",
+        "expires_at": "2026-11-26T20:59:23Z",
+        "protocol_dataset_version": "20261126T204423Z-ac6744c638f9",
         "total": 1,
         "page": 1,
         "per_page": 20,
@@ -1689,578 +2521,8 @@
         "hit": false,
         "revalidated": false,
         "stale": false,
-        "fetched_at": 1795693480,
-        "etag": "W/\"ec182a590b1e0b0d496b115dd773312d0c6042f7026d32042bef33879788f935\""
-      }
-    },
-    "openvpn": {
-      "data": [
-        {
-          "id": "pvl_555c136a1550a6cb50880bbb",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1589,
-          "speed_mbps": 12.07,
-          "latency_ms": 58,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 71,
-          "score_label": "Good",
-          "last_checked_at": "2026-11-26T03:14:14Z",
-          "first_seen_at": "2026-08-18T06:37:26Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_555c136a1550a6cb50880bbb",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_262555ca469c9254b434f86b",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1766,
-          "speed_mbps": 6.9,
-          "latency_ms": 72,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 66,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T03:44:03Z",
-          "first_seen_at": "2026-08-21T21:35:44Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_262555ca469c9254b434f86b",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_6628e5ed1406d56aaf2429d2",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1298,
-          "speed_mbps": 9.46,
-          "latency_ms": 61,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 66,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T09:30:23Z",
-          "first_seen_at": "2026-06-27T15:49:41Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_6628e5ed1406d56aaf2429d2",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_6b38c3e8c00a1bf0d09820fd",
-          "country_code": "BY",
-          "country_name": "Belarus",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1559,
-          "speed_mbps": 2.6,
-          "latency_ms": 78,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 62,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T10:32:19Z",
-          "first_seen_at": "2026-06-20T19:25:32Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_6b38c3e8c00a1bf0d09820fd",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_38b9a432483b7787a73f6011",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1907,
-          "speed_mbps": 0.04,
-          "latency_ms": 77,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 61,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T11:13:10Z",
-          "first_seen_at": "2026-07-14T12:35:32Z",
-          "freshness_status": "fresh",
-          "source_name": "VPNGate",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_38b9a432483b7787a73f6011",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_dafd83ca20ba87a786281632",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1687,
-          "speed_mbps": 4.82,
-          "latency_ms": 87,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 61,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T14:54:27Z",
-          "first_seen_at": "2026-07-26T17:51:52Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_dafd83ca20ba87a786281632",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_fc03b369ad17ea17bc4516fc",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1429,
-          "speed_mbps": 7.39,
-          "latency_ms": 106,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 60,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T01:21:10Z",
-          "first_seen_at": "2026-08-24T23:06:05Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_fc03b369ad17ea17bc4516fc",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_19808c9c1a7f78200b7d812b",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1963,
-          "speed_mbps": 1.63,
-          "latency_ms": 73,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 59,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T08:17:25Z",
-          "first_seen_at": "2026-08-17T11:37:44Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_19808c9c1a7f78200b7d812b",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_57ef813c973920831ea8f365",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1540,
-          "speed_mbps": 4.39,
-          "latency_ms": 94,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 59,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T13:40:55Z",
-          "first_seen_at": "2026-08-27T07:06:09Z",
-          "freshness_status": "recent",
-          "source_name": "VPNGate",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_57ef813c973920831ea8f365",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_cb970d05c8c2fdab16b9e5df",
-          "country_code": "LT",
-          "country_name": "Lithuania",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1974,
-          "speed_mbps": 6.18,
-          "latency_ms": 114,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 59,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T23:40:54Z",
-          "first_seen_at": "2026-06-10T12:23:43Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_cb970d05c8c2fdab16b9e5df",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_5f86c7fa99c2754282731378",
-          "country_code": "NL",
-          "country_name": "Netherlands",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1809,
-          "speed_mbps": 5.37,
-          "latency_ms": 125,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 58,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T23:49:02Z",
-          "first_seen_at": "2026-08-12T03:35:15Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_5f86c7fa99c2754282731378",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_629397d197a88c5e5ac20e56",
-          "country_code": "HU",
-          "country_name": "Hungary",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "udp",
-          "port": 1997,
-          "speed_mbps": 4.78,
-          "latency_ms": 130,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 58,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T04:20:50Z",
-          "first_seen_at": "2026-07-03T17:04:23Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_629397d197a88c5e5ac20e56",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_778b7a614f3529db5f65a4c9",
-          "country_code": "HU",
-          "country_name": "Hungary",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1640,
-          "speed_mbps": 6.11,
-          "latency_ms": 138,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 58,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T08:05:03Z",
-          "first_seen_at": "2026-08-14T08:06:20Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_778b7a614f3529db5f65a4c9",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_fb8555c028988c46ace6bcbb",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1439,
-          "speed_mbps": 10.23,
-          "latency_ms": 61,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 58,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T20:33:13Z",
-          "first_seen_at": "2026-06-18T00:40:46Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_fb8555c028988c46ace6bcbb",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_f02f037ac218516a5ec6c6df",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1652,
-          "speed_mbps": 9.26,
-          "latency_ms": 65,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 57,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T10:00:51Z",
-          "first_seen_at": "2026-06-26T19:51:20Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_f02f037ac218516a5ec6c6df",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_0a4ed79054a4e02163b71857",
-          "country_code": "BY",
-          "country_name": "Belarus",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1866,
-          "speed_mbps": 7.53,
-          "latency_ms": 106,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 56,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T08:10:14Z",
-          "first_seen_at": "2026-08-07T15:10:30Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_0a4ed79054a4e02163b71857",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_3c241b96c2eb5332a87213d8",
-          "country_code": "UA",
-          "country_name": "Ukraine",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1326,
-          "speed_mbps": 3.72,
-          "latency_ms": 130,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 56,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T09:42:54Z",
-          "first_seen_at": "2026-06-23T23:57:39Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_3c241b96c2eb5332a87213d8",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_d72d7e67d0818bd3ec267c35",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1292,
-          "speed_mbps": 4.95,
-          "latency_ms": 59,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 56,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T16:16:54Z",
-          "first_seen_at": "2026-07-29T23:22:48Z",
-          "freshness_status": "recent",
-          "source_name": "AutoOVPN",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_d72d7e67d0818bd3ec267c35",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_e74dbafa28e96148a1d648a6",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1642,
-          "speed_mbps": 9.89,
-          "latency_ms": 74,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 56,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-26T06:51:00Z",
-          "first_seen_at": "2026-08-05T09:40:21Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_e74dbafa28e96148a1d648a6",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        },
-        {
-          "id": "pvl_f67c2b080f92a70594bb7c44",
-          "country_code": "RU",
-          "country_name": "Russia",
-          "city": null,
-          "protocol": "openvpn",
-          "transport": "tcp",
-          "port": 1441,
-          "speed_mbps": 5.99,
-          "latency_ms": 73,
-          "uptime_percent_7d": null,
-          "technical_quality_score": 56,
-          "score_label": "Limited",
-          "last_checked_at": "2026-11-25T17:27:19Z",
-          "first_seen_at": "2026-07-30T07:54:27Z",
-          "freshness_status": "recent",
-          "source_name": "IPSpeed",
-          "server_page_url": "https://publicvpnlist.com/api/v1/servers/pvl_f67c2b080f92a70594bb7c44",
-          "config_download_url": null,
-          "risk_flags": [
-            "third_party_server",
-            "privacy_not_assessed",
-            "state_may_change"
-          ],
-          "v2rayng_url": null,
-          "connection_info_url": null
-        }
-      ],
-      "meta": {
-        "schema_version": "1.1",
-        "dataset_version": "20261126T114122Z-f0dd51a81b5b",
-        "snapshot_id": "274220a68c5d1087",
-        "generated_at": "2026-11-26T11:41:22Z",
-        "expires_at": "2026-11-26T11:56:22Z",
-        "protocol_dataset_version": "20261126T114430Z-9d913fbfed09",
-        "total": 2239,
-        "page": 1,
-        "per_page": 20,
-        "pages": 112
-      },
-      "links": {
-        "self": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=1&per_page=20&protocol=openvpn&sort=score&status=online",
-        "next": "https://publicvpnlist.com/api/v1/servers?fields=id%2Ccountry_code%2Ccountry_name%2Ccity%2Cexit_ip%2Cprotocol%2Ctransport%2Cport%2Cspeed_mbps%2Clatency_ms%2Ctechnical_quality_score%2Cscore_label%2Clast_checked_at%2Cfirst_seen_at%2Cfreshness_status%2Cuptime_percent_7d%2Csource_name%2Crisk_flags%2Cv2rayng_url%2Cconnection_info_url%2Cconfig_download_url%2Cserver_page_url&fresh_within=259200&order=desc&page=2&per_page=20&protocol=openvpn&sort=score&status=online",
-        "prev": null,
-        "documentation": "https://publicvpnlist.com/api/"
-      },
-      "_cache": {
-        "key": "servers_v2?protocol=openvpn&status=online&fresh_within=259200&sort=score&order=desc&page=1&per_page=20&fields=id,country_code,country_name,city,exit_ip,protocol,transport,port,speed_mbps,latency_ms,technical_quality_score,score_label,last_checked_at,first_seen_at,freshness_status,uptime_percent_7d,source_name,risk_flags,v2rayng_url,connection_info_url,config_download_url,server_page_url",
-        "hit": false,
-        "revalidated": false,
-        "stale": false,
-        "fetched_at": 1795693480,
-        "etag": "W/\"3b57a0186576b0e3f65f8cf0af5037743bcebf145b0681b4fdd31ebd0f2c0f57\""
+        "fetched_at": 1795725884,
+        "etag": "W/\"6f32cd5151245b3c06a55618a4e12497634842fceeb2ae96493654c2244b43dc\""
       }
     }
   }
